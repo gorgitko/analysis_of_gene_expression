@@ -134,7 +134,8 @@ So in the example above, `cyl` and `mpg` variables are evaluated in the context 
 defined in `select()` function call.
 
 NSE is a quite advanced topic and its knowledge is mainly needed for implementation of custom functions, which share the tidyverse philosophy.
-See `vignette("programming")`.
+See `vignette("programming")` and [`friendlyeval`](https://github.com/MilesMcBain/friendlyeval),
+a friendly interface for NSE programming.
 
 Now we will quickly look at the most popular tidyverse packages.
 
@@ -966,6 +967,25 @@ pdf("ggplot2_example.pdf")
 print(p)
 dev.off()
 ```
+
+## Using dynamic variable names in aesthetics
+
+You probably wondered, how can you use dynamic variable names in `aes()`.
+For example, consider a function `plot_pca(data, color_by)`
+which calculates PCA and shows scatterplot colorized by a specified variable.
+Although it is possible via NSE (see `vignette("programming")`),
+the easiest way is to use `aes_string()` function.
+
+```{r}
+color_by <- "cyl"
+
+ggplot(mtcars) +
+  geom_point(aes_string(x = "mpg", y = "qsec", color = color_by))
+```
+
+The disadvantage is that you cannot use the capabilities of NSE.
+In the example above, you cannot specify `factor(color_by)` to treat
+`cyl` as factor variable.
 
 ## Libraries extending the `ggplot2`
 
