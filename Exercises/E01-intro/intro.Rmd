@@ -1,0 +1,487 @@
+---
+title: "E01 - Intro (Analysis of Gene Expression @ VSCHT)"
+author: "Jiri Novotny"
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    # code_folding: "show"
+    df_print: "paged"
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 4
+    number_sections: false
+    theme: "united"
+    self_contained: true
+    css: "../stylesheet.css"
+---
+
+---
+date: '`r glue("Document generated: {Sys.Date()}")`'
+---
+
+# Welcome to Analysis of Gene Expression (AGE)!
+
+Here you will find some introductory information, e.g. virtual machines, conda package manager etc.
+
+***
+
+# Virtual machines
+
+We will work at virtual machines (VM) provided by [Metacentrum/CESNET](https://cloud.gitlab-pages.ics.muni.cz/documentation/quick-start/).
+**The instructions how to set up your VM are [here](https://github.com/bio-platform/bio-class).**
+However, most of you already have experience with VM from *Genomics: Algorithms and Analysis* class.
+
+## [`sshfs`](https://github.com/libfuse/sshfs) - mount directory on remote server
+
+`sshfs` allows to mount directories on a remote server, through SSH protocol.
+On Ubuntu (and derived) distros, install it by `sudo apt install sshfs`.
+
+It is recommended to use `sshfs` as a regular user, not root.
+For that, create directory on your local machine, owned by you.
+Then you can mount a remote directory: `sshfs user@hostname:directory mountpoint` 
+
+In case of VM for AGE, you can have a saved connection in `~/.ssh/config`:
+
+```
+Host age
+    Hostname 192.168.8.153
+    User jirinovo
+```
+
+Then you can use, for example, `sshfs age:/home/novotnyj mountpoint`.
+
+***
+
+# AGE files
+
+Files for AGE are stored in `/data/shared/AGE2020`.
+Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others :), please,
+create your personal directory `~/AGE2020/Exercises` in which you will copy exercise files on the beginning of each exercise.
+
+Now, please, copy these files and directories to your personal directory:
+
+```{bash, eval = FALSE}
+cp -r /data/shared/AGE2020/Exercises/{age_library.R,stylesheet.css,E01-intro} ~/AGE2020/Exercises
+```
+
+It is also needed to switch your R working directory to the current exercise.
+
+```{r, eval = FALSE}
+setwd("~/AGE2020/Exercises/E01-intro")
+```
+
+***
+
+# Conda: virtual environment and package manager
+
+You may have heard about [conda](https://docs.conda.io/en/latest/), which is by default installed on your VM.
+
+- [Tutorial](https://conda.io/docs/user-guide/getting-started.html)
+- [Cheatsheet](https://conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf)
+- [Nature blog](http://blogs.nature.com/naturejobs/2017/11/03/techblog-bioconda-promises-to-ease-bioinformatics-software-installation-woes/)
+- [bioRxiv paper](https://www.biorxiv.org/content/early/2017/10/27/207092)
+
+## Virtual environment (venv)
+
+`Conda` is able to create so-called "virtual environments" (venvs).
+Those are environments isolated from system where you can install software packages.
+You can also export these venvs so everyone is able to recreate them with the same package versions.
+
+Venvs are just directories with subdirectories following the [UNIX file system hierarchy](https://www.geeksforgeeks.org/unix-file-system/).
+The root venv is called `base` and is located in `conda` installation directory
+(by default `~/miniconda3`, on your VM `/opt/bio-class/miniconda`).
+
+## Conda packages
+
+Conda packages contain precompiled software for specific OS, together with other data files like text, images etc.
+Each package also knows its own dependencies, which are automatically installed.
+Packages are available in channels ("directories"), which are maintained by users, e.g. there are channels [`bioconda`](https://anaconda.org/bioconda),
+[`intel`](https://anaconda.org/intel), [`R`](https://anaconda.org/r) etc.
+Packages are hosted in the [Anaconda cloud](https://anaconda.org/). Hosting is free for public packages, paid for private ones.
+Because `conda` is installed locally in your home directory, you can use it on machines where you would normally need administrator access to install software.
+That is very useful for computing on Metacentrum (and other computational grids)!
+
+Fortunately at your VM, you have root permissions and most of the required software is already installed.
+But still, `conda` makes installation of software, which requires compilation, super easy.
+And also, by using venvs, you can install multiple versions of software to your VM.
+
+## Conda vs. Miniconda vs. Anaconda
+
+- `conda`: the package manager itself.
+- [Miniconda](https://docs.conda.io/en/latest/miniconda.html): minimal distribution of `conda`.
+- [Anaconda Distribution](https://www.anaconda.com/distribution/): scientific distribution of `conda` with included packages (all of them can be installed with `conda`).
+
+## Conda basics
+
+There is no need to install `conda` on your VM, however, if you would need it somewhere else, I will recommend you to go with
+[Miniconda](https://docs.conda.io/en/latest/miniconda.html).
+
+To switch to `base` venv, use `startConda` command.
+Now you can see `(base)` on the left side of your bash prompt.
+
+**Create a new venv**
+
+This will create an empty venv: `conda create -n my_new_venv`
+
+You can also specify packages which will be immediately installed to a new venv, e.g. `conda create -n my_new_venv bwa bowtie star salmon`
+
+**Switch to the new venv**
+
+`conda activate my_new_venv`
+
+**Deactivate current venv**
+
+`conda deactivate my_new_venv`
+
+**Install packages**
+
+`conda install fastqc salmon`
+
+You can also specify the package version: `conda install fastqc=0.10.1`
+
+**Update packages**
+
+`conda update salmon`
+
+Or all packages at once: `conda update --all`
+
+**Remove packages**
+
+`conda uninstall fastqc`
+
+**List packages installed in current venv**
+
+`conda list`
+
+**List venvs**
+
+`conda info --envs`
+
+**Channels**
+
+After fresh installation, `conda` will search for packages in `defaults` channel,
+where are only basic packages.
+For example, when you try to install `fastqc` on fresh `conda` installation...
+
+```
+$ conda install fastqc
+Collecting package metadata (current_repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+Collecting package metadata (repodata.json): done
+Solving environment: failed with initial frozen solve. Retrying with flexible solve.
+PackagesNotFoundError: The following packages are not available from current channels:
+
+  - fastqc
+
+Current channels:
+
+  - https://repo.anaconda.com/pkgs/main/linux-64
+  - https://repo.anaconda.com/pkgs/main/noarch
+  - https://repo.anaconda.com/pkgs/r/linux-64
+  - https://repo.anaconda.com/pkgs/r/noarch
+
+To search for alternate channels that may provide the conda package you're looking for, navigate to
+
+    https://anaconda.org
+
+and use the search bar at the top of the page.
+```
+
+...it fails, because `fastqc` was not found in `defaults` channel.
+However, `conda` on your VM has already several **very useful** channels added.
+You can view current channels with:
+
+```
+$ conda config --show channels
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+```
+
+- [`conda-forge`](https://conda-forge.org/) contains various packages, which are automatically built from GitHub repositories.
+  There are many popular tools and libraries, such as `graphicsmagick` or `libgfortran`.
+- [`bioconda`](https://bioconda.github.io/) is channel for bioinformatics.
+  All the popular bioinfotools can be found there, such as previously shown `fastqc`.
+
+Current channels are stored in `~/.condarc`.
+Packages can have the same names, but can lie in different channels.
+In such a case, package is installed from more priority channel (top > down).
+
+If you want to install package from non-current channel,
+you have to specify it: `conda install -c intel numpy`
+
+***
+
+# Programming in R
+
+We expect you to have knowledge of base R.
+You can refresh your skills:
+
+- [swirl](https://swirlstats.com/students.html) - interactive tutorial directly in R session. **Highly recommended**.
+- [Base R cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/master/base-r.pdf)
+- [fasteR](https://github.com/matloff/fasteR) - Fast Lane to Learning R
+- [Programming with R](http://swcarpentry.github.io/r-novice-inflammation/)
+- [R for Reproducible Scientific Analysis](http://swcarpentry.github.io/r-novice-gapminder/)
+- ([Advanced R](https://adv-r.hadley.nz/) - advanced topics.)
+
+**Useful links**
+
+- [**Awesome list of cheatsheets**](https://rstudio.com/resources/cheatsheets/).
+  Some of them are also accessible in RStudio: `Help -> Cheatsheets`
+- [RStudio cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/master/rstudio-ide.pdf)
+- [rdrr.io](https://rdrr.io/) - very nice package reference from multiple sources (CRAN, Bioconductor, GitHub, etc.).
+- [Heatmaps in R](https://www.biostars.org/p/205417/)
+  - Found here some interesting heatmap packages I hadn't know before:
+    [ComplexHeatmap](https://jokergoo.github.io/ComplexHeatmap-reference/book/),
+    [Superheat](https://rlbarter.github.io/superheat/index.html),
+    [Heatplus](https://bioconductor.org/packages/release/bioc/html/Heatplus.html),
+    [iheatmapr](https://docs.ropensci.org/iheatmapr/articles/full_vignettes/iheatmapr.html)
+
+## Installing R packages
+
+For bioinformatic purposes we will be using packages from [Bioconductor](http://bioconductor.org/), which
+groups together packages for bioinformatics.
+There are several core packages developed by Bioconductor's team which
+share the same philosophy (API) and are used by other third-party packages.
+For example, [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html)
+is used for storing experiment data (expression matrix, phenotype data, genomic ranges).
+
+Bioconductor packages are installed through `BiocManager::install()` function.
+Because some Bioconductor packages can interefere with packages from R main repository
+[CRAN](https://cran.r-project.org/), always use `BiocManager::install()` to install packages,
+regardless their source repository.
+
+Some packages cannot be installed from R session started by a regular user,
+so always install packages as the root (`$ sudo R`).
+
+It is also possible to install packages from GitHub repository with `devtools::install_github("user/repository")`, for example
+`devtools::install_github("tidyverse/stringr")`
+
+## Debugging
+
+Because R has dynamic typing and its error tracing is not as good as in e.g. Python, its debugging
+could be very painful. Here are some tips for saving your mental health (or refer to [this](https://adv-r.hadley.nz/debugging.html)):
+
+### `traceback()`
+
+When error occurs, its message is usually not very informative.
+`traceback()` function will print a call stack of last error,
+helping you to resolve a location of the error.
+
+Let's define the group of functions, which call each other, starting from `f()`:
+
+```{r}
+f <- function(x) g(x)
+g <- function(y) h(y)
+h <- function(z) {
+  z**2
+}
+
+f(2)
+f("2")
+```
+
+Let's inspect the call stack:
+
+```{r}
+traceback()
+```
+
+Also try running `f("a")` in your prompt.
+RStudio will directly offer you to show traceback or rerun code with debug (see below).
+
+### Interactive debugger
+
+Sometimes you need more information from a location of error.
+Interactive debugger allows you to pause execution of a function and interactively explore its state.
+It is invoked by calling the `browser()` function:
+
+```{r}
+f2 <- function(x) g2(x)
+g2 <- function(y) h2(y)
+h2 <- function(z) {
+  browser()
+  z**2
+}
+
+f2("2")
+```
+
+Interactive debugger can be also invoked by RStudio, as is shown above in the `traceback()` section.
+**Unfortunately, `browser()` is not working well from within code chunks,
+so rather run debugged function from the R command line (interactive session).**
+
+### `recover()`
+
+Another way to activate `browser()` is to use `options(error = recover)`.
+Now when you get an error, you’ll get an interactive prompt that displays the
+traceback and gives you the ability to interactively debug inside any of the frames:
+
+```{r}
+options(error = recover)
+f("2")
+```
+
+***
+
+## Introduction to RMarkdown
+
+```{r, eval = TRUE, include = FALSE, echo = FALSE}
+# Just a function to escape backticks in inline code.
+rinline <- function(code) {
+  html <- '<code  class="r">``` `r CODE` ```</code>'
+  sub("CODE", code, html)
+}
+```
+
+We will be using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html) for exercises.
+It allows to combine [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown) and (not only) R code
+to generate documents in HTML, PDF, Word (docx) and many more formats.
+This is [how it works](https://rmarkdown.rstudio.com/lesson-2.html):
+
+![Code chunks in RMarkdown document are evaluated by [`knitr`](https://yihui.name/knitr/) and converted to [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown),
+which is then converted by [`pandoc`](https://pandoc.org) to selected output format (in our case HTML).](images/rmarkdown_flow.png)
+
+**Useful links**
+
+- [RMarkdown cheatsheet](https://rmarkdown.rstudio.com/lesson-15.html)
+  (PDF [here](https://raw.githubusercontent.com/rstudio/cheatsheets/master/rmarkdown-2.0.pdf) and
+  [here](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf))
+- [RMarkdown book](https://bookdown.org/yihui/rmarkdown/)
+- [RMarkdown cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/)
+- [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+- [`pandoc`'s Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown)
+- [`knitr` options](https://yihui.name/knitr/options/)
+
+### How to use RMarkdown
+
+**Pandoc header**
+
+On the beginning of the source file you can see the header section separated by `---`. Those are options for `pandoc`.
+
+**Markdown syntax**
+
+Markdown is an easy-to-write/easy-to-read markup language.
+It is widely used by, but not only, developers for documentation (you have certainly seen it on GitHub).
+Markdown syntax is super easy and so, please, refer to [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+(however, `pandoc` uses an [extended version](https://pandoc.org/MANUAL.html#pandocs-markdown) of Markdown).
+
+**Using HTML tags**
+
+Besides Markdown syntax, you can use anything you would normally use in HTML.
+For example, `<div style="color: red;">Some red text.</div>`
+
+<div style="color: red;">Some red text.</div>
+
+Just be careful, because RMarkdown is not a classic HTML document and you don't have full control over
+conversion to output HTML.
+
+**Code chunks**
+
+Code (R, Python, etc.) is placed in chunks. A chunk begins with triple backticks followed by `{language_name}` and
+ends with another triple backticks. Both start and end triple backticks must be on separate lines.
+
+Example of chunk with R code:
+
+<pre class="r">
+&grave;&grave;&grave;{r}
+df <- data.frame()
+&grave;&grave;&grave;
+</pre>
+
+Output from a chunk is generated below the chunk.
+
+Each chunk can have options set. For example,
+
+<pre class="r">
+&grave;&grave;&grave;{r, warning = FALSE}
+df <- data.frame()
+&grave;&grave;&grave;
+</pre>
+
+will suppress all warnings produced by this chunk. See [`knitr` options](https://yihui.name/knitr/options/).
+
+JavaScript and CSS is also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
+Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
+
+**Inline code**
+
+You can also place R code [inline](https://rmarkdown.rstudio.com/lesson-4.html) using `r rinline("code")`.
+Inline code in final document will be replaced by its output.
+
+**Rendering a document**
+
+On the end of this document you will find a chunk, which generates a HTML document from this source.
+If you are curious how an intermediate Markdown document looks like, you can specify `clean = FALSE` in `render()` function.
+
+### Useful keyboard shortcuts in RStudio
+
+You can view them in `Tools -> Keyboard Shortcuts Help`.
+
+- `Ctrl + Enter`: run current line or selected lines.
+- `Ctrl + Alt + R`: run all chunks.
+- `Ctrl + Alt + P`: run all chunks above.
+- `Ctrl + Shift + Enter`: run current chunk.
+- `Ctrl + Alt + N`: run next chunk.
+
+### Advanced usage
+
+**Pretty tables**
+
+We can use [`DT`](https://rstudio.github.io/DT/) package, an R interface to JavaScript library [`datatables`](https://datatables.net/).
+
+```{r, eval = TRUE}
+DT::datatable(
+  mtcars,
+  filter = "top",
+  class = "display",
+  rownames = TRUE
+)
+```
+
+Or [`kable`](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
+[`kableExtra`](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html) for simplier tables.
+
+```{r, eval = TRUE}
+kableExtra::kable_styling(
+  knitr::kable(head(mtcars)),
+  bootstrap_options = c("striped", "hover", "condensed")
+)
+```
+
+**Using tab design**
+
+As you can see, this document has autogenerated menu on the left.
+However, `pandoc` also allows to use a tab-style menu.
+See [this](tab_design.Rmd) ([HTML](tab_design.html)) example.
+
+Personally, I have found this design very useful for reporting.
+
+**Generating Markdown and HTML from R**
+
+The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
+For example, this chunk produces a header:
+
+<pre class="r">
+&grave;&grave;&grave;{r, results = "asis"}
+cat("\n\n# Header\n\n")
+&grave;&grave;&grave;
+</pre>
+
+I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
+
+# HTML rendering
+
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell :)
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(rmarkdown)
+library(knitr)
+library(glue)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
+render("intro.Rmd", output_file = "intro.html")
+```
