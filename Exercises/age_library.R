@@ -156,7 +156,7 @@ plot_pca <- function(
 
 plot_pca_ggplot2 <- function(
   m,
-  pheno_data,
+  sample_data,
   n_top_features = Inf,
   color_by = NULL,
   shape_by = NULL,
@@ -170,29 +170,26 @@ plot_pca_ggplot2 <- function(
   #'
   #' Args:
   #'   m: Expression matrix (rows are features, columns are samples).
-  #'   pheno_data: Dataframe describing samples.
+  #'   sample_data: Dataframe describing samples.
   #'   n_top_features: Number of top features with the highest variance across the samples.
-  #'   color_by: Column name in pheno_data to use for point coloring.
-  #'   shape_by: Column name in pheno_data to use for point shape.
-  #'   label_by: Column name in pheno_data to use for point labels.
+  #'   color_by: Column name in sample_data to use for point coloring.
+  #'   shape_by: Column name in sample_data to use for point shape.
+  #'   label_by: Column name in sample_data to use for point labels.
   #'   point_size: Point size (numeric).
   #'   text_size: Label text size (numeric).
   #'   center: Whether to center PCA. See ?prcomp.
   #'   scale.: Whether to scale PCA. See ?prcomp.
   #'
   #' Returns:
-  #'   list(pca = object of class 'prcomp', pca_df = combined dataframe of pheno_data and PCs, plot = ggplot2 object)
+  #'   list(pca = prcomp object, pca_df = combined dataframe of sample_data and PCs, plot = ggplot2 object)
 
   library(rlist)
   library(ggplot2)
-  library(ggthemes)
-  library(cowplot)
-  library(ggrepel)
 
   x <- select_var_features(m, n_top_features = n_top_features)
 
   pca <- prcomp(t(m), center = center, scale. = scale.)
-  pca_df <- data.frame(pheno_data, pca$x)
+  pca_df <- data.frame(sample_data, pca$x)
 
   cme <- summary(pca)$importance["Cumulative Proportion", ]
   cme <- as.data.frame(cme)
@@ -202,10 +199,10 @@ plot_pca_ggplot2 <- function(
   p_list <- lapply(pc_combinations, function(pc) {
     p <- ggplot(pca_df, aes_string(x = pc[1], y = pc[2], color = color_by, shape = shape_by)) +
       geom_point(size = point_size) +
-      theme_few()
+      ggthemes::theme_few()
 
     if (!is.null(label_by)) {
-      p <- p + geom_text_repel(aes_string(label = label_by), color = "black", size = text_size)
+      p <- p + ggrepel::geom_text_repel(aes_string(label = label_by), color = "black", size = text_size)
     }
 
     return(p)
@@ -228,11 +225,12 @@ plot_pca_ggplot2 <- function(
 
   p_list <- list.append(
     p_list,
-    ggplot(cme, aes(x = PC, y = cme)) + geom_bar(stat = "identity") + theme_few(),
+    ggplot(cme, aes(x = PC, y = cme)) + geom_bar(stat = "identity") +
+      ggthemes::theme_few(),
     legend
   )
 
-  p <- plot_grid(plotlist = p_list, nrow = 3)
+  p <- cowplot::plot_grid(plotlist = p_list, nrow = 3)
 
   return(list(pca = pca, pca_df = pca_df, plot = p))
 }
@@ -261,21 +259,24 @@ plot_pca_ggpairs <- function(
   #'
   #' Args:
   #'   m: Expression matrix (rows are features, columns are samples).
-  #'   pheno_data: Dataframe describing samples.
+  #'   sample_data: Dataframe describing samples.
   #'   output_file: File to save plot in.
   #'   n_components: Number of PCs to plot.
   #'   n_top_features: Number of top features with the highest variance across the samples.
-  #'   color_by: Column name in pheno_data to use for point coloring.
+  #'   color_by: Column name in sample_data to use for point coloring.
   #'   color_legend_lab: Name of the color legend.
-  #'   shape_by: Column name in pheno_data to use for point shape.
+  #'   shape_by: Column name in sample_data to use for point shape.
   #'   shape_legend_lab: Name of the shape legend.
-  #'   label_by: Column name in pheno_data to use for point labels.
+  #'   label_by: Column name in sample_data to use for point labels.
   #'   point_size: Point size (numeric).
   #'   text_size: Label text size (numeric).
   #'   title: Plot title.
   #'   subtitle: Plot subtitle.
   #'   center: Whether to center PCA. See ?prcomp.
   #'   scale.: Whether to scale PCA. See ?prcomp.
+  #'
+  #' Returns:
+  #'   list(pca = prcomp object, pca_df = combined dataframe of sample_data and PCs, plot = ggplot2 object)
 
   library(ggplot2)
   library(magrittr)
@@ -362,25 +363,42 @@ plot_pca_ggpairs <- function(
 }
 
 
-plot_heatmap <- function(x, group = NULL, group_name = "Group", main = "") {
+plot_heatmap <- function(
+  m,
+  color_by = NULL,
+  color_legend_lab = "Group",
+  main = ""
+) {
+  #' Plot heatmap using heatmap.2()
+  #'
+  #' Args:
+  #'   m: Expression matrix (rows are features, columns are samples).
+  #'   color_by: Vector of discrete values to colorize samples.
+  #'             Length must be the same as number of columns in 'm'.
+  #'   color_legend_lab: Name of the color legend.
+  #'   main: Plot title.
+  #'
+  #' Returns:
+  #'   logical
+
   library(RColorBrewer)
   library(gplots)
   library(magrittr)
 
   pal <- colorRampPalette(c("white", "darkblue"))(256)
 
-  if (is.null(group)) {
-    heatmap.2(x, main = main, col = pal, mar = c(10, 10),
+  if (is.null(color_by)) {
+    heatmap.2(m, main = main, col = pal, mar = c(10, 10),
               scale = "none", trace = "none")
 
   } else {
-    group <- factor(group)
-    cpal  <- levels(group) %>% length() %>% brewer.pal("Set1")
-    csc   <- cpal[group]
+    color_by <- factor(color_by)
+    cpal  <- levels(color_by) %>% length() %>% brewer.pal("Set1")
+    csc   <- cpal[color_by]
 
-    heatmap.2(x, ColSideColors = csc, main = main, col = pal, mar = c(10, 10),
+    heatmap.2(m, ColSideColors = csc, main = main, col = pal, mar = c(10, 10),
               scale = "none", trace = "none")
-    legend("topright", title = group_name, legend = levels(group), pch = 19,
+    legend("topright", title = color_legend_lab, legend = levels(color_by), pch = 19,
            bty = "n", col = cpal)
   }
 
@@ -388,145 +406,292 @@ plot_heatmap <- function(x, group = NULL, group_name = "Group", main = "") {
 }
 
 
-ComputeM <- function(g, CP) {
-  og <- setdiff(rownames(CP), g)
+plot_pheatmap <- function(
+  m,
+  sample_data = NULL,
+  feature_data = NULL,
+  column_color_by = NULL,
+  row_color_by = NULL,
+  main = ""
+) {
+  #' Plot heatmap using pheatmap()
+  #'
+  #' Args:
+  #'   m: Expression matrix (rows are features, columns are samples).
+  #'   sample_data: Dataframe describing samples.
+  #'   feature_data: Dataframe describing features
+  #'   column_color_by: Vector of column names of sample_data to color columns in heatmap.
+  #'                    If NULL and sample_data is provided, all columns will be used for coloring.
+  #'   row_color_by: Vector of column names of feature_data to color rows in heatmap.
+  #'                 If NULL and feature_data is provided, all columns will be used for coloring.
+  #'   main: Plot title.
+  #'
+  #' Returns:
+  #'   pheatmap object
 
-  V <- apply(CP[og, ], 1, function(x) {sd(CP[g, ] - x)})
-  M <- mean(V)
-  return(M)
-}
-
-
-PlotBW <- function(plotData, gene, ticks = -10:10) {
-  library(lattice)
-
-  trellis.device(device = "pdf", file = paste(gene, ".pdf", sep = ""),
-                 width = 4, height = 4)
-
-  labels <- 2^ticks
-  labels[ticks < 0] <- paste("1/", 2^(-ticks[ticks < 0]), sep = "")
-
-  print(bwplot(as.formula(paste(gene, "~ Sample_Group")),
-               groups = Confluence,
-               data = plotData,
-               main = gene,
-               ylab = "Relative expression\n(normalised to controls)",
-               xlab = "Treatment\nConfluence",
-               horizontal = FALSE,
-               scales = list(y = list(at = ticks, labels = labels)),
-               panel = function(...) {
-                 panel.abline(h = ticks, lwd = 0.25, lty = 1,
-                              col = "#eeeeee")
-                 panel.stripplot(jitter.data = TRUE, ...)
-                 panel.bwplot(do.out = FALSE, ...)
-               }, auto.key = TRUE))
-  dev.off()
-  return(invisible(TRUE))
-}
-
-
-TestGene <- function(gene, data, test = t.test) {
-  library(glue)
-  library(dplyr)
-
-  print(glue("{gene}: Controls vs. Spirulina"))
-
-  res <- test(as.formula(delta_cp_centered ~ Sample_Group),
-              data = data %>% filter(Symbol == gene))$p.value
-
-  print(glue("p-value: {signif(res, 3)} {Asterisk(res)}"))
-}
-
-
-TestGeneTable <- function(data, test = t.test) {
-  library(dplyr)
-
-  genes <- unique(data$Symbol)
-  p_values <- lapply(genes, function(gene) {
-    test(as.formula(delta_cp_centered ~ Sample_Group),
-         data = data %>% filter(Symbol == gene))$p.value
-  }) %>% unlist()
-
-  return(data.frame(
-    Symbol = genes,
-    p_value = p_values,
-    significance = lapply(p_values, Asterisk) %>% unlist()
-  ))
-}
-
-
-Asterisk <- function(p_value) {
-  if (is.na(p_value)) {
-    return("")
-  } else if (p_value < 0.001) {
-    return("***")
-  } else if (p_value < 0.01) {
-    return("**")
-  } else if (p_value < 0.05) {
-    return("*")
-  } else {
-    return("")
+  if (!is.null(sample_data) && !is.null(column_color_by)) {
+    sample_data <- sample_data[, column_color_by, drop = FALSE]
   }
+
+  if (!is.null(feature_data) && !is.null(row_color_by)) {
+    feature_data <- feature_data[, row_color_by, drop = FALSE]
+  }
+
+  pheatmap::pheatmap(m, annotation_col = sample_data, annotation_row = feature_data, main = main)
 }
 
 
-PlotBW_ggplot <- function(plot_data, gene, cp_col, facet_by = NULL, point_size = 2, do_t_test = TRUE) {
+plot_heatmaply <- function(
+  m,
+  sample_data = NULL,
+  feature_data = NULL,
+  column_color_by = NULL,
+  row_color_by = NULL,
+  main = NULL,
+  key.title = NULL
+) {
+  #' Create heatmap using heatmaply.
+  #'
+  #' Args:
+  #'   m: Expression matrix (rows are features, columns are samples).
+  #'   sample_data: Dataframe describing samples.
+  #'   feature_data: Dataframe describing features
+  #'   column_color_by: Vector of column names of sample_data to color columns in heatmap.
+  #'                    If NULL and sample_data is provided, all columns will be used for coloring.
+  #'   row_color_by: Vector of column names of feature_data to color rows in heatmap.
+  #'                 If NULL and feature_data is provided, all columns will be used for coloring.
+  #'   main: Plot title.
+  #'   key.title: Main color legend title.
+  #'
+  #' Returns:
+  #'   plotly object
+
+  # heatmaply cannot handle NULL parameters.
+  # Could be this implemented better?
+  params <- list(m, key.title = key.title)
+
+  if (!is.null(sample_data) && !is.null(column_color_by)) {
+    params[["col_side_colors"]] <- sample_data[, column_color_by, drop = FALSE]
+  }
+
+  if (!is.null(feature_data) && !is.null(row_color_by)) {
+    params[["row_side_colors"]] <- feature_data[, row_color_by, drop = FALSE]
+  }
+
+  if (!is.null(main)) {
+    params[["main"]] <- main
+  }
+
+  do.call(heatmaply::heatmaply, params)
+}
+
+
+plot_boxplot_ggplot2 <- function(
+  plot_data,
+  x,
+  y,
+  feature_col,
+  feature = NULL,
+  facet_by = NULL,
+  color_by = NULL,
+  main = NULL,
+  add = "jitter",
+  point_size = 2,
+  do_t_test = TRUE
+) {
   #' Plot boxplot of gene expression.
   #'
   #' Args:
   #'   plot_data: data.frame (long format)
-  #'   gene: symbol of gene to plot
-  #'   cp_col: name of column with CP values
-  #'   facet_by: name of column by which to make subplots (panels)
-  #'   point_size: size of points inside boxplots
-  #'   do_t_test: do t-test and display p-value inside the plot
+  #'   x: Column to divide x-axis values to (e.g. sample groups).
+  #'   y: Column to compute boxplots on y-axis.
+  #'   feature_col: Column for facetting.
+  #'   feature: Name of feature from which boxplots will be made.
+  #'            If NULL, facet by feature_col (facet_by will be ignored).
+  #'   facet_by: One or two columns used for facetting.
+  #'   color_by: Column to use for boxplot and point coloring.
+  #'   main: Main plot title.
+  #'   add: Add something more to boxplots.
+  #'        Allowed values are one or the combination of:
+  #'        "none", "dotplot", "jitter", "boxplot", "point", "mean",
+  #'        "mean_se", "mean_sd", "mean_ci", "mean_range", "median",
+  #'        "median_iqr", "median_mad", "median_range".
+  #'        See ?ggpubr::ggboxplot
+  #'   point_size: Size of points inside boxplots.
+  #'   do_t_test: Whether to do the t-test and display a p-value inside the plot.
   #'
   #' Returns:
   #'   ggplot2 object
 
   library(ggplot2)
-  library(ggpubr)
-  library(ggthemes)
+  library(glue)
+  library(friendlyeval)
 
-  if (do_t_test) {
-    title = sprintf("%s (p-val: t-test between groups)", gene)
+  if (is.null(color_by)) {
+    color <- "black"
   } else {
-    title = gene
+    color <- color_by
   }
 
-  plot_data <- plot_data %>%
-    dplyr::filter(Symbol == gene)
+  if (is.null(main)) {
+    main <- feature
+  }
 
-  p <- ggboxplot(data = plot_data,
-                 x = "Sample_Group", y = cp_col,
-                 facet.by = facet_by,
-                 color = "Sample_Group",
-                 xlab = "Sample Group", ylab = "Relative expression\n(normalised to controls)",
-                 title = title,
-                 outlier.shape = NA, add = "jitter", repel = TRUE, add.params = list(size = point_size),
-                 ggtheme = theme_bw()) +
+  subtitle <- ""
+
+  if (is.null(feature))
+  {
+    facet_by <- feature_col
+
+    if (do_t_test) {
+      subtitle <- "p-val: t-test between groups"
+    }
+  } else {
+    subtitle <- feature
+    plot_data <- plot_data %>%
+      dplyr::filter(!!treat_string_as_col(feature_col) == !!feature)
+
+    if (do_t_test) {
+      subtitle <- glue("{subtitle}\np-val: t-test between groups")
+    }
+  }
+
+  p <- ggpubr::ggboxplot(
+    data = plot_data,
+    x = x,
+    y = y,
+    facet.by = facet_by,
+    color = color,
+    # xlab = "Sample Group",
+    ylab = "Relative expression\n(normalised to controls)",
+    title = main,
+    subtitle = subtitle,
+    outlier.shape = NA,
+    add = add,
+    repel = TRUE,
+    add.params = list(size = point_size),
+    ggtheme = theme_bw()
+  ) +
     theme(legend.position = "top")
 
   if (do_t_test)
-    p <- p + stat_compare_means(aes(group = Sample_Group), inherit.aes = TRUE, label = "p.format", method = "t.test", paired = FALSE)
+    p <- p + ggpubr::stat_compare_means(aes(group = !!treat_string_as_col(x)), inherit.aes = TRUE, label = "p.format", method = "t.test", paired = FALSE)
 
   return(p)
 }
 
 
-PlotHeatmap_heatmaply <- function(x, col_side_colors = NULL, showticklabels = c(TRUE, FALSE)) {
-  #' Create heatmap with heatmaply.
+compute_m <- function(gene, cp_m) {
+  #' Compute the M value of CP values.
   #'
   #' Args:
-  #'   x: matrix or dataframe (wide format)
-  #'   col_side_colors: numeric vector of factors to use for column colors; length(col_side_colors) == ncol(x)
+  #'  gene: Name of gene to compute the M value.
+  #'  cp_m: Dataframe of CP values. Rows are genes and columns are samples.
   #'
   #' Returns:
-  #'   plotly object
+  #'  M value (numeric)
 
-  library(heatmaply)
+  og <- setdiff(rownames(cp_m), gene)
 
-  heatmaply(x,
-            col_side_colors = col_side_colors,
-            showticklabels = showticklabels)
+  V <- apply(cp_m[og, ], 1, function(x) {sd(cp_m[gene, ] - x)})
+  M <- mean(V)
+
+  return(M)
 }
+
+
+test_gene <- function(gene, gene_data, gene_col, value_col, group_col, test = t.test, verbose = TRUE) {
+  #' For a single gene, test for statistical significance of difference in group means.
+  #'
+  #' Args:
+  #'   gene: Name of gene to test.
+  #'   gene_data: Dataframe in long format.
+  #'   gene_col: Column with genes.
+  #'   value_col: Column with values to test.
+  #'   group_col: Column with sample groups. There must be exactly two different groups.
+  #'   test: Statistical test to perform. It must have the same interface as t.test()
+  #'   verbose: Whether to print test results.
+  #'
+  #' Returns:
+  #'   htest object
+
+  library(glue)
+  library(magrittr)
+  library(friendlyeval)
+
+  test_name <- quote(t.test) %>% as.character()
+  test_formula <- glue("{value_col} ~ {group_col}") %>% as.formula()
+
+  sample_groups <- levels(gene_data[, group_col, drop = TRUE])
+
+  if (length(sample_groups) != 2)
+    stop("More than two groups to compare.")
+
+  if (verbose)
+    glue("{gene}: {sample_groups[2]} vs. {sample_groups[1]}") %>% cat(sep = "\n")
+
+  res <- test(
+    test_formula,
+    data = dplyr::filter(gene_data, !!treat_string_as_col(gene_col) == !!gene)
+  )
+
+  p_value <- res$p.value
+
+  if (verbose)
+    glue("{test_name} p-value: {signif(p_value, 3)} {asterisk(p_value)}") %>% cat(sep = "\n")
+
+  return(res)
+}
+
+
+test_gene_table <- function(gene_data, gene_col, value_col, group_col, test = t.test) {
+  #' For all genes in the input dataframe, test for statistical significance of difference in group means.
+  #'
+  #' Args:
+  #'   gene_data: Dataframe in long format.
+  #'   gene_col: Column with genes.
+  #'   value_col: Column with values to test.
+  #'   group_col: Column with sample groups. There must be exactly two different groups.
+  #'   test: Statistical test to perform. It must have the same interface as t.test()
+  #'
+  #' Returns:
+  #'   tibble object
+
+  library(magrittr)
+
+  genes <- unique(gene_data[, gene_col, drop = TRUE])
+
+  test_results <- lapply(genes, function(gene) {
+    test_gene(gene, gene_data, gene_col, value_col, group_col, test = test, verbose = FALSE)
+  })
+
+  p_values <- lapply(test_results, "[[", "p.value") %>% unlist()
+  significance <- lapply(p_values, asterisk) %>% unlist()
+
+  return(tibble::tibble(
+    gene = genes,
+    p_value = p_values,
+    significance = significance,
+    test_result = test_results
+  ))
+}
+
+
+asterisk <- function(p_value) {
+  #' Return asterisks according to p-values.
+  #'
+  #' Args:
+  #'   p_value: Vector of p-values.
+  #'
+  #' Returns:
+  #'  character vector
+
+  dplyr::case_when(
+    is.na(p_value) ~ NA_character_,
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ "NS"
+  )
+}
+
