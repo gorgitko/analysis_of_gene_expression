@@ -24,6 +24,12 @@ date: '`r glue("Document generated: {Sys.Date()}")`'
 
 Here you will find some introductory information, e.g. virtual machines, conda package manager etc.
 
+## Contact
+
+Michal Kolar: kolarmi@img.cas.cz
+
+Jiri Novotny: jiri.novotny@img.cas.cz
+
 ***
 
 # Virtual machines
