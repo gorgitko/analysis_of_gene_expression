@@ -259,11 +259,11 @@ Because some Bioconductor packages can interefere with packages from R main repo
 [CRAN](https://cran.r-project.org/), always use `BiocManager::install()` to install packages,
 regardless their source repository.
 
+It is also possible to install packages from GitHub repository with `BiocManager::install("user/repository")`, for example
+`BiocManager::install("tidyverse/stringr")`. `BiocManager` recognizes `/` as GitHub source and uses `devtools::install_github()`.
+
 Some packages cannot be installed from R session started by a regular user,
 so always install packages as the root (`$ sudo R`).
-
-It is also possible to install packages from GitHub repository with `devtools::install_github("user/repository")`, for example
-`devtools::install_github("tidyverse/stringr")`
 
 ## Debugging
 
