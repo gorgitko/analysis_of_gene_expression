@@ -42,5 +42,5 @@ img {
 }
 
 li.tocify-item.active > a {
-    color: black; !important;
+    color: black !important;
 }
