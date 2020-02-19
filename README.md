@@ -3,6 +3,7 @@
 ## [E01](Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd))
 
 - `sshfs` - mount directory on remote server
+- `tmux` - termimal multiplexer
 - Conda package manager
 - Programming in R
   - Links to base R tutorials and other useful stuff.
