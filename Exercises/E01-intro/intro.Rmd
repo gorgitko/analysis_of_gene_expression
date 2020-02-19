@@ -38,9 +38,9 @@ We will work at virtual machines (VM) provided by [Metacentrum/CESNET](https://c
 **The instructions how to set up your VM are [here](https://github.com/bio-platform/bio-class).**
 However, most of you already have experience with VM from *Genomics: Algorithms and Analysis* class.
 
-## [`sshfs`](https://github.com/libfuse/sshfs) - mount directory on remote server
+## [`sshfs`](https://github.com/libfuse/sshfs) - mount a directory on remote server
 
-`sshfs` allows to mount directories on a remote server, through SSH protocol.
+`sshfs` allows to mount directories on a remote server, through the SSH protocol.
 On Ubuntu (and derived) distros, install it by `sudo apt install sshfs`.
 
 It is recommended to use `sshfs` as a regular user, not root.
@@ -59,19 +59,62 @@ Then you can use, for example, `sshfs age:/home/novotnyj mountpoint`.
 
 ***
 
+## [`tmux`](https://github.com/tmux/tmux/wiki) - terminal multiplexer
+
+`tmux` is a very helpful utility to manage multiple persistent shell sessions.
+It is somewhat similar to quite old `screen`, but `tmux` is a better choice in my opinion.
+You can install `tmux` by `sudo apt install tmux`.
+
+`tmux` has a following hierarchy:
+
+![In sessions, you create windows which can be split to panes.](images/tmux.png)
+
+**The important thing is that `tmux` sessions are persistent until you restart a server.**
+And so you can return back to your work after a network outage, or run a long-term task and
+quit the SSH connection.
+
+There are three ways how to issue commands inside a `tmux` session:
+
+- **Shortcuts**: triggered by a prefix key followed by a command key.
+  By default, `tmux` uses `Ctrl + b` as the prefix key.
+  For example, to create a new window, you press `Ctrl + b` followed by `c`.
+- **Command mode**: Enter command mode by pressing `Prefix` then `:`.
+  This will open a command prompt at the bottom of the screen, which will accept `tmux` commands.
+  For example, `kill-window` will kill the current window.
+- **Command line**: Commands can also be entered directly to the command line within a `tmux` session.
+  Usually these commands are prefaced by `tmux`.
+  For example, `tmux kill-window` will do the same as in the command mode above.
+
+To start a new session: `tmux new -s my_session`
+
+You can read a quick guide [here](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and
+[here](https://www.linode.com/docs/networking/ssh/persistent-terminal-sessions-with-tmux/) (more useful shortcuts there).
+Also, there is a nice [cheatsheet](https://tmuxcheatsheet.com/).
+
+***
+
 # AGE files
+
+We have two persistent storages mounted by `startNFS` command:
+
+- `/data/shared` for shared data, and
+- `/data/persistent/<user>` for your personal data.
+
+To avoid data lose, I would recommend you to use the persistent storage.
+You can create a symlink: `ln -s /data/persistent/<user> /home/<user>/persistent`
 
 Files for AGE are stored in `/data/shared/AGE2020`.
 Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others :), please,
-create your personal directory `~/AGE2020/Exercises` in which you will copy exercise files on the beginning of each exercise.
+create your personal directory `/data/persistent/<user>/AGE2020/Exercises` in which you will
+copy exercise files on the beginning of each exercise.
 
 Now, please, copy these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r /data/shared/AGE2020/Exercises/{age_library.R,stylesheet.css,E01-intro} ~/AGE2020/Exercises
+cp -r /data/shared/AGE2020/Exercises/{age_library.R,stylesheet.css,E01-intro} /data/persistent/<user>/AGE2020/Exercises
 ```
 
-It is also needed to switch your R working directory to the current exercise.
+It is also needed to switch your R working directory to the current exercise:
 
 ```{r, eval = FALSE}
 setwd("~/AGE2020/Exercises/E01-intro")
@@ -81,7 +124,7 @@ setwd("~/AGE2020/Exercises/E01-intro")
 
 # Conda: virtual environment and package manager
 
-You may have heard about [conda](https://docs.conda.io/en/latest/), which is by default installed on your VM.
+You may have heard about [conda](https://docs.conda.io/en/latest/), which is defaultly installed on your VM.
 
 - [Tutorial](https://conda.io/docs/user-guide/getting-started.html)
 - [Cheatsheet](https://conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf)
@@ -215,7 +258,7 @@ Current channels are stored in `~/.condarc`.
 Packages can have the same names, but can lie in different channels.
 In such a case, package is installed from more priority channel (top > down).
 
-If you want to install package from non-current channel,
+If you want to install package from a non-current channel,
 you have to specify it: `conda install -c intel numpy`
 
 ***
@@ -245,6 +288,8 @@ You can refresh your skills:
     [Heatplus](https://bioconductor.org/packages/release/bioc/html/Heatplus.html),
     [iheatmapr](https://docs.ropensci.org/iheatmapr/articles/full_vignettes/iheatmapr.html)
 
+***
+
 ## Installing R packages
 
 For bioinformatic purposes we will be using packages from [Bioconductor](http://bioconductor.org/), which
@@ -255,15 +300,18 @@ For example, [SummarizedExperiment](https://bioconductor.org/packages/release/bi
 is used for storing experiment data (expression matrix, phenotype data, genomic ranges).
 
 Bioconductor packages are installed through `BiocManager::install()` function.
-Because some Bioconductor packages can interefere with packages from R main repository
+However, because some Bioconductor packages can interefere with packages from R main repository
 [CRAN](https://cran.r-project.org/), always use `BiocManager::install()` to install packages,
 regardless their source repository.
 
 It is also possible to install packages from GitHub repository with `BiocManager::install("user/repository")`, for example
-`BiocManager::install("tidyverse/stringr")`. `BiocManager` recognizes `/` as GitHub source and uses `devtools::install_github()`.
+`BiocManager::install("tidyverse/stringr")`. `BiocManager` recognizes `/` as a GitHub source and uses
+`devtools::install_github()` underneath.
 
 Some packages cannot be installed from R session started by a regular user,
-so always install packages as the root (`$ sudo R`).
+so always install packages as the root (`sudo R`).
+
+***
 
 ## Debugging
 
@@ -361,6 +409,8 @@ which is then converted by [`pandoc`](https://pandoc.org) to selected output for
 - [`pandoc`'s Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown)
 - [`knitr` options](https://yihui.name/knitr/options/)
 
+***
+
 ### How to use RMarkdown
 
 **Pandoc header**
@@ -434,7 +484,7 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 
 ### Advanced usage
 
-**Pretty tables**
+#### Pretty tables
 
 We can use [`DT`](https://rstudio.github.io/DT/) package, an R interface to JavaScript library [`datatables`](https://datatables.net/).
 
@@ -457,7 +507,9 @@ kableExtra::kable_styling(
 )
 ```
 
-**Using tab design**
+***
+
+#### Using tab design
 
 As you can see, this document has autogenerated menu on the left.
 However, `pandoc` also allows to use a tab-style menu.
@@ -465,7 +517,9 @@ See [this](tab_design.Rmd) ([HTML](tab_design.html)) example.
 
 Personally, I have found this design very useful for reporting.
 
-**Generating Markdown and HTML from R**
+***
+
+#### Generating Markdown and HTML from R
 
 The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
 For example, this chunk produces a header:
@@ -477,6 +531,8 @@ cat("\n\n# Header\n\n")
 </pre>
 
 I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
+
+***
 
 # HTML rendering
 
