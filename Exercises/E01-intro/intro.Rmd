@@ -38,16 +38,62 @@ We will work at virtual machines (VM) provided by [Metacentrum/CESNET](https://c
 **The instructions how to set up your VM are [here](https://github.com/bio-platform/bio-class).**
 However, most of you already have experience with VM from *Genomics: Algorithms and Analysis* class.
 
+## AGE files
+
+We have two persistent storages mounted by `startNFS` command:
+
+- `/data/shared` for shared data, and
+- `/data/persistent/<user>` for your personal data.
+
+To avoid data lose, I would recommend you to use the persistent storage.
+You can create a symlink in your home directory:
+
+```{bash}
+ln -s /data/persistent/<user> /home/<user>/persistent
+```
+
+Files for AGE are stored in `/data/shared/AGE2020`.
+Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others :), please,
+create your personal directory in which you will
+copy exercise files on the beginning of each exercise:
+
+```{bash}
+mkdir -p /data/persistent/<user>/AGE2020/Exercises
+```
+
+And make a symlink in your home to this directory:
+
+```{bash}
+ln -s /data/persistent/<user>/AGE2020 ~/AGE2020
+```
+
+Now, please, copy these files and directories to your personal directory:
+
+```{bash}
+cp -r /data/shared/AGE2020/Exercises/{age_library.R,stylesheet.css,E01-intro} ~/AGE2020/Exercises
+```
+
+It is also needed to switch your R working directory to the current exercise:
+
+```{r}
+setwd("~/AGE2020/Exercises/E01-intro")
+```
+
 ## [`sshfs`](https://github.com/libfuse/sshfs) - mount a directory on remote server
 
 `sshfs` allows to mount directories on a remote server, through the SSH protocol.
 On Ubuntu (and derived) distros, install it by `sudo apt install sshfs`.
 
 It is recommended to use `sshfs` as a regular user, not root.
-For that, create directory on your local machine, owned by you.
-Then you can mount a remote directory: `sshfs user@hostname:directory mountpoint` 
+For that, create a directory on your local machine, owned by you. For example:
 
-In case of VM for AGE, you can have a saved connection in `~/.ssh/config`:
+```{bash}
+mkdir ~/age_vm
+```
+
+Then you can mount a remote directory: `sshfs user@hostname:directory ~/age_vm` 
+
+In case of VM for AGE, you can have a saved connection in `~/.ssh/config` on your local machine:
 
 ```
 Host age
@@ -55,7 +101,7 @@ Host age
     User jirinovo
 ```
 
-Then you can use, for example, `sshfs age:/home/novotnyj mountpoint`.
+Then you can use, for example, `sshfs age:/home/jirinovo ~/age_vm`
 
 ***
 
@@ -69,7 +115,7 @@ You can install `tmux` by `sudo apt install tmux`.
 
 ![In sessions, you create windows which can be split to panes.](images/tmux.png)
 
-**The important thing is that `tmux` sessions are persistent until you restart a server.**
+**The important thing is that `tmux` sessions are persistent until you restart the server.**
 And so you can return back to your work after a network outage, or run a long-term task and
 quit the SSH connection.
 
@@ -90,35 +136,6 @@ To start a new session: `tmux new -s my_session`
 You can read a quick guide [here](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and
 [here](https://www.linode.com/docs/networking/ssh/persistent-terminal-sessions-with-tmux/) (more useful shortcuts there).
 Also, there is a nice [cheatsheet](https://tmuxcheatsheet.com/).
-
-***
-
-# AGE files
-
-We have two persistent storages mounted by `startNFS` command:
-
-- `/data/shared` for shared data, and
-- `/data/persistent/<user>` for your personal data.
-
-To avoid data lose, I would recommend you to use the persistent storage.
-You can create a symlink: `ln -s /data/persistent/<user> /home/<user>/persistent`
-
-Files for AGE are stored in `/data/shared/AGE2020`.
-Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others :), please,
-create your personal directory `/data/persistent/<user>/AGE2020/Exercises` in which you will
-copy exercise files on the beginning of each exercise.
-
-Now, please, copy these files and directories to your personal directory:
-
-```{bash, eval = FALSE}
-cp -r /data/shared/AGE2020/Exercises/{age_library.R,stylesheet.css,E01-intro} /data/persistent/<user>/AGE2020/Exercises
-```
-
-It is also needed to switch your R working directory to the current exercise:
-
-```{r, eval = FALSE}
-setwd("~/AGE2020/Exercises/E01-intro")
-```
 
 ***
 
@@ -309,7 +326,7 @@ It is also possible to install packages from GitHub repository with `BiocManager
 `devtools::install_github()` underneath.
 
 Some packages cannot be installed from R session started by a regular user,
-so always install packages as the root (`sudo R`).
+so rather install packages as the root (`sudo R`).
 
 ***
 
@@ -378,9 +395,15 @@ options(error = recover)
 f("2")
 ```
 
+To restore the default on-error behaviour, use `dump.frames`:
+
+```{r}
+options(error = dump.frames)
+```
+
 ***
 
-## Introduction to RMarkdown
+## Introduction to RMarkdown (Rmd)
 
 ```{r, eval = TRUE, include = FALSE, echo = FALSE}
 # Just a function to escape backticks in inline code.
@@ -459,7 +482,7 @@ df <- data.frame()
 
 will suppress all warnings produced by this chunk. See [`knitr` options](https://yihui.name/knitr/options/).
 
-JavaScript and CSS is also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
+JavaScript and CSS are also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
 Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
 
 **Inline code**
@@ -482,7 +505,7 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 - `Ctrl + Shift + Enter`: run current chunk.
 - `Ctrl + Alt + N`: run next chunk.
 
-### Advanced usage
+### Advanced RMarkdown usage
 
 #### Pretty tables
 
@@ -490,7 +513,7 @@ We can use [`DT`](https://rstudio.github.io/DT/) package, an R interface to Java
 
 ```{r, eval = TRUE}
 DT::datatable(
-  mtcars,
+  mtcars[, 1:5],
   filter = "top",
   class = "display",
   rownames = TRUE
@@ -502,7 +525,7 @@ Or [`kable`](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
 
 ```{r, eval = TRUE}
 kableExtra::kable_styling(
-  knitr::kable(head(mtcars)),
+  knitr::kable(head(mtcars[, 1:5])),
   bootstrap_options = c("striped", "hover", "condensed")
 )
 ```
@@ -522,7 +545,7 @@ Personally, I have found this design very useful for reporting.
 #### Generating Markdown and HTML from R
 
 The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
-For example, this chunk produces a header:
+For example, this chunk produces a Markdown header:
 
 <pre class="r">
 &grave;&grave;&grave;{r, results = "asis"}

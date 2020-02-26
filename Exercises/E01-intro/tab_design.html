@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -1627,6 +1626,9 @@ img {
 border-width: 1px !important;
 border-style: ridge !important;
 }
+li.tocify-item.active > a {
+color: black !important;
+}
 </style>
 
 
@@ -1704,6 +1706,7 @@ summary {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -1748,7 +1751,7 @@ summary {
 
 <h1 class="title toc-ignore">Example of tab design (Analysis of Gene Expression @ VSCHT)</h1>
 <h4 class="author">Jiri Novotny</h4>
-<h4 class="date">Document generated: 2020-01-09</h4>
+<h4 class="date">Document generated: 2020-02-26</h4>
 
 </div>
 
@@ -1763,7 +1766,11 @@ We won't name the first header - it will just be a "root" for our tabs.
 <h2>Tab 1</h2>
 <div id="tab-1-1" class="section level3">
 <h3>Tab 1-1</h3>
+<!-- You can use regular headers inside tabs -->
+<div id="header-in-tab-1-1" class="section level4">
+<h4>Header in Tab 1-1</h4>
 <p>Content of tab 1-1</p>
+</div>
 </div>
 <div id="tab-1-2" class="section level3">
 <h3>Tab 1-2</h3>

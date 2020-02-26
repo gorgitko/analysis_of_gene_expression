@@ -27,6 +27,9 @@ We won't name the first header - it will just be a "root" for our tabs.
 
 ### Tab 1-1
 
+<!-- You can use regular headers inside tabs -->
+#### Header in Tab 1-1
+
 Content of tab 1-1
 
 ### Tab 1-2
