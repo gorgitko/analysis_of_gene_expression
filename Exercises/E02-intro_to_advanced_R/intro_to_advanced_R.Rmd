@@ -28,7 +28,17 @@ Copy, please, these files and directories to your personal directory:
 cp -r /data/shared/AGE2020/Exercises/E02-intro_to_advanced_R ~/AGE2020/Exercises
 ```
 
-And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E02-intro_to_advanced_R")`
+And switch the R working directory to the current exercise:
+
+```{r}
+setwd("~/AGE2020/Exercises/E02-intro_to_advanced_R")
+```
+
+You will probably need to install these packages:
+
+```{r, eval = FALSE}
+BiocManager::install(c("ggcorrplot", "hrbrthemes", "see", "janitor", "psych"))
+```
 
 ***
 
@@ -252,6 +262,8 @@ Many tidyverse functions return a `tibble` or drop rownames, but most of times w
 with defined rownames.
 `tibble` can be converted to `data.frame` by `as.data.frame()` function.
 
+**To preserve rownames in a new column, use the `tibble::rownames_to_column("name_of_new_column")` function.**
+
 Useful is the `tribble()` function for more readable creation of (small) tables in code:
 
 ```{r}
@@ -262,8 +274,6 @@ tibble::tribble(
   "c",   3
 )
 ```
-
-**To preserve rownames in a new column, use the `tibble::rownames_to_column("name_of_new_column")` function.**
 
 ## [`dplyr`](https://dplyr.tidyverse.org/) - data manipulation
 
@@ -293,7 +303,7 @@ dplyr::select(mtcars_sm, -cyl, -mpg)
 
 We can select a range of variables.
 Numerical range is also supported, e.g. `1:5`.
-Omitting a range is also possible - in thix example you would use `-(disp:drat)`.
+Omitting a range is also possible - in this example you would use `-(disp:drat)`.
 
 ```{r}
 dplyr::select(mtcars_sm, disp:drat)
@@ -549,7 +559,7 @@ dplyr::left_join(mtcars_sm, mtcars_prices, by = "cyl") %>%
 ```
 
 `bind_rows()` append rows to dataframe.
-It puts `NA`s in columns not present in the second dataframe.
+It puts `NA`s to columns not present in both dataframes.
 
 ```{r}
 dplyr::bind_rows(mtcars_sm, mtcars_prices) %>%
@@ -560,7 +570,7 @@ dplyr::bind_rows(mtcars_sm, mtcars_prices) %>%
 
 ## [`tidyr`](https://tidyr.tidyverse.org/) - tools for tidy data
 
-The goal of `tidyr` is to help you create [tidy data](https://tidyr.tidyverse.org/articles/tidy-data.html).
+The goal of `tidyr` is to help you to create [tidy data](https://tidyr.tidyverse.org/articles/tidy-data.html).
 Just to remind you, tidy data is data where:
 
 - Every column is variable.
@@ -820,6 +830,7 @@ This will provide you sensible defaults. To further modify the plot, you can add
   also [colors](http://sape.inf.usi.ch/quick-reference/ggplot2/colour),
   [point shapes](http://sape.inf.usi.ch/quick-reference/ggplot2/shape),
   [line types](http://sape.inf.usi.ch/quick-reference/ggplot2/linetype), etc.
+- [Aesthetic specifications](https://ggplot2.tidyverse.org/articles/ggplot2-specs.html) - types of shapes, lines, etc.
 - [`ggplot2` essentials](http://www.sthda.com/english/wiki/ggplot2-essentials) - there is probably answer to any "How to...?" question.
 - [Top 50 `ggplot2` visualizations](http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html)
 
@@ -873,7 +884,7 @@ Because `ggplot2` is a part of `tidyverse`, it also uses the non-standard evalua
 to the example above, but without modifying the `mtcars` object:
 
 ```{r, eval = FALSE}
-ggplot(mtcars2) +
+ggplot(mtcars) +
   geom_point(aes(x = cyl, y = mpg, color = factor(gear)))
 ```
 
@@ -882,7 +893,7 @@ In this way you haven't to repeat common aesthetics for each geom.
 This is equivalent to the example above:
 
 ```{r, eval = FALSE}
-ggplot(mtcars2, aes(x = cyl, y = mpg, color = factor(gear))) +
+ggplot(mtcars, aes(x = cyl, y = mpg, color = factor(gear))) +
   geom_point()
 ```
 
