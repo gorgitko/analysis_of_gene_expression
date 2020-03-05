@@ -44,8 +44,8 @@ To correct for initial RNA concentration and quality, reference genes are used (
 These genes are considered to be equally expressed in every condition (purple and orange curves), and so serve as the baseline.
 First, we normalize each sample to reference gene by subtracting the $C_P^r$ from $C_P^t$.
 We obtain the $\Delta C_t$ values which are used to calculate the <ins>relative change</ins> of gene expression
-between samples, fold-change: $FC = 2^{\Delta C_P,cnt - \Delta C_P,trt}$.
-We usually report $FC$ in log2 scale ($LFC = \Delta C_T,cnt - \Delta C_T,trt = log_2(FC)$).](images/qpcr_curves.png)
+between samples, fold-change: $FC = 2^{\Delta C_{P,cnt} - \Delta C_{P,trt}}$.
+We usually report $FC$ in log2 scale: $LFC = \Delta C_{P,cnt} - \Delta C_{P,trt} = log_2(FC)$](images/qpcr_curves.png)
 
 This will be an introductory exercise in which you will refresh your R skills
 and implement (mainly visualization) functions, which you will use later on different types of data.
@@ -119,7 +119,7 @@ library(magrittr)
 This will be your personal library in which you implement the tasks.
 Now it contains only function skeletons.
 These skeletons are not obligatory, but your functions should have output
-similar to what you see in this tutorial.
+similar to what you will see in this tutorial.
 
 Note that your functions will be universal, serving not only for qPCR data.
 This is mainly true for exploratory analysis functions (hiearchical clustering, PCA, etc.),
@@ -133,6 +133,7 @@ source("../age_library.R")
 
 I would recommend you to always define constants at the beginning of a script. It is more transparent, and if you, for example, change some path, you haven't to
 replace it in whole source code.
+Constants are, by convention, named in UPPERCASE.
 
 ```{r}
 CP_DATA <- "qPCR.Rds"
@@ -143,7 +144,7 @@ CP_DATA <- "qPCR.Rds"
 ## $C_P$ matrix
 
 We have already preprocessed a $C_P$ matrix for you.
-But if you really want to start from the floor, create the $C_P$ matrix from original files
+But if you really want to start from the floor, you can create the $C_P$ matrix from original files
 ([here](data/2015-06-08_Strnad.txt) and [here](data/2015-06-08_Strnad.xls)).
 
 In $C_P$ matrix, columns are samples, rows are genes, and values are $C_P$ values.
@@ -205,6 +206,12 @@ cp_plot <- replace(cp, is.na(cp), 40)
 ## Phenotypical data (sample sheet)
 
 You usually obtain a sample sheet, but in this case we are going to parse the column names of $C_P$ matrix.
+Everything needed is contained there:
+
+- K and SP: sample groups
+- Number behind sample group: Petri dish (= biological replicate)
+- Number behind slash ("/"): confluence
+- (2RT): second technical replicate
 
 ```{r}
 (sample_names <- colnames(cp))
