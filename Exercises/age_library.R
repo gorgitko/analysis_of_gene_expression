@@ -484,6 +484,8 @@ plot_heatmaply <- function(
 #'            If NULL, facet by feature_col (facet_by will be ignored).
 #'   facet_by: One or two columns used for facetting.
 #'   color_by: Column to use for boxplot and point coloring.
+#'   x_lab: Name of x-axe.
+#'   y_lab: Name of y-axe.
 #'   main: Main plot title.
 #'   add: Add something more to boxplots.
 #'        Allowed values are one or the combination of:
@@ -492,6 +494,7 @@ plot_heatmaply <- function(
 #'        "median_iqr", "median_mad", "median_range".
 #'        See ?ggpubr::ggboxplot
 #'   point_size: Size of points inside boxplots.
+#'   outlier_shape: Which point shape to use for outliers.
 #'   do_t_test: Whether to do the t-test and display a p-value inside the plot.
 #'
 #' Returns:
@@ -504,9 +507,12 @@ plot_boxplot_ggplot2 <- function(
   feature = NULL,
   facet_by = NULL,
   color_by = NULL,
+  x_lab = x,
+  y_lab = y,
   main = NULL,
   add = "jitter",
   point_size = 2,
+  outlier_shape = 0,
   do_t_test = TRUE
 ) {
   library(ggplot2)
@@ -548,11 +554,11 @@ plot_boxplot_ggplot2 <- function(
     y = y,
     facet.by = facet_by,
     color = color,
-    # xlab = "Sample Group",
-    ylab = "Relative expression\n(normalised to controls)",
+    xlab = x_lab,
+    ylab = y_lab,
     title = main,
     subtitle = subtitle,
-    outlier.shape = NA,
+    outlier.shape = outlier_shape,
     add = add,
     repel = TRUE,
     add.params = list(size = point_size),
@@ -560,8 +566,9 @@ plot_boxplot_ggplot2 <- function(
   ) +
     theme(legend.position = "top")
 
-  if (do_t_test)
+  if (do_t_test) {
     p <- p + ggpubr::stat_compare_means(aes(group = !!treat_string_as_col(x)), inherit.aes = TRUE, label = "p.format", method = "t.test", paired = FALSE)
+  }
 
   return(p)
 }

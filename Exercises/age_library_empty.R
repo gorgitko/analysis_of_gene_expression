@@ -224,6 +224,8 @@ compute_m <- function(gene, cp_m) {}
 #'            If NULL, facet by feature_col (facet_by will be ignored).
 #'   facet_by: One or two columns used for facetting.
 #'   color_by: Column to use for boxplot and point coloring.
+#'   x_lab: Name of x-axe.
+#'   y_lab: Name of y-axe.
 #'   main: Main plot title.
 #'   add: Add something more to boxplots.
 #'        Allowed values are one or the combination of:
@@ -232,6 +234,7 @@ compute_m <- function(gene, cp_m) {}
 #'        "median_iqr", "median_mad", "median_range".
 #'        See ?ggpubr::ggboxplot
 #'   point_size: Size of points inside boxplots.
+#'   outlier_shape: Which point shape to use for outliers.
 #'   do_t_test: Whether to do the t-test and display a p-value inside the plot.
 #'
 #' Returns:
@@ -244,9 +247,12 @@ plot_boxplot_ggplot2 <- function(
   feature = NULL,
   facet_by = NULL,
   color_by = NULL,
+  x_lab = x,
+  y_lab = y,
   main = NULL,
   add = "jitter",
   point_size = 2,
+  outlier_shape = 0,
   do_t_test = TRUE
 ) {}
 

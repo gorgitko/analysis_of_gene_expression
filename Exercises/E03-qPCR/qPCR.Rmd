@@ -20,6 +20,12 @@ output:
 date: '`r glue("Document generated: {Sys.Date()}")`'
 ---
 
+```{js, echo = FALSE}
+$(document).ready(function() {
+  $("#div_lfc_table table").addClass("table table-condensed");
+});
+```
+
 ***
 
 Copy, please, these files and directories to your personal directory:
@@ -42,13 +48,18 @@ This amplification depends on initial RNA concentration and approximates the gen
 We select a fluorescence signal threshold $S_T$ and measure crossing points $C_P$ (also called threshold cycle $C_T$) for samples.
 To correct for initial RNA concentration and quality, reference genes are used (dashed curves).
 These genes are considered to be equally expressed in every condition (purple and orange curves), and so serve as the baseline.
-First, we normalize each sample to reference gene by subtracting the $C_P^r$ from $C_P^t$.
-We obtain the $\Delta C_t$ values which are used to calculate the <ins>relative change</ins> of gene expression
-between samples, fold-change: $FC = 2^{\Delta C_{P,cnt} - \Delta C_{P,trt}}$.
-We usually report $FC$ in log2 scale: $LFC = \Delta C_{P,cnt} - \Delta C_{P,trt} = log_2(FC)$](images/qpcr_curves.png)
+First, we normalize each sample to reference gene (or they geometric mean) by calculating $\Delta C_t = C_P^r - C_P^t$.
+Obtained $\Delta C_t$ values are then used to calculate the <ins>relative change</ins> of gene expression between samples.
+In this case, we are interested how much more or less is gene expressed in $\text{treatment}$ sample ($\text{trt}$), relative to $\text{control}$ ($\text{cnt}$) sample.
+This relative change is called $\text{fold-change}$: $FC = 2^{-\Delta\Delta C_P} = 2^{-(\Delta C_{P, trt} - \Delta C_{P, cnt})}$.
+We usually report $FC$ in $log_2$ scale: $LFC = \Delta C_{P, cnt} - \Delta C_{P, trt} = log_2(FC)$
+Important is to realize that the higher $C_P$ is, the **lower** initial mRNA concentration was.
+This is why we put minus /$-$/ in front of $\Delta\Delta C_t$.
+We usually don't consider the efficiency of PCR and expect the mRNA concentration to double in each cycle.
+Otherwise $FC = (1+E)^{-\Delta\Delta C_P}$, where $E$ is the PCR efficiency.](images/qpcr_curves.png)
 
 This will be an introductory exercise in which you will refresh your R skills
-and implement (mainly visualization) functions, which you will use later on different types of data.
+and implement (mainly visualization) functions, which you will use later on different types of gene expression data.
 
 # Our experiment
 
@@ -197,7 +208,7 @@ gene_groups <- if_else(str_detect(genes, " H\\d+$"), "reference", "target")
 )
 ```
 
-For plotting purposes, we will replace `NA`s by `40`:
+For plotting purposes, we replace `NA`s by `40`:
 
 ```{r}
 cp_plot <- replace(cp, is.na(cp), 40)
@@ -265,7 +276,7 @@ if not, samples might be swapped.
 
 ## Hiearchical clustering (**TASK 1**)
 
-**TASK 1: Implement your own function which takes $C_P$ matrix and returns a dendrogram with coloring by a chosen variable.**
+**TASK 1: Implement your own function which takes an expression matrix and returns a dendrogram with coloring by a chosen variable.**
 
 ```{r}
 color_variables <- c("sample_group", "confluence", "petri_number")
@@ -517,67 +528,128 @@ for (variable in color_variables) {
 plot_pheatmap(delta_cp_avg_plot, sample_data = pheno_data_avg, column_color_by = color_variables, main = "qPCR")
 ```
 
-For plotting purposes (boxplots), we set mean $\Delta C_P$ of controls to $0$
-and calculate $logFC$s ($\text{mean}(\Delta C_P,control) - \Delta C_P$).
-$logFC$ is also called $\Delta \Delta C_P$.
+***
 
-![](images/centered_boxplot.png)
+# Calculating ($log_2$) fold-changes
+
+Now we calculate the **relative** change in gene expression between sample groups.
+For the sake of simplicity, we don't take into account other variables, e.g. confluence.
+Also from the exploratory analysis you can see that these variables don't have much effect
+on the separation of samples - sample group has the largest influence.
+
+First, we calculate the $mean(C_P)$ of control samples:
 
 ```{r}
 (control_means <- cp_long_target %>%
   dplyr::filter(sample_group == "control") %>%
   dplyr::group_by(gene) %>%
-  dplyr::summarise(delta_cp_control_mean = mean(delta_cp, na.rm = TRUE)))
+  dplyr::summarise(delta_cp_control_mean = mean(delta_cp, na.rm = TRUE))
+)
+```
 
+Then we join this table with our long data and calculate:
+
+- $\Delta \Delta C_P = \Delta C_{P, treatment} - \text{mean}(\Delta C_P, control)$
+- $log_2(\text{fold-change}) = -\Delta \Delta C_P$
+- $\text{fold-change} = 2^{LFC}$
+
+```{r}
 cp_long_target <- cp_long_target %>%
   dplyr::left_join(control_means, by = "gene") %>%
   dplyr::mutate(
-    delta_cp_centered = delta_cp_control_mean - delta_cp,
-    delta_cp_centered_plot = replace_na(delta_cp_centered, ceiling(max(delta_cp_centered, na.rm = TRUE) + 1))
+    delta_delta_cp = delta_cp - delta_cp_control_mean,
+    lfc = -delta_delta_cp,
+    fc = 2^lfc
   ) %>%
-  dplyr::select(sample_name, gene, matches("_cp|cp_"), everything())
+  dplyr::select(sample_name, gene, cp, cp_plot, delta_cp, delta_cp_plot, delta_cp_control_mean, delta_delta_cp, lfc, fc, everything())
 
 head(cp_long_target)
 ```
+
+$\text{mean}(\Delta \Delta C_{P, control})$ is now $0$, because we subtracted $\text{mean}(\Delta C_P, control)$
+also from the control samples. Of course this also applies for $LFC$, which is just $-\Delta \Delta C_P$.
+As you will see, this is useful for plotting (boxplots).
 
 # Boxplots (**TASK 5**)
 
 Boxplots are very informative when you want to see a difference between groups.
 
-**TASK 5: Implement a function to produce a boxplot of $\Delta C_P$ values.**
+**TASK 5: Implement a function to produce a boxplot of values.**
+It should work for any type of long data, as you will be able to specify
+the grouping column to split boxplots on x-axe, and column with values to plot on y-axe.
+
+First we will plot the $\Delta C_P$ values:
 
 ```{r}
 plot_boxplot_ggplot2(
-  cp_long_target,
-  x = "sample_group",
-  y = "delta_cp_centered_plot",
-  feature_col = "gene",
-  color_by = "sample_group",
-  main = "qPCR"
+    cp_long_target,
+    x = "sample_group",
+    y = "delta_cp",
+    feature_col = "gene",
+    color_by = "sample_group",
+    main = "delta Cp values",
+    y_lab = "delta Cp"
 )
 ```
+
+And this is tricky to interpret at the first sight, because in spirulina group, all genes are actually upregulated!
+Also, you cannot directly see the $LFCs$ - in your head, you have to calculate the difference between spirulina and control
+and flip the sign.
+
+So better is to plot the $LFCs$. Why not the $\text{fold-changes}$?
+Because $LFCs$ are easier to read, as changes (relative to controls) are multiplicative and symmetric:
+
+<div id="div_lfc_table">
+
+----------------------------  ---------  ---------  ---------  -----------  ---------  ---------  ---------
+$\text{fold-change}$           0.125      0.25       0.5        1            2          4          8
+$log_2(\text{fold-change})$    -3         -2         -1         0            1          2          3
+You read: Change is...         8x less    4x less    2x less    no change    2x more    4x more    8x more  
+----------------------------  ---------  ---------  ---------  -----------  ---------  ---------  ---------
+
+</div>
+
+This figure summarises how $LFCs$ were calculated and why it is better for boxplots :)
+
+![](images/boxplot_lfc.png)
+
+```{r}
+plot_boxplot_ggplot2(
+    cp_long_target,
+    x = "sample_group",
+    y = "lfc",
+    feature_col = "gene",
+    color_by = "sample_group",
+    main = "log2 fold-changes",
+    y_lab = "log2 fold-change"
+)
+```
+
+We can also split plots by confluence:
 
 ```{r}
 for (g in target_genes) {
   p1 <- plot_boxplot_ggplot2(
     cp_long_target,
     x = "sample_group",
-    y = "delta_cp_centered_plot",
+    y = "lfc",
     feature_col = "gene",
     feature = g,
-    main = "qPCR",
-    color_by = "sample_group"
+    main = "log2 fold-changes",
+    color_by = "sample_group",
+    y_lab = "log2 fold-change"
   )
   
   p2 <- plot_boxplot_ggplot2(
     cp_long_target,
     x = "sample_group",
-    y = "delta_cp_centered_plot",
+    y = "lfc",
     feature_col = "gene",
     feature = g,
-    main = "qPCR",
+    main = "log2 fold-changes",
     color_by = "sample_group",
-    facet_by = "confluence"
+    facet_by = "confluence",
+    y_lab = "log2 fold-change"
   )
   
   p1_p2 <- cowplot::plot_grid(p1, p2, ncol = 2)
@@ -588,7 +660,28 @@ for (g in target_genes) {
 
 # t-test (**TASK 6**)
 
-t-test is testing whether two means coming from data having Student's distribution significantly differ.
+t-test is testing whether two means, coming from samples having Student's distribution, significantly differ.
+t-test assumes that the input $C_P$ values are normally distributed and the variance between conditions is comparable.
+Wilcoxon test can be used when sample size is small and those two last assumptions are hard to achieve.
+
+As we will use two-sided alternative (i.e. gene is up- or downregulated = deregulated),
+it doesn't matter which one of $\Delta C_P$, $\Delta \Delta C_P$ or $LFC$ we will use.
+In all cases, the absolute difference between group means remains the same:
+
+```{r}
+group_means <- dplyr::filter(cp_long_target, gene == "CD24") %>%
+  dplyr::group_by(sample_group) %>%
+  dplyr::summarise(
+    delta_cp_mean = mean(delta_cp),
+    delta_delta_cp_mean = mean(delta_delta_cp),
+    lfc_mean = mean(lfc)
+  ) %>%
+  as.data.frame() %>%
+  tibble::column_to_rownames("sample_group")
+
+group_means
+apply(group_means, MARGIN = 2, FUN = function(x) abs(x[1] - x[2]))
+```
 
 **TASK 6: Implement a function which do the t-test of gene from two groups.**
 
@@ -598,7 +691,7 @@ for (g in target_genes) {
     gene = g,
     gene_data = cp_long_target,
     gene_col = "gene",
-    value_col = "delta_cp_centered",
+    value_col = "lfc",
     group_col = "sample_group",
     test = t.test,
     verbose = TRUE
@@ -613,7 +706,7 @@ Or you can return a table for all genes:
 (test_table <- test_gene_table(
   gene_data = cp_long_target,
   gene_col = "gene",
-  value_col = "delta_cp_centered",
+  value_col = "delta_cp",
   group_col = "sample_group"
 ))
 ```
