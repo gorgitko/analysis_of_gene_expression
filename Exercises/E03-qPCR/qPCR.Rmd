@@ -48,7 +48,7 @@ This amplification depends on initial RNA concentration and approximates the gen
 We select a fluorescence signal threshold $S_T$ and measure crossing points $C_P$ (also called threshold cycle $C_T$) for samples.
 To correct for initial RNA concentration and quality, reference genes are used (dashed curves).
 These genes are considered to be equally expressed in every condition (purple and orange curves), and so serve as the baseline.
-First, we normalize each sample to reference gene (or they geometric mean) by calculating $\Delta C_t = C_P^r - C_P^t$.
+First, we normalize target genes in each sample to reference gene (or they geometric mean) by calculating $\Delta C_t = C_P^t - C_P^r$.
 Obtained $\Delta C_t$ values are then used to calculate the <ins>relative change</ins> of gene expression between samples.
 In this case, we are interested how much more or less is gene expressed in $\text{treatment}$ sample ($\text{trt}$), relative to $\text{control}$ ($\text{cnt}$) sample.
 This relative change is called $\text{fold-change}$: $FC = 2^{-\Delta\Delta C_P} = 2^{-(\Delta C_{P, trt} - \Delta C_{P, cnt})}$.
@@ -398,38 +398,58 @@ PCA of correlation coefficients is also helpful:
 
 ```{r}
 plot_pca_ggplot2(gene_cor, genes_df, color_by = "gene_group")$plot
-plot_pca_ggpairs(gene_cor, genes_df, color_by = "gene_group")$plot
 ```
 
 ### geNorm M-values (**TASK 4**)
 
-**TASK 4: Implement a function which computes the M-value.**
+M values are telling you how stable is a gene expressed across the samples.
+From the original [paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC126239/):
 
-All reference genes are OK:
+> "This measure relies on the principle that the expression ratio of two ideal internal control genes is identical in all samples,
+  regardless of the experimental condition or cell type. In this way, variation of the expression ratios of two real-life
+  housekeeping genes reflects the fact that one (or both) of the genes is (are) not constantly expressed,
+  with increasing variation in ratio corresponding to decreasing expression stability."
+
+For a further explanation see the section "Gene-stability measure and ranking of selected housekeeping genes" in the paper above.
+
+**TASK 4: Implement a function which computes the M value.** Hints:
+
+- Remember that R is vectorized by default. In this way you can directly write most of equations as you see them on paper.
+- Very useful is `apply()` function. It applies a function to each of rows or columns of a matrix.
+  Whether to apply function to rows or columns can be specified by `MARGIN` parameter: `1` for rows and `2` for columns.
+  That is, when `MARGIN = 1`, you obtain N values from matrix with N rows. Similarly for `MARGIN = 2`, but for M columns.
+
+Let's compute the M values:
 
 ```{r}
 for (g in ref_genes)
-  compute_m(g, cp_plot[ref_genes, ]) %>% glue("{g}: ", .) %>% cat(sep = "\n")
+  compute_m(g, cp_plot[ref_genes, ]) %>% glue("{g}: ", format(., digits = 3)) %>% cat(sep = "\n")
 ```
 
-Compare with target genes - they would not be good reference genes:
+All reference genes seem to be OK. But compare them with target genes - they would not be good reference genes:
 
 ```{r}
 for (g in target_genes)
-  compute_m(g, cp_plot[target_genes, ]) %>% glue("{g}: ", .) %>% cat(sep = "\n")
+  compute_m(g, cp_plot[target_genes, ]) %>% glue("{g}: ", format(., digits = 3)) %>% cat(sep = "\n")
 ```
 
 ## Subtracting the reference genes: $\Delta C_P$
 
-For each sample we calculate a geometric mean of reference genes:
+For each sample we calculate a geometric mean of reference genes.
+Don't be confused, it's just [this](https://en.wikipedia.org/wiki/Geometric_mean#Relationship_with_logarithms)
+formula applied to reference genes of each sample.
 
 ```{r}
 norm <- apply(cp[ref_genes, ], 2, function(x) {
   log(x) %>% mean() %>% exp()
 })
+
+head(norm)
 ```
 
-Let's look how these means behave:
+Let's look how these geometric means of reference genes behave.
+As you can see, they lie in the centre of reference genes,
+and that's what we want.
 
 ```{r}
 gene_cor_norm <- rbind(cp, norm = norm) %>%
@@ -447,26 +467,47 @@ plot_hc(gene_cor_norm, color_by = genes_df_norm$gene_group, color_by_lab = "Gene
 plot_hc(gene_cor_norm, color_by = genes_df_norm$gene_group, color_by_lab = "Gene groups", method_distance = "pearson", main = "Hierarchical clustering (Pearson distance)")
 
 plot_pca_ggplot2(gene_cor_norm, genes_df_norm, color_by = "gene_group")$plot
-plot_pca_ggpairs(gene_cor_norm, genes_df_norm, color_by = "gene_group")$plot
 ```
 
-We get $\Delta C_P$ by subtracting the reference gene means:
+Now we calculate $\Delta C_P$ values by subtracting the reference gene means from target genes.
+First, we create a matrix of the same size as `cp`, with reference gene mean of each sample in columns.
 
 ```{r}
-(ref_gene_cp_matrix <- matrix(norm, ncol = ncol(cp), nrow = nrow(cp), byrow = TRUE))
-(delta_cp <- cp - ref_gene_cp_matrix)
+ref_gene_cp_matrix <- matrix(norm, ncol = ncol(cp), nrow = nrow(cp), byrow = TRUE)
+ref_gene_cp_matrix[1:5, 1:5]
 ```
 
-Now we average technical replicates:
+Now we are ready for subtraction, that is, to calculate $\Delta C_t = C_P^t - C_P^r$:
+
+```{r}
+delta_cp <- cp - ref_gene_cp_matrix
+delta_cp[1:5, 1:5]
+```
+
+Now we average the technical replicates.
+First, we create an empty matrix, with the same number of rows as `delta_cp` matrix, but
+with the same number of columns (and column names) as the number of biological replicates (next time I will call them just "samples").
 
 ```{r}
 samples <- unique(pheno_data$sample_name)
 
 delta_cp_avg <- matrix(NA, nrow = nrow(delta_cp), ncol = length(samples), dimnames = list(rownames(delta_cp), samples))
 delta_cp_avg[1:5, 1:5]
+```
 
-(tech_rep <- split(colnames(delta_cp), pheno_data$sample_name))
+We create a list in which names are samples and values are names of their corresponding technical replicates:
 
+```{r}
+tech_rep <- split(colnames(delta_cp), pheno_data$sample_name)
+head(tech_rep)
+```
+
+And finally we start to fill in averages of technical replicates to our empty matrix `delta_cp_avg`.
+For each of the samples, we select columns from `delta_cp` matrix, corresponding to technical replicates of that sample,
+and calculate the mean of each row (= each gene).
+We add these means to sample's column in `delta_cp_avg`.
+
+```{r}
 for (s in samples)
   delta_cp_avg[, s] <- rowMeans(delta_cp[, tech_rep[[s]], drop = FALSE], na.rm = TRUE)
 
@@ -476,7 +517,9 @@ for (s in samples)
   stopifnot()
 ```
 
-Final $\Delta C_P$:
+Let's finalize the $\Delta C_P$ calculation.
+We keep only target genes and again, create a separate matrix for plotting purposes.
+We also add $\Delta C_P$ to our long data.
 
 ```{r}
 delta_cp_avg <- delta_cp_avg[target_genes, ]
@@ -513,7 +556,6 @@ You can check for outliers, as these could mess up a differential expression ana
 
 ```{r}
 plot_pca_ggplot2(delta_cp_avg_plot, pheno_data_avg, color_by = "sample_group", shape_by = "confluence")$plot
-plot_pca_ggpairs(delta_cp_avg_plot, pheno_data_avg, n_components = 4, color_by = "sample_group", shape_by = "confluence")$plot
 
 for (variable in color_variables) {
   plot_hc(
@@ -683,7 +725,9 @@ group_means
 apply(group_means, MARGIN = 2, FUN = function(x) abs(x[1] - x[2]))
 ```
 
-**TASK 6: Implement a function which do the t-test of gene from two groups.**
+**TASK 6: Implement a function which do the t-test of gene from two groups.** Hints:
+
+- Look at the `formula` parameter of `t.test` function.
 
 ```{r}
 for (g in target_genes) {

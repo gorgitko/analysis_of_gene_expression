@@ -582,9 +582,20 @@ plot_boxplot_ggplot2 <- function(
 #' Returns:
 #'  M value (numeric)
 compute_m <- function(gene, cp_m) {
-  og <- setdiff(rownames(cp_m), gene)
+  # Save the names of other reference genes.
+  other_genes <- setdiff(rownames(cp_m), gene)
 
-  V <- apply(cp_m[og, ], 1, function(x) {sd(cp_m[gene, ] - x)})
+  # For each of the other reference genes, we apply the following function to its corresponding row in CP matrix.
+  # MARGIN = 1 applies FUN to each row of input matrix (dataframe). MARGIN = 2 does so for columns instead of rows.
+  V <- apply(cp_m[other_genes, ], MARGIN = 1, FUN = function(x) {
+    # For each sample, we calculate expression ratio of the input reference gene and other reference gene.
+    expression_ratios <- cp_m[gene, ] - x
+
+    # We calculate standard deviation of these expression ratios.
+    sd(expression_ratios)
+  })
+
+  # Final M value is mean of standard deviations of expression ratios.
   M <- mean(V)
 
   return(M)

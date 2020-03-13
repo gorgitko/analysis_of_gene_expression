@@ -196,8 +196,11 @@ plot_heatmaply <- function(
 ) {}
 
 ### TASK 4: Implement a function which computes the M-value.
-### Hint: R performs vector and matrix operations by default.
-###       So don't use for loops and make usage of apply() function.
+### Hints:
+### - Remember that R is vectorized by default. In this way you can directly write most of equations as you see them on paper.
+### - Very useful is `apply()` function. It applies a function to each of rows or columns of a matrix.
+###   Whether to apply function to rows or columns can be specified by `MARGIN` parameter: `1` for rows and `2` for columns.
+###   That is, when `MARGIN = 1`, you obtain N values from matrix with N rows. Similarly for `MARGIN = 2`, but for M columns.
 
 #' Compute the M value of CP values.
 #'
@@ -210,8 +213,9 @@ plot_heatmaply <- function(
 compute_m <- function(gene, cp_m) {}
 
 ### TASK 5: Implement a function to produce a boxplot of CP values.
-### Hint: ggpubr::ggboxplot() is pretty good.
-###       Again, data in long format are required.
+### Hints:
+### - ggpubr::ggboxplot() is pretty good.
+### - Again, data in long format are required.
 
 #' Plot boxplot of gene expression.
 #'
@@ -257,6 +261,8 @@ plot_boxplot_ggplot2 <- function(
 ) {}
 
 ### TASK 6: Implement a function which do the t-test of gene from two groups.
+### Hint:
+### - Look at the "formula" parameter of "t.test" function.
 
 #' For a single gene, test for statistical significance of difference in group means.
 #'
@@ -273,8 +279,9 @@ plot_boxplot_ggplot2 <- function(
 #'   htest object
 test_gene <- function(gene, gene_data, gene_col, value_col, group_col, test = t.test, verbose = TRUE) {}
 
-# You can also produce a table for all genes.
-# Hint: Make use of test_gene() and just put results to dataframe.
+### You can also produce a table for all genes.
+### Hint:
+### - Make use of test_gene() and just put results to dataframe.
 
 #' For all genes in the input dataframe, test for statistical significance of difference in group means.
 #'
