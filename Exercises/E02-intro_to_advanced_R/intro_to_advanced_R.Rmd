@@ -61,7 +61,7 @@ it is not suitable for R beginners.
 - [**Awesome list of cheatsheets**](https://rstudio.com/resources/cheatsheets/).
   Some of them are also accessible in RStudio: `Help -> Cheatsheets`
 
-## Tidy data
+## Tidy (long) data
 
 Tidyverse packages are not meant to replace the base R.
 Especially, they are not suited for matrix manipulation, and are specifically used for **long data**
@@ -86,7 +86,7 @@ For each sample (column) and each gene (row) we have its value (cell).
 This form of data is usable for functions operating on matrices (e.g. PCA), but as you will see later, not for e.g. plotting
 (besides base R plotting).
 
-This dataframe is wide, and thus it is not tidy.
+This dataframe has wide format, and thus it is not tidy.
 You can see that rownames and colnames are, in fact, values of variables `Gene` and `Sample`, respectively.
 So how would this dataframe look like in tidy format? Don't be surprised now, we will get to this code later.
 
@@ -99,26 +99,26 @@ df_long <- df_wide %>%
 df_long
 ```
 
-Now `df_long` corresponds to tidy format of the original dataframe.
+Now `df_long` is tidy and corresponds to long format of the original dataframe.
 We actually did this:
 
-![Converting wide data to tidy format.](images/wide_to_long.png)
+![Converting wide data to long format.](images/wide_to_long.png)
 
-Why is tidy data useful for some purposes (mainly for plotting)?
+Why is long data useful for some purposes (mainly for plotting)?
 Well, for biological matrix like the one in `df`, you usually also have a sample sheet, for example:
 
 ```{r}
 (sample_sheet <- data.frame(Sample = c("sample_1", "sample_2", "sample_3"), Age = 1:3, Treatment = c("yes", "no", "yes")))
 ```
 
-Would it be neat to have this information alongside the tidy data (`df_long`)?
+Would it be neat to have this information alongside the long data (`df_long`)?
 I think so:
 
 ```{r}
 dplyr::left_join(df_long, sample_sheet, by = "Sample")
 ```
 
-**As you will see later, this tidy form of data is extremely useful for plotting.**
+**As you will see later, this long form of data is extremely useful for plotting.**
 In this blog [post](http://varianceexplained.org/r/tidy-genomics/), there is a nice example of using tidy data and tidyverse in genomics.
 
 ## Non-standard evaluation (NSE)
