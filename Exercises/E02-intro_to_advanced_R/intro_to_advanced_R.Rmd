@@ -20,6 +20,11 @@ output:
 date: '`r glue("Document generated: {Sys.Date()}")`'
 ---
 
+```{r, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
 ***
 
 Copy, please, these files and directories to your personal directory:
@@ -909,7 +914,7 @@ Let's introduce more `ggplot2` components:
   We can override settings in predefined `theme_*()` themes.
 
 ```{r}
-p <- ggplot(mtcars2, aes(x = qsec, y = mpg)) +
+p <- ggplot(mtcars, aes(x = qsec, y = mpg)) +
   geom_point(aes(color = factor(gear), size = hp)) +
   geom_text(aes(label = rownames(mtcars)), color = "black") +
   scale_color_manual(values = c("3" = "orchid4", "4" = "darkcyan", "5" = "darkorange1")) +
@@ -1285,7 +1290,7 @@ sessionInfo()
 
 # HTML rendering
 
-This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell :)
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(rmarkdown)

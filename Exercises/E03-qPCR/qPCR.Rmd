@@ -20,6 +20,11 @@ output:
 date: '`r glue("Document generated: {Sys.Date()}")`'
 ---
 
+```{r, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
 ```{js, echo = FALSE}
 $(document).ready(function() {
   $("#div_lfc_table table").addClass("table table-condensed");
@@ -63,7 +68,7 @@ and implement (mainly visualization) functions, which you will use later on diff
 
 # Our experiment
 
-We will work with data from pancreatic tumour experiment, where
+We will work with data from pancreatic tumour experiment where
 an influence of [spirulina](https://en.wikipedia.org/wiki/Spirulina_(dietary_supplement)) algae was investigated.
 In this experiment there are two sample groups:
 
@@ -110,7 +115,7 @@ But we can expand it to:
           |-- ...
 ```
 
-If you want, we can draw it on the board :)
+If you want, we can draw it on the board `r emo::ji("slightly_smiling_face")`
 
 Also, there are two groups of measured genes:
 
@@ -591,7 +596,7 @@ First, we calculate the $mean(C_P)$ of control samples:
 
 Then we join this table with our long data and calculate:
 
-- $\Delta \Delta C_P = \Delta C_{P, treatment} - \text{mean}(\Delta C_P, control)$
+- $\Delta \Delta C_P = \Delta C_{P, treatment} - \text{mean}(\Delta C_{P, control})$
 - $log_2(\text{fold-change}) = -\Delta \Delta C_P$
 - $\text{fold-change} = 2^{LFC}$
 
@@ -651,7 +656,7 @@ You read: Change is...         8x less    4x less    2x less    no change    2x 
 
 </div>
 
-This figure summarises how $LFCs$ were calculated and why it is better for boxplots :)
+This figure summarises how $LFCs$ were calculated and why it is better for boxplots `r emo::ji("slightly_smiling_face")`
 
 ![](images/boxplot_lfc.png)
 
@@ -767,7 +772,7 @@ sessionInfo()
 
 # HTML rendering
 
-This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell :)
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(rmarkdown)

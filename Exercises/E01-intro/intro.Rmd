@@ -20,6 +20,11 @@ output:
 date: '`r glue("Document generated: {Sys.Date()}")`'
 ---
 
+```{r, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
 # Welcome to Analysis of Gene Expression (AGE)!
 
 Here you will find some introductory information, e.g. virtual machines, conda package manager etc.
@@ -53,7 +58,7 @@ ln -s /data/persistent/<user> /home/<user>/persistent
 ```
 
 Files for AGE are stored in `/data/shared/AGE2020`.
-Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others :), please,
+Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others `r emo::ji("slightly_smiling_face")`, please,
 create your personal directory in which you will
 copy exercise files on the beginning of each exercise:
 
@@ -559,7 +564,7 @@ I have found this to be very useful for dynamic reports, e.g. header names are c
 
 # HTML rendering
 
-This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell :)
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(rmarkdown)
