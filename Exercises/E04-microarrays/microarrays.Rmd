@@ -1,0 +1,929 @@
+---
+title: "E04 - Affymetrix microarrays (Analysis of Gene Expression 2020 @ VSCHT)"
+author: "Jiri Novotny"
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    # code_folding: "show"
+    df_print: "paged"
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 4
+    number_sections: false
+    theme: "united"
+    self_contained: true
+    css: "../stylesheet.css"
+---
+
+---
+date: '`r glue("Document generated: {Sys.Date()}")`'
+---
+
+```{r, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
+***
+
+Copy, please, these files and directories to your personal directory:
+
+```{bash, eval = FALSE}
+cp -r /data/shared/AGE2020/Exercises/E04-microarrays ~/AGE2020/Exercises
+```
+
+And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E04-microarrays")`
+
+***
+
+# Introduction
+
+From [Wikipedia](https://en.wikipedia.org/wiki/DNA_microarray):
+
+> A DNA microarray (also commonly known as DNA chip or biochip) is a collection of microscopic DNA spots attached to a solid surface.
+  Scientists use DNA microarrays to measure the expression levels of large numbers of genes simultaneously or to genotype multiple regions of a genome.
+  Each DNA spot contains picomoles (10−12 moles) of a specific DNA sequence, known as probes (or reporters or oligos).
+  These can be a short section of a gene or other DNA element that are used to hybridize a cDNA or cRNA (also called anti-sense RNA)
+  sample (called target) under high-stringency conditions. Probe-target hybridization is usually detected and quantified by
+  detection of fluorophore-, silver-, or chemiluminescence-labeled targets to determine relative abundance of nucleic acid sequences in the target.
+
+![A typical protocol for microarray experiment. mRNA is isolated from the sample and reverse transcribed to cDNA which
+is labelled by fluorescent dye. The next steps are [hybridization](https://en.wikipedia.org/wiki/DNA_microarray#/media/File:NA_hybrid.svg),
+in which cDNA hydridizes with probes on microarray, and the consequent washing, where non-specific sequences are removed, i.e. only strongly paired strands will remain hybridized.
+The final wet-lab step is scanning in which the fluorescence intensity of probe spots is measured.
+Total strength of the signal, from a spot (feature), depends upon the amount of target sample binding to the probes present on that spot.
+Microarrays use relative quantitation in which the intensity of a feature is compared to the intensity of the same feature under
+a different condition, and the identity of the feature is known by its position.
+Intensities are summarised and analysis of data usually starts with normalization and technical quality control,
+and is followed by exploratory analysis and testing for differential expression.
+Image adapted from Wikipedia
+([1](https://en.wikipedia.org/wiki/DNA_microarray#/media/File:Microarray_exp_horizontal.svg), 
+[2](https://commons.wikimedia.org/wiki/File:Microarray_and_sequencing_flow_cell.svg)).](images/microarray.png)
+
+***
+
+# Our experiment
+
+Data come from [experiment](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE57822) where rats were separately treated with 127 compounds dissolved in corn oil.
+To control rats only corn oil was given. The goal was to determine the carcinogenity of these compounds.
+We will be working only with subset, where are some well known drugs:
+
+- Acetaminophen
+- Aspirin
+- Diclofenac
+- Ibuprofen
+
+For each drug, we have 3 rats (= 3 biological replicates). For controls we have 6 rats.
+
+The used chip is Affymetrix Rat Genome 230 2.0 Array (`Rat230_2`).
+
+***
+
+# Libraries
+
+```{r}
+library(oligo)
+library(stringr)
+library(tidyr)
+library(glue)
+library(limma)
+library(ReportingTools)
+library(lattice)
+library(sva)
+library(dplyr)
+
+source("../age_library.R")
+```
+
+***
+
+# Config
+
+```{r}
+BASE_DATA_DIR <- "data"
+EXPERIMENT_1_DATA_DIR <- glue("{BASE_DATA_DIR}/E-GEOD-57822")
+EXPERIMENT_1_SAMPLE_SHEET_FILE <- glue("{EXPERIMENT_1_DATA_DIR}/E-GEOD-57822.sdrf.txt")
+
+# For differential expression analysus report.
+REPORT_DIR <- "html_report"
+REPORT_N_GENES <- 50
+REPORT_LFC_THRESHOLD <- 1
+REPORT_P_VALUE_THRESHOLD <- 0.1
+REPORT_P_VALUE_ADJUST_METHOD <- "fdr"
+
+# This experiment will be used to demonstrate the batch effect.
+EXPERIMENT_2_DATA_DIR <- glue("{BASE_DATA_DIR}/E-GEOD-68065")
+```
+
+***
+
+# Reading the data
+
+## Phenotypical data
+
+We need only few columns from the sample sheet. You can explore `r str_replace(EXPERIMENT_1_SAMPLE_SHEET_FILE, ".txt", ".xlsx")` Excel sheet.
+
+```{r}
+pheno_data <- readr::read_delim(EXPERIMENT_1_SAMPLE_SHEET_FILE, delim = "\t") %>%
+  dplyr::select(1, 48, 41) %>%
+  magrittr::set_colnames(c("sample_name", "sample_group", "cel_file"))
+
+pheno_data
+```
+
+Let's adjust `pheno_data` a little bit more:
+
+```{r}
+pheno_data <- pheno_data %>%
+  dplyr::mutate(
+    sample_name = str_remove(sample_name, " 1"),
+    sample_group = dplyr::if_else(sample_group == "not specified", "control", sample_group),
+    sample_group = str_to_lower(sample_group) %>%
+      factor() %>%
+      relevel("control")
+  ) %>%
+  as.data.frame() %>%
+  magrittr::set_rownames(.$sample_name)
+
+pheno_data
+```
+
+## CEL files
+
+Microarray manufacturers use their own format to store intensity data, usually in binary form.
+Affymetrix is using [CEL format](http://dept.stat.lsa.umich.edu/~kshedden/Courses/Stat545/Notes/AffxFileFormats/cel.html).
+
+[oligo](https://www.bioconductor.org/packages/release/bioc/html/oligo.html) is a package for analyzing microarrays and supports Affymetrix
+([user guide](https://www.bioconductor.org/packages/release/bioc/vignettes/oligo/inst/doc/oug.pdf)).
+Raw data are stored in object of class `ExpressionFeatureSet`.
+
+```{r}
+cel_files <- glue("{EXPERIMENT_1_DATA_DIR}/{pheno_data$cel_file}")
+raw_data <- read.celfiles(cel_files)
+```
+
+`raw_data` is object of class `ExpressionFeatureSet`, which is designated to store the raw (non-summarised, non-normalized) data from an experiment.
+It is derived from `ExpressionSet` class, of which object we will obtain after data normalization.
+`ExpressionSet` is one of the core Bioconductor's classes found in `Biobase` package.
+It is used as a container for high-throughput assays and experimental metadata.
+You can read its manual [here](https://www.bioconductor.org/packages/release/bioc/vignettes/Biobase/inst/doc/ExpressionSetIntroduction.pdf).
+
+![The basic structure of `ExpressionSet` object.
+There are three matrices:
+<span style="color: #FF7E7E">intensity (expression) matrix</span> (rows = probes, columns = samples),
+<span style="color: #BF7EBF">phenotypical (sample) data</span>, and
+<span style="color: #7E7EFF">feature (probe) data</span>, which adds additional information about probes (probe ID, gene ID, symbol, name, etc.).
+The <span style="color: #FF7E7E">expression matrix</span> is accesible via `exprs()`.
+The <span style="color: #BF7EBF">sample data</span> are accesible via `pData()` (or `phenoData()`, see below).
+The <span style="color: #7E7EFF">feature data</span> are accesible via `fData()` (or `featureData()`, see below).
+It is important that the latter two matrices are linked to the
+<span style="color: #FF7E7E">expression matrix</span> via their rownames:
+rownames of the <span style="color: #BF7EBF">phenotypical matrix</span> match **colnames** of the
+<span style="color: #FF7E7E">expression matrix</span>, and rownames of the
+<span style="color: #7E7EFF">feature matrix</span> match rownames of the
+<span style="color: #FF7E7E">expression matrix</span>.
+](images/ExpressionSet.png)
+
+There is also other data stored in `ExpressionSet`, such as `experimentData`, but that is not important for now.
+You can find it in the manual above or see `?ExpressionSet`.
+Alternatively, you can look at methods implemented by a class, in this case the `ExpressionSet`:
+
+```{r}
+methods(class = "ExpressionSet")
+```
+
+You can see all the stored data in the `raw_data` summary:
+
+```{r}
+raw_data
+```
+
+Rownames and colnames of `ExpressionSet` can be simply retrieved by the usual functions,
+but for better readability is better to use the alternative `Biobase` functions:
+
+```{r}
+# or colnames(raw_data)
+sampleNames(raw_data)
+
+# or rownames(raw_data)
+featureNames(raw_data) %>% head()
+```
+
+Rownames are now just row numbers, because we already haven't done the probe summarisation.
+
+Sample and feature data are actually not a basic `data.frame`, but a more complex `AnnotatedDataFrame`.
+That is a "special data frame" which consists of two parts:
+dataframe describing metadata of samples and dataframe describing this metadata (i.e. its columns).
+
+Let's create such an `AnnotatedDataFrame`.
+First we change the sample names to a more neat form:
+
+```{r}
+sampleNames(raw_data) <- pheno_data$sample_name
+```
+
+Now we create metadata for `AnnotatedDataFrame`:
+
+```{r}
+metadata <- data.frame(
+  labelName = colnames(pheno_data),
+  labelDescription = c("", "Used drug.", ""),
+  stringsAsFactors = FALSE
+)
+
+metadata
+```
+
+And finally the `AnnotatedDataFrame`:
+
+```{r}
+(pheno_data <- AnnotatedDataFrame(data = pheno_data, varMetadata = metadata))
+```
+
+We also combine `pheno_data` with existing pheno data, as there is some
+existing information:
+
+```{r}
+phenoData(raw_data)
+pData(raw_data) %>% head()
+phenoData(raw_data) <- Biobase::combine(phenoData(raw_data), pheno_data)
+phenoData(raw_data)
+pData(raw_data) %>% head()
+```
+
+Look at the difference between `phenoData()` and `pData()`:
+the first returns `AnnotatedDataFrame`, while the second `data.frame`.
+
+Accessing the metadata:
+
+```{r}
+varMetadata(raw_data)
+```
+
+Accessing the expression matrix:
+
+```{r}
+exprs(raw_data)[1:5, 1:5]
+```
+
+Subsetting work as for normal matrix, but will subset all matrices:
+
+```{r}
+raw_data_subset <- raw_data[1:5, 1:5]
+raw_data_subset
+exprs(raw_data_subset)
+pData(raw_data_subset)
+fData(raw_data_subset)
+```
+
+***
+
+# Technical quality control
+
+Now we will assess whether the experiment was performed correctly at the technical level.
+
+_**Assumption: most of the genes do not change expression across the samples.**_
+
+## Pseudo-image
+
+Pseudo-image  plots  are  used  to  assess  the  spatial  distribution  of  the  data  on  the  chips.
+Due to the magnitude of the readings, pseudo-images using data on the original scale often mask spatial features that may be present on the arrays.
+This is why we recommend the use of the $log_2$ scale.
+
+```{r}
+image(raw_data, which = 12, transfo = log2)
+```
+
+You should see something like a random noise.
+In the case of a larger area of the same color, there could be some technical problem.
+
+## MA plot
+
+$j, k$ ... arrays
+
+$i$ ... probe
+
+Difference in log-intensities of probe $i$: $M_i=log_2(Y_{i,j}/Y_{i,k})$
+
+Average log-intensity of probe $i$: $A_i=\frac{1}{2}log_2(Y_{i,j}*Y_{i,k})$
+
+Ideally, $M = 0$ should apply for all probes in all samples, due to the assumption that most of the genes do not change expression across the samples..
+
+```{r}
+MAplot(raw_data[, 12:14], pairs = TRUE)
+```
+
+We can also summarise groups. Defaultly, median is used to summarise probe intensities across the samples.
+
+```{r}
+MAplot(raw_data, groups = pData(raw_data)$sample_group, pairs = TRUE)
+```
+
+## Boxplots
+
+Ideally, we should see similar boxplots.
+
+```{r}
+boxplot(raw_data, nsample = nrow(raw_data))
+```
+
+## Probe level model
+
+We will fit PLM using a robust regression which allows to calculate the standard errors of the coefficients.
+
+$log_{2}(Y_{i,j})=\beta_j + \alpha_i + \epsilon_{i,j}$
+
+$Y_{i,j}$ ... background corrected intensity of probe $i$ in sample $j$
+
+$\beta_j$ ... true transcript intensity of sample $j$
+
+$\alpha_i$ ... systematic bias of probe $i$
+
+$\epsilon_{i,j}$ ... random noise of probe $i$ in sample $j$
+
+```{r}
+fit_plm <- fitProbeLevelModel(raw_data)
+```
+
+Let's see its properties:
+
+```{r}
+image(fit_plm, which = 12)
+image(fit_plm, which = 12, type = "sign.residuals")
+```
+
+Again, as in the case of pseudo-image, you should see something like a random noise.
+In the case of a larger area of the same color, there could be some technical problem.
+
+## Relative log expression (RLE)
+
+$y_{i,j}$ ... intesity of gene $i$ in sample $j$
+
+For each gene $i$ we calculate its median intensity across the samples: $median(y_{i,*})$
+
+Then we calculate deviations from this median: $y_{i,j} - median(y_{i,*})$
+
+Ideally, RLE values should be spread around $0$.
+
+```{r}
+RLE(fit_plm)
+```
+
+## Normalized unscaled standard errors (NUSE)
+
+We can look at the standard error estimates from PLM, for each probe on each array $j$.
+They are standardized so that the median standard error across arrays is $1$ for each gene.
+
+$NUSE(\beta_j)=\frac{SE(\beta_j)}{median_j(\beta_j)}$
+
+Ideally, boxplots should be centered around $1$.
+Samples having median above $1.1$ and/or higher spread can be considered as low quality ones ([source](http://arrayanalysis.org/main.html)).
+
+```{r}
+NUSE(fit_plm)
+```
+
+***
+
+# Normalization and probe annotation
+
+As we are working with Affymetrix microarrays, we use the RMA method for normalization:
+
+```{r}
+norm_data <- rma(raw_data)
+```
+
+Now we only know the probe IDs, but not the gene IDs they correspond to:
+
+```{r}
+featureNames(norm_data) %>% head()
+```
+
+And so we use [DB package](http://bioconductor.org/packages/release/data/annotation/html/rat2302.db.html) corresponding to our chip to annotate the probes.
+
+All of those annotation packages use SQLite database as a backend and have a common interface called
+[`AnnotationDbi`](https://bioconductor.org/packages/release/bioc/html/AnnotationDbi.html).
+
+Some methods in `AnnotationDbi` have names similar to the ones from other packages (like `dplyr::select()`).
+So always rather use `AnnotationDbi::` prefix.
+
+Note: because SQLite is a very simple database, it allows only one session (i.e. database file can be opened by only one user at the time).
+So it is not possible to use parallel processing when working with DB packages.
+
+```{r}
+library(rat2302.db)
+rat2302.db
+class(rat2302.db)
+```
+
+Let's show how to work with `AnnotationDbi` objects.
+
+To show DB columns:
+
+```{r}
+AnnotationDbi::columns(rat2302.db)
+```
+
+We can show a description of each column:
+
+```{r}
+help("UNIGENE")
+```
+
+The primary keys of this DB are probe IDs:
+
+```{r}
+AnnotationDbi::keys(rat2302.db) %>% head()
+```
+
+But there are more key columns to use:
+
+```{r}
+AnnotationDbi::keytypes(rat2302.db)
+```
+
+And finally, we can select data using our list of keys. We also specify which columns we want to return and what is our keytype:
+
+```{r}
+feature_data <- AnnotationDbi::select(
+  rat2302.db,
+  # Which columns we want to retrieve from DB.
+  columns = c("PROBEID", "ENSEMBL", "SYMBOL", "GENENAME", "ENTREZID"),
+  # Vector of keys to use. Each key corresponds to its value in different columns.
+  keys = featureNames(norm_data),
+  # Our key type is ID of probe.
+  keytype = "PROBEID"
+)
+
+head(feature_data)
+```
+
+Some probes are targeting multiple genes:
+
+```{r}
+janitor::get_dupes(feature_data, PROBEID) %>% head()
+```
+
+How is it possible? Well, I am not sure `r emo::ji("slightly_smiling_face")` But one explanation could be that in the time microarray probes were designed,
+they were really targeting a single gene, but some time later, a more precise genome annotation was released.
+
+We have two options: to take the first gene, or to summarise gene information to single row.
+In my opinion, the second option is better, as you won't lose any information.
+On the other hand, you could have some problems, as, for example, ENSEMBL ID will look like this: `ENSRNOG00000013741, ENSRNOG00000042523`,
+and that cannot be used, for example, in joining operations.
+
+For the sake of completeness, we will try both options, but go further in the analysis with the first one.
+
+Let's start with the second option, as we won't use it later.
+We group `feature_data` by `PROBEID` and apply function to each of its other four columns.
+This function takes separately each of them and joins its values by `, `.
+
+```{r}
+feature_data_sum <- feature_data %>%
+  dplyr::group_by(PROBEID) %>%
+  dplyr::summarise_at(
+    vars(ENSEMBL, SYMBOL, GENENAME, ENTREZID),
+    ~ str_c(., collapse = ", ")
+  )
+
+head(feature_data_sum)
+```
+
+And now the first option. We simply drop duplicates with the `dplyr::distinct()` function.
+We specify `PROBEID` column to be used for determining uniqueness.
+
+```{r}
+feature_data <- dplyr::distinct(feature_data, PROBEID, .keep_all = TRUE)
+```
+
+Now we can filter `norm_data` and assign feature data to it:
+
+```{r}
+norm_data <- norm_data[feature_data$PROBEID, ]
+
+if (any(feature_data$PROBEID != featureNames(norm_data)))
+  stop("Feature data mismatch.")
+
+fData(norm_data) <- feature_data
+annotation(norm_data) <- "rat2302.db"
+
+saveRDS(norm_data, file = glue("{EXPERIMENT_1_DATA_DIR}/norm_data.Rds"))
+```
+
+Feature data are also stored in `ExpressionSet` as `AnnotatedDataFrame`:
+
+```{r}
+featureData(norm_data)
+```
+
+But it is not needed to directly assign `AnnotatedDataFrame` - in the step above,
+we have assigned just the dataframe with `fData(norm_data) <- feature_data`.
+
+***
+
+# Biological quality control
+
+Now we are ready to look at some biology.
+It is time to reuse your functions `r emo::ji("slightly_smiling_face")`
+
+```{r}
+groups <- pData(norm_data)$sample_group
+names(groups) <- sampleNames(norm_data)
+plot_hc(
+  exprs(norm_data), color_by = groups,
+  color_by_lab = "Sample Group"
+)
+
+plot_pca_ggplot2(exprs(norm_data), pData(norm_data), color_by = "sample_group")$plot
+```
+
+For heatmap, 1000 probes are enough. Don't use a big number of probes, or your browser will freeze `r emo::ji("wink")`
+
+```{r}
+plot_pheatmap(exprs(norm_data)[1:1000, ], pData(norm_data), column_color_by = "sample_group", main = "Affymetrix", show_rownames = FALSE)
+```
+
+***
+
+# Differential expression analysis (DEA)
+
+DEA tells us which genes are differentially expressed between conditions.
+As in the qPCR, this is again a relative measure: for example, we can say that a gene is third times
+more expressed in treatment group, relative to control group.
+
+In the qPCR, we were using the simple t-test to test for the differential expression.
+We could use that, because qPCR data are small enough to do so.
+On the other hand, data from the high-throughput methods, such as microarrays and RNA-seq, are
+much bigger and one of their properties is that the number of samples is always **much** smaller than the number of features.
+For that reason, we have to do DEA using a more complex statistical method: linear models.
+
+## `limma`
+
+For DEA we will be using [limma](https://bioconductor.org/packages/release/bioc/html/limma.html).
+It is the most known package (Bioconductor top 12. package, `r format(Sys.time(), "%Y-%d-%m")`)
+for DEA on microarray data and was probably the first which uses linear models for that.
+
+We will fit a linear model and improve estimates of standard errors using empirical Bayes approach.
+Because we have 5 sample groups (the first one being control), our model looks like this:
+
+$Y_i = \beta_0 + \beta_1 x_{i,1} + \dotso + \beta_5 x_{i,5} + \epsilon_i, i = 1 \dotso N$
+
+This can be rewritten to matrix form as:
+
+$$
+  \begin{pmatrix}
+    Y_1 \\ Y_2 \\
+    \vdots \\
+    Y_N\end{pmatrix} =
+  \begin{pmatrix}
+    1 & x_{1,1} & \dotso & x_{1,5} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    1 & x_{N,1} & \dotso & x_{N,5}
+  \end{pmatrix}
+  \begin{pmatrix}
+    \beta_0 \\
+    \beta_1 \\
+    \vdots \\
+    \beta_5
+  \end{pmatrix} +
+  \begin{pmatrix}
+    \epsilon_1 \\
+    \epsilon_2 \\
+    \vdots \\
+    \epsilon_N
+  \end{pmatrix}
+$$
+
+It can be simplified to:
+
+$\mathbf{Y} = \mathbf{X \beta} + \mathbf{\epsilon}$
+
+The matrix $\mathbf{X}$ is the design matrix. Let's make it:
+
+```{r}
+group <- pData(norm_data)$sample_group %>% factor() %>% relevel("control")
+dea_model <- model.matrix(~ group)
+colnames(dea_model)[1] <- "Intercept"
+dea_model
+```
+
+So for example, how is the first sample of *diclofenac* group expressed?
+
+$Y_{diclofenac,1} = \beta_0*1 + \beta_1*0 + \beta_2*0 + \beta_3*1 + \beta_4*0 + \epsilon = \beta_0 + \beta_3 + \epsilon$
+
+Intercept is our $\beta_0$ (i.e. *control* = the reference group).
+In factor variable, the first level is automatically taken as the reference level.
+
+Some models could be quite complicated. You can read more about model design [here](http://genomicsclass.github.io/book/) (Chapter 5).
+
+Now we can fit the model and use the empirical Bayes shrinkage:
+
+```{r}
+fit <- lmFit(norm_data, dea_model) %>% eBayes()
+colnames(fit)
+```
+
+Using the `topTable()` function, we can look at differential expression statistics for each gene in a specific group
+(in this case, *acetaminophen* vs *control*). We call those comparisons **contrasts**.
+
+```{r}
+topTable(fit, coef = "groupacetaminophen")
+```
+
+Let's inspect the `topTable` columns:
+
+- `logFC`: $log_2(\text{fold-change})$ relative to reference group (in this case `control`).
+- `AveExpr`: average expression in group (in this case `acetaminophen`).
+- `t`: t-statistic.
+- `P.Value`: p-value of the differential expression test.
+- `adj.P.Val`: p-value adjusted for multiple testing issue.
+- `B`: log-odds that the gene is differentially expressed.
+
+We didn't specify any parameter to `topTable`, but if you look at its help page,
+you can see that it is possible to set p-value adjust method and also to set thresholds for maximum
+adjusted p-value, as well as for minimal absolute value of LFC.
+By default, it won't filter anything and return DEA statistics for first 10 genes by their `B` value.
+
+## DEA between other sample groups
+
+But what if we want to compare two non-control groups?
+Well, we need to specify our own contrasts (in this case, *aspirin* vs *ibuprofen* and *acetaminophen* vs *diclofenac*):
+
+```{r}
+contrasts <- makeContrasts(
+  aspirin_vs_ibuprofen = groupaspirin - groupibuprofen,
+  acetaminophen_vs_diclofenac = groupacetaminophen - groupdiclofenac,
+  levels = dea_model
+)
+
+contrasts
+```
+
+Behind it is just $(aspirin - control) - (ibuprofen - control) = aspirin - ibuprofen$, so comparison to control (reference) group simply cancels out.
+Now we can refit our model using our defined contrasts:
+
+```{r}
+fit_c <- contrasts.fit(fit, contrasts = contrasts) %>% eBayes()
+colnames(fit_c)
+topTable(fit_c, coef = "aspirin_vs_ibuprofen")
+```
+
+## ReportingTools
+
+[ReportingTools](https://bioconductor.org/packages/release/bioc/html/ReportingTools.html) is a great package for HTML reporting of DEA.
+Basically, it outputs a table from the `topTable()`, but in an interactive form.
+It is working with many DE analysis packages, as you will see in RNA-seq.
+
+We will iterate over all treatment sample groups and for each we create the HTML report.
+Because `ReportingTools` are throwing error when no probe is meeting a filtering criteria,
+we have to put the code inside the `tryCatch()` function.
+The following code could be a bit complicated, so don't hesitate to ask me.
+
+```{r, results = "asis"}
+output_groups <- levels(groups)
+output_groups <- output_groups[output_groups != "control"]
+
+rep_theme <- reporting.theme()
+lattice.options(default.theme = rep_theme)
+
+for (group in output_groups) {
+  cat(glue("\nDEA for group '{group}': ", .trim = FALSE))
+  
+  tryCatch(
+    {
+      # This is an object (and a file) to which we are publishing.
+      de_report <- HTMLReport(
+        shortName = group,
+        title = glue("{group} vs. control"),
+        reportDirectory = REPORT_DIR
+      )
+      
+      # We can control what to take from topTable.
+      # Here, we want top REPORT_N_GENES DE genes (ranked by p-value adjusted by FDR) with minimal LFC of 1 (i.e. two-fold up or down).
+      # We won't be much conservative and set adjusted p-value cutoff to 0.1. That means we expect 10% of our DE genes to be false positives.
+      publish(
+        fit,
+        de_report,
+        eSet = norm_data,
+        factor = groups,
+        coef = glue("group{group}"),
+        n = REPORT_N_GENES,
+        lfc = REPORT_LFC_THRESHOLD,
+        pvalueCutoff = REPORT_P_VALUE_THRESHOLD,
+        adjust.method = REPORT_P_VALUE_ADJUST_METHOD
+      )
+      
+      finish(de_report)
+      
+      cat(glue("<a href='{DE_REPORT_DIR}/{group}.html' target='_blank'>report</a>"))
+    },
+    
+    error = function(e) {
+      cat(e$message)
+  })
+}
+```
+
+However, for a HTML report to be loaded correctly, you must open it from normal filesystem, not RStudio file browser.
+So copy the `html_report` directory to your local computer or access the HTML files with `sshfs`.
+
+***
+
+# Boxplots
+
+We can use our boxplot functions also for microarray data.
+In case of `plot_boxplot_ggplot2()`, we need to convert `ExpressionSet` to the long format.
+And this is a big drawback, because such long dataframe will be **huge**.
+So don't convert a full dataset at once, unless you have a lot of RAM.
+
+We convert to the long format only the subset of first 10 probes:
+
+```{r}
+data_long <- exprs(norm_data)[1:10, ] %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("PROBEID") %>%
+  tidyr::pivot_longer(-PROBEID, names_to = "sample_name", values_to = "E") %>%
+  dplyr::left_join(fData(norm_data), by = "PROBEID") %>%
+  dplyr::left_join(pData(norm_data), by = "sample_name")
+
+data_long
+```
+
+Let's make a boxplot:
+
+```{r}
+plot_boxplot_ggplot2(
+  data_long,
+  x = "sample_group",
+  y = "E",
+  feature_col = "SYMBOL",
+  color_by = "sample_group",
+  main = "Affymetrix",
+  x_lab = "Sample_Group",
+  y_lab = "log2(expression intensity)",
+  do_t_test = FALSE
+) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank()
+  )
+```
+
+As for the qPCR data, it would be nice to see LFC between the treatment groups and the `control` group.
+Again, this is doable by subtracting the mean expression intensity of the `control` group.
+
+***
+
+# Batch effect
+
+Batch effects are technical sources of variation that have been added to the samples during handling or,
+in our case, by different technical preparation of the experiments.
+They have to be removed, otherwise they act as confounding elements which can be wrongly interpreted as biological variation.
+
+We will join two experiments. The one we have been working with and the [second one](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-68065/)
+in which rats were treated with acetaminophen.
+
+The preprocessing is quite similar to what we have already done.
+
+```{r}
+SAMPLE_SHEET_2_FILE <- glue("{EXPERIMENT_2_DATA_DIR}/E-GEOD-68065.sdrf.txt")
+
+pheno_data_2 <- readr::read_delim(SAMPLE_SHEET_2_FILE, delim = "\t") %>%
+  dplyr::select(1, 4, 5, 38) %>%
+  magrittr::set_colnames(c("sample_name", "sample_group", "rat_status", "cel_file"))
+
+head(pheno_data_2)
+```
+
+```{r}
+pheno_data_2 <- pheno_data_2 %>%
+  dplyr::filter(rat_status == "susceptible") %>%
+  dplyr::mutate(
+    sample_name = str_replace(sample_name, " 1", ""),
+    sample_group = dplyr::if_else(str_detect(sample_group, "predose"), "control", "acetaminophen"),
+    batch = 2,
+    rat_status = NULL
+  )
+
+pheno_data_2
+```
+
+We modify the sample sheet from first experiment to contain only
+
+```{r}
+pheno_data_batch <- pData(norm_data) %>%
+  dplyr::filter(sample_group %in% c("control", "acetaminophen")) %>%
+  dplyr::mutate(batch = 1) %>%
+  dplyr::bind_rows(pheno_data_2) %>%
+  dplyr::mutate(
+    index = NULL,
+    sample_group = factor(sample_group) %>% relevel("control"),
+    batch = factor(batch),
+    cel_file = dplyr::if_else(batch == 1, glue("{EXPERIMENT_1_DATA_DIR}/{cel_file}"), glue("{EXPERIMENT_2_DATA_DIR}/{cel_file}"))
+  ) %>%
+  as.data.frame() %>%
+  magrittr::set_rownames(.$sample_name)
+
+pheno_data_batch
+```
+
+```{r}
+raw_data_batch <- read.celfiles(pheno_data_batch$cel_file)
+
+sampleNames(raw_data_batch) <- pheno_data_batch$sample_name
+metadata <- data.frame(
+  labelName = colnames(pheno_data_batch),
+  labelDescription = c(""),
+  stringsAsFactors = FALSE
+)
+pheno_data_batch <- AnnotatedDataFrame(data = pheno_data_batch, varMetadata = metadata)
+phenoData(raw_data_batch) <- Biobase::combine(phenoData(raw_data_batch), pheno_data_batch)
+```
+
+```{r}
+MAplot(raw_data_batch, groups = pData(raw_data_batch)$sample_group, pairs = TRUE)
+
+boxplot_colors <- dplyr::if_else(pData(raw_data_batch)$batch == 1, "red", "blue")
+boxplot(raw_data_batch, nsample = nrow(raw_data_batch), col = boxplot_colors)
+legend("topright", legend = c("1", "2"), title = "Batch", col = c("red", "blue"), pch = 20)
+```
+
+```{r}
+fit_plm_batch <- fitProbeLevelModel(raw_data_batch)
+RLE(fit_plm_batch)
+NUSE(fit_plm_batch)
+```
+
+Hmm, it looks suspicious, doesn't it? `r emo::ji("thinking")`
+
+```{r}
+norm_data_batch <- rma(raw_data_batch)
+```
+
+Here, at the biological level, you can see that the samples are obviously divided according to batches.
+
+```{r}
+groups <- pData(norm_data_batch)$sample_group
+batches <- pData(norm_data_batch)$batch
+names(groups) <- sampleNames(norm_data_batch)
+names(batches) <- sampleNames(norm_data_batch)
+
+plot_hc(exprs(norm_data_batch), color_by = groups, color_by_lab = "Sample Group")
+plot_hc(exprs(norm_data_batch), color_by = batches, color_by_lab = "Batch")
+plot_pca_ggplot2(exprs(norm_data_batch), pData(norm_data_batch), color_by = "sample_group", shape_by = "batch")$plot
+plot_pheatmap(
+  exprs(norm_data_batch)[1:1000, ],
+  pData(norm_data_batch),
+  column_color_by = c("sample_group", "batch"),
+  main = "Affymetrix",
+  show_rownames = FALSE
+)
+```
+
+Let's correct the batch effect with the `ComBat()` function from `sva` package.
+We will specify how are samples divided to batches and what is our experimental design.
+
+```{r}
+norm_data_batch_combat <- norm_data_batch
+exprs(norm_data_batch_combat) <- ComBat(exprs(norm_data_batch_combat), batch = batches, mod = model.matrix(~ groups))
+```
+
+Let's look again at biological exploratory analysis. The batch effect seems to be corrected `r emo::ji("slightly_smiling_face")`
+
+```{r}
+plot_hc(exprs(norm_data_batch_combat), color_by = groups, color_by_lab = "Sample Group")
+plot_hc(exprs(norm_data_batch_combat), color_by = batches, color_by_lab = "Batch")
+plot_pca_ggplot2(exprs(norm_data_batch_combat), pData(norm_data_batch_combat), color_by = "sample_group", shape_by = "batch")$plot
+plot_pheatmap(
+  exprs(norm_data_batch_combat)[1:1000, ],
+  pData(norm_data_batch_combat),
+  column_color_by = c("sample_group", "batch"),
+  main = "Affymetrix",
+  show_rownames = FALSE
+)
+```
+
+# Cleanup
+
+```{r, warning = TRUE, message = TRUE}
+save.image("microarrays.RData")
+
+warnings()
+traceback()
+sessionInfo()
+```
+
+# HTML rendering
+
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(rmarkdown)
+library(knitr)
+library(glue)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE)
+render("microarrays.Rmd", output_file = "microarrays.html")
+```
