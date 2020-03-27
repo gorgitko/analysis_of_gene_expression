@@ -79,7 +79,7 @@ plot_hc <- function(
 #'   n_top_features: Number of top features.
 #'
 #' Returns:
-#'   Object 'm' subset to 'n_top_features' with the highest variance across the samples.
+#'   Subset of 'm' with 'n_top_features' with the highest variance across the samples.
 select_var_features <- function(m, n_top_features) {
   if (!is.infinite(n_top_features))
   {
@@ -187,8 +187,8 @@ plot_pca_ggplot2 <- function(
   pca_df <- data.frame(sample_data, pca$x)
 
   cme <- summary(pca)$importance["Cumulative Proportion", ]
-  cme <- as.data.frame(cme)
-  cme$PC <- rownames(cme)
+  cme <- as.data.frame(cme) %>%
+    dplyr::mutate(PC = 1:nrow(.))
 
   pc_combinations <- list(c("PC2", "PC1"), c("PC3", "PC1"), c("PC2", "PC3"))
   p_list <- lapply(pc_combinations, function(pc) {
@@ -220,8 +220,10 @@ plot_pca_ggplot2 <- function(
 
   p_list <- list.append(
     p_list,
-    ggplot(cme, aes(x = PC, y = cme)) + geom_bar(stat = "identity") +
-      ggthemes::theme_few(),
+    ggplot(cme, aes(x = PC, y = cme)) +
+      geom_bar(stat = "identity") +
+      ggthemes::theme_few() +
+      scale_x_continuous(breaks = 1:nrow(cme)),
     legend
   )
 
@@ -408,6 +410,8 @@ plot_heatmap <- function(
 #'   row_color_by: Vector of column names of feature_data to color rows in heatmap.
 #'                 If NULL and feature_data is provided, all columns will be used for coloring.
 #'   main: Plot title.
+#'   show_rownames: If TRUE, show rownames in the heatmap.
+#'   show_colnames: If TRUE, show colnames in the heatmap.
 #'
 #' Returns:
 #'   pheatmap object
@@ -417,7 +421,10 @@ plot_pheatmap <- function(
   feature_data = NULL,
   column_color_by = NULL,
   row_color_by = NULL,
-  main = ""
+  main = "",
+  show_rownames = TRUE,
+  show_colnames = TRUE
+  # n_top_var_features = NULL
 ) {
   if (!is.null(sample_data) && !is.null(column_color_by)) {
     sample_data <- sample_data[, column_color_by, drop = FALSE]
@@ -427,7 +434,17 @@ plot_pheatmap <- function(
     feature_data <- feature_data[, row_color_by, drop = FALSE]
   }
 
-  pheatmap::pheatmap(m, annotation_col = sample_data, annotation_row = feature_data, main = main)
+  # if (!is.null(n_top_var_features))
+  #   m <- select_var_features(m, n_top_var_features)
+
+  pheatmap::pheatmap(
+    m,
+    annotation_col = sample_data,
+    annotation_row = feature_data,
+    main = main,
+    show_rownames = show_rownames,
+    show_colnames = show_colnames
+  )
 }
 
 #' Create heatmap using heatmaply.
@@ -435,7 +452,7 @@ plot_pheatmap <- function(
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
 #'   sample_data: Dataframe describing samples.
-#'   feature_data: Dataframe describing features
+#'   feature_data: Dataframe describing features.
 #'   column_color_by: Vector of column names of sample_data to color columns in heatmap.
 #'                    If NULL and sample_data is provided, all columns will be used for coloring.
 #'   row_color_by: Vector of column names of feature_data to color rows in heatmap.
@@ -452,11 +469,12 @@ plot_heatmaply <- function(
   column_color_by = NULL,
   row_color_by = NULL,
   main = NULL,
-  key.title = NULL
+  key.title = NULL,
+  showticklabels = c(TRUE, TRUE)
 ) {
   # heatmaply cannot handle NULL parameters.
   # Could be this implemented better?
-  params <- list(m, key.title = key.title)
+  params <- list(m, key.title = key.title, showticklabels = showticklabels)
 
   if (!is.null(sample_data) && !is.null(column_color_by)) {
     params[["col_side_colors"]] <- sample_data[, column_color_by, drop = FALSE]
