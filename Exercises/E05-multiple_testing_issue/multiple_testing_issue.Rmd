@@ -1,0 +1,217 @@
+---
+title: "E05 - Multiple testing issue (Analysis of Gene Expression 2020 @ VSCHT)"
+author: "Michal Kolar"
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    # code_folding: "show"
+    df_print: "paged"
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 4
+    number_sections: false
+    theme: "united"
+    self_contained: true
+    css: "../stylesheet.css"
+---
+
+---
+date: '`r glue("Document generated: {Sys.Date()}")`'
+---
+
+```{r, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
+***
+
+Copy, please, these files and directories to your personal directory:
+
+```{bash, eval = FALSE}
+cp -r /data/shared/AGE2020/Exercises/E05-multiple_testing_issue ~/AGE2020/Exercises
+```
+
+And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E04-multiple_testing_issue")`
+
+***
+
+# Introduction
+
+In this tutorial we will show how to control Type I and Type II errors in an experiment that includes multiple simultaneous tests:
+
+- This situation happens very often in functional genomics experiments
+- In a toy model, we will try to identify 100 skewed coins among 1000 coins.
+
+# Config
+
+Set random seed:
+
+```{r}
+set.seed(111)
+```
+
+# Perform the experiment
+
+Flip each coin 100 times in 100 trials and store the mean number of heads in each trial.
+First the skewed coins, then the fair coins. Represent the prototypic fair coin by expected mean number of heads in 100 trials.
+
+100 skewed coins:
+
+```{r}
+trialsSkew <- lapply(1:100,  function(x) rbinom(n = 100, size = 100, prob = 1/2.1))
+trialsSkew[[1]]
+```
+
+900 fair coins:
+
+```{r}
+trialsNull <- lapply(1:900,  function(x) rbinom(n = 100, size = 100, prob = 1/2))
+trialsNull[[1]]
+```
+
+A prototype fair coin:
+
+```{r}
+muTrue <- 1/2 * 100
+```
+
+# Statistics
+
+We will compare the outcomes using one sample t-test and store the resulting p-values for the skewed (resp. fair) coins as `pSkew` (resp. `pFair`).
+Note the differences in the p-value distributions.
+
+Compare skewed coins and the prototype:
+
+```{r}
+pSkew <- sapply(trialsSkew, function(x) t.test(x, mu = muTrue)$p.value)
+```
+
+Compare fair coins and the prototype:
+
+```{r}
+pNull <- sapply(trialsNull, function(x) t.test(x, mu = muTrue)$p.value)
+```
+
+All p-values:
+
+```{r}
+p <- c(pSkew, pNull)
+```
+
+Observe skewed, uniform, and mixed distribution of p-values:
+
+```{r}
+hist(pSkew, breaks = 20)
+hist(pNull, breaks = 20)
+hist(p, breaks = 20)
+```
+
+# Multiple testing issue
+
+In the last histogram, we see that more than 150 coins would be considered skewed when requiring p < 0.05.
+
+```{r}
+table(p < 0.05)
+```
+
+That is many more than the grand truth. The spurious skewed coins come from the fact that roughly 1/20 of the fair coins will have p < 0.05:
+the 900 p-values of insignificant tests of fair coins to the prototype coin are uniformly distributed.
+
+Let's adjust the p-values using Bonferroni's method (family-wise error rate, FWER), Benjamini-Hochberg's FDR (false discovery rate), and Storey's q-value (positive FDR):
+
+```{r}
+bonferroni <- p.adjust(p, "bonferroni")
+fdr <- p.adjust(p, "fdr")
+library(qvalue)
+q <- qvalue(p)$qvalues
+
+hist(p, breaks = 20)
+hist(bonferroni, breaks = 20)
+hist(fdr, breaks = 20)
+hist(q, breaks = 20)
+```
+
+p < 0.05:
+
+```{r}
+table(p < 0.05)
+```
+
+FWER < 0.05:
+
+```{r}
+table(bonferroni < 0.05)
+```
+
+FDR < 0.05:
+
+```{r}
+table(fdr < 0.05)
+```
+
+q < 0.05:
+
+```{r}
+table(q < 0.05)
+```
+
+We observe that while p-value is overly liberal and FWER overly stringent, FDR and q-value approach the number of skewed coins pretty well.
+But do we actually find the skewed coins, or just any coins? Can we distinguish the skewed coins by our experiment?
+Let's do some plots. In the plots, black coins are fair and skewed coins are green.
+The first plot shows all the coins, then we zoom in to see mainly the skewed coins.
+
+```{r}
+##-- order of the p-values
+oq <- order(p)
+
+##-- see selected coins
+plot(p[oq], col = c(rep("green", 100), rep("black", 900))[oq], pch = ".", cex = 3, ylab = "Raw p-value")
+plot(p[oq], xlim = c(0, 200), ylim = c(0, 0.125), col = c(rep("green", 100), rep("black", 900))[oq], pch = ".",
+     cex = 3, ylab = "Raw p-value")
+```
+
+The thresholds corresponding to p-value, FWER, and FDR are drawn in dark red, red, and orange, respectively.
+
+```{r}
+plot(p[oq], xlim = c(0, 150), ylim = c(0, 0.05), col = c(rep("green", 100), rep("black", 900))[oq], pch = ".",
+     cex = 3, ylab = "Raw p-value")
+
+abline(a = 0.05, b = 0, col = "darkred", lwd = 2)
+abline(a = 0.05 / 1000, b = 0, col = "red", lwd = 2)
+abline(a = 0, b = 0.05 / 1000, col = "darkorange", lwd = 2)
+```
+
+As both FDR and q estimate proportion of false discoveries among significant tests, we often set their threshold values to 0.1,
+having 10% false discoveries in the resulting list of coins that are deemed skewed.
+
+FDR < 0.1:
+
+```{r}
+table(fdr < 0.1)
+```
+
+q < 0.1:
+
+```{r}
+table(q < 0.1)
+```
+
+# Homework
+
+Create the [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) for different p-adjustment methods and cutoff value of 0.05, 0.1 and 0.25.
+
+# HTML rendering
+
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(rmarkdown)
+library(knitr)
+library(glue)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE)
+render("multiple_testing_issue.Rmd", output_file = "multiple_testing_issue.html")
+```
