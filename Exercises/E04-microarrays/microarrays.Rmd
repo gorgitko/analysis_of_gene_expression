@@ -358,7 +358,7 @@ In the case of a larger area of the same color, there could be some technical pr
 
 ## Relative log expression (RLE)
 
-$y_{i,j}$ ... intesity of gene $i$ in sample $j$
+$y_{i,j}$ ... intensity of gene $i$ in sample $j$
 
 For each gene $i$ we calculate its median intensity across the samples: $median(y_{i,*})$
 
