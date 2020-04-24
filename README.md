@@ -37,3 +37,22 @@
   later for microarray and RNA-seq data.
 - Implemented functions are located in [age_library.R](Exercises/age_library.R),
   skeletons are in [age_library_empty.R](Exercises/age_library_empty.R).
+
+## [E04](Exercises/E04-microarrays/microarrays.html) - microarrays ([Rmd](Exercises/E04-microarrays/microarrays.Rmd))
+
+- Exercise on Affymetrix microarray analysis.
+- Reading in data, technical and biological quality control, normalization, differential expression, reporting.
+
+## [E05](Exercises/E05-multiple_testing_issue/multiple_testing_issue.html) - multiple testing issue ([Rmd](Exercises/E05-multiple_testing_issue/multiple_testing_issue.Rmd))
+
+- Demonstration of multiple testing issue correction methods on fair/skewed coins.
+
+## [E06](Exercises/E06-IGV) - IGV browser
+
+- Files for practising [IGV](http://software.broadinstitute.org/software/igv/) usage.
+
+## [E07](Exercises/E07-RNA_seq) - RNA-seq
+
+### [01](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
+
+- Downloading from SRA (`fasterq-dump`), `FastQC`, `MultiQC`, `Trimmomatic`.
