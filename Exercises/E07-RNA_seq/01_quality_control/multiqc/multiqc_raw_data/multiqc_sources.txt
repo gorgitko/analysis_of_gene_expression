@@ -1,0 +1,9 @@
+Module	Section	Sample Name	Source
+FastQC	all_sections	SRR1039513_2_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039513_2_subset_fastqc.zip
+FastQC	all_sections	SRR1039508_1_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039508_1_subset_fastqc.zip
+FastQC	all_sections	SRR1039509_2_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039509_2_subset_fastqc.zip
+FastQC	all_sections	SRR1039513_1_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039513_1_subset_fastqc.zip
+FastQC	all_sections	SRR1039512_2_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039512_2_subset_fastqc.zip
+FastQC	all_sections	SRR1039509_1_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039509_1_subset_fastqc.zip
+FastQC	all_sections	SRR1039512_1_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039512_1_subset_fastqc.zip
+FastQC	all_sections	SRR1039508_2_subset	/data/persistent/jirinovo/AGE2020/Exercises/E07-RNA_seq/01_quality_control/fastqc/SRR1039508_2_subset_fastqc.zip

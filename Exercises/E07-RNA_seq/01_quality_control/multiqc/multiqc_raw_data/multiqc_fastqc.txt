@@ -1,0 +1,9 @@
+Sample	adapter_content	Sequences flagged as poor quality	sequence_duplication_levels	avg_sequence_length	Encoding	per_base_sequence_quality	sequence_length_distribution	Sequence length	File type	basic_statistics	per_sequence_gc_content	Total Sequences	per_base_n_content	per_base_sequence_content	overrepresented_sequences	%GC	total_deduplicated_percentage	Filename	per_tile_sequence_quality	per_sequence_quality_scores
+SRR1039508_1_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	warn	50.0	80.5566689275	SRR1039508_1_subset.fastq	pass	pass
+SRR1039508_2_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	pass	50.0	80.9686636067	SRR1039508_2_subset.fastq	pass	pass
+SRR1039509_1_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	warn	49.0	80.7789885698	SRR1039509_1_subset.fastq	pass	pass
+SRR1039509_2_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	warn	49.0	81.7133727513	SRR1039509_2_subset.fastq	pass	pass
+SRR1039512_1_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	pass	49.0	78.0693418128	SRR1039512_1_subset.fastq	pass	pass
+SRR1039512_2_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	pass	49.0	78.5849282362	SRR1039512_2_subset.fastq	pass	pass
+SRR1039513_1_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	pass	48.0	80.5631875572	SRR1039513_1_subset.fastq		pass
+SRR1039513_2_subset	pass	0.0	pass	63.0	Sanger / Illumina 1.9	pass	pass	63.0	Conventional base calls	pass	pass	1250000.0	pass	pass	pass	48.0	81.0026279736	SRR1039513_2_subset.fastq		pass

@@ -1,0 +1,19 @@
+TrimmomaticPE: Started with arguments:
+ -threads 2 -phred33 ../_data/experiment/SRR1039512_1_subset.fastq ../_data/experiment/SRR1039512_2_subset.fastq ../_data/experiment_trimmed/SRR1039512_subset_trimmomatic_1P.fastq ../_data/experiment_trimmed/SRR1039512_subset_trimmomatic_1U.fastq ../_data/experiment_trimmed/SRR1039512_subset_trimmomatic_2P.fastq ../_data/experiment_trimmed/SRR1039512_subset_trimmomatic_2U.fastq ILLUMINACLIP:adapters.fa:2:30:8 LEADING:13 TRAILING:13 SLIDINGWINDOW:4:19 MINLEN:36
+Using PrefixPair: 'AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT' and 'GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT>TruSeq3_IndexedAdapterAGATCGGAAGAGCACACGTCTGAACTCCAGTCAC'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA'
+Skipping duplicate Clipping Sequence: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAG>PrefixPE/1TACACTCTTTCCCTACACGACGCTCTTCCGATCT'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCGGTTCAGCAGGAATGCCGAGACCGATCTCGTATGCCGTCTTCTGCTTG'
+Using Long Clipping Sequence: 'TTTTTTTTTTAATGATACGGCGACCACCGAGATCTACAC'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT'
+Using Long Clipping Sequence: 'TTTTTTTTTTCAAGCAGAAGACGGCATACGA>TruSeq2_SEAGATCGGAAGAGCTCGTATGCCGTCTTCTGCTTG'
+Using Long Clipping Sequence: 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC>PrefixPE/1TACACTCTTTCCCTACACGACGCTCTTCCGATCT'
+Using Long Clipping Sequence: 'GTGACTGGAGTTCAGACGTGTGCTCTTCCGATCT'
+Using Long Clipping Sequence: 'TACACTCTTTCCCTACACGACGCTCTTCCGATCT'
+Using Long Clipping Sequence: 'CAAGCAGAAGACGGCATACGAGATCGGTCTCGGCATTCCTGCTGAACCGCTCTTCCGATCT'
+Using Long Clipping Sequence: 'AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT'
+ILLUMINACLIP: Using 1 prefix pairs, 12 forward/reverse sequences, 0 forward only sequences, 0 reverse only sequences
+Input Read Pairs: 1250000 Both Surviving: 1177741 (94.22%) Forward Only Surviving: 42355 (3.39%) Reverse Only Surviving: 20795 (1.66%) Dropped: 9109 (0.73%)
+TrimmomaticPE: Completed successfully

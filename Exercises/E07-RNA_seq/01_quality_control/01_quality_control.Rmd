@@ -1,0 +1,469 @@
+---
+title: "E07 - RNA-seq / 01 - quality control (Analysis of Gene Expression 2020 @ VSCHT)"
+author: "Jiri Novotny"
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    # code_folding: "show"
+    df_print: "paged"
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 4
+    number_sections: false
+    theme: "united"
+    self_contained: true
+    # highlight: "tango"
+    css: "../../stylesheet.css"
+---
+
+---
+date: '`r glue("Document generated: {Sys.Date()}")`'
+---
+
+```{r, eval = TRUE, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
+```{r, eval = TRUE, echo = FALSE}
+HIGHLIGHT_TYPE <- "highlightjs"
+```
+
+```{r, eval = TRUE, child = "../../tooltip_child.Rmd"}
+```
+
+```{js, echo = FALSE, eval = TRUE}
+$(document).ready(function () {
+  var regex = new RegExp("^NOTE:\\s");
+  var p_note = $("p").filter(function () {
+      return regex.test($(this).text()); 
+  });
+  
+  p_note.addClass("bg-success");
+});
+```
+
+***
+
+Copy, please, these files and directories to your personal directory:
+
+```{bash, eval = FALSE}
+mkdir -p ~/AGE2020/Exercises/E07-RNA_seq/_data/experiment
+cp /data/shared/AGE2020/Exercises/E07-RNA_seq/_data/experiment/*_subset.fastq ~/AGE2020/Exercises/E07-RNA_seq/_data/experiment
+cp -r /data/shared/AGE2020/Exercises/E07-RNA_seq/01_quality_control ~/AGE2020/Exercises/E07-RNA_seq
+```
+
+And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E07-RNA_seq/01_quality_control")`
+
+We will be mostly working in shell, so also make sure your current working directory in terminal is `~/AGE2020/Exercises/E07-RNA_seq/01_quality_control`.
+Some command will take time to finish, so I recommend you to work in `tmux` session, as you will be anytime able to exit your SSH connection
+and later to come back to your work.
+
+NOTE: To easily distinguish between R and bash code chunks, you can hover over a chunk and code type will appear on the left side.
+
+***
+
+# Introduction
+
+From [Wikipedia](https://en.wikipedia.org/wiki/RNA-Seq):
+
+> RNA-seq (named as an abbreviation of "RNA sequencing") is a particular technology-based sequencing technique which
+uses next-generation sequencing (NGS) to reveal the presence and quantity of RNA in a biological sample at a given moment,
+analyzing the continuously changing cellular transcriptome.
+
+![A typical RNA-seq pipeline in which we want to compare two or several experimental conditions.
+This pipeline is in principle the same for different research questions, such as differential expression, alternative splicing, mutations (SNPs),
+gene fusions, de novo transcriptome assembly etc.
+In the first two steps, RNA is isolated and prepared for sequencing by reverse transcription (cDNA) and linker ligation.
+After sequencing you obtain short reads of original RNA, and this is where data analysis begins (see next picture).
+You usually obtain demultiplexed reads in FASTQ format, i.e. separate file for each sample.
+[Source](https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004393)](images/rnaseq_pipeline.png)
+
+![RNA-seq data analysis workflow. It starts by a technical quality control of reads which tells you if sequencing went technically good.
+This is partially also possible to do in BaseSpace, a cloud for Illumina sequencing platform.
+The second step is an alignment of reads to reference genome or transcriptome.
+This tells us from which genes (or more precisely, from which part of genome) our reads are coming from.
+Then we use the information about the alignment to do a quantification, that is, we calculate how many reads are aligned to genes and use
+this information to obtain a transcript abundance.
+Finally, we use the transcript abundance for differential expression, that is, a relative change in the trascript abundance
+(i.e. gene expression) between experimental conditions.
+Results from the differential expression can be used for higher-level analysis - for example a functional profiling, in which
+we are looking at changes at the level of whole gene sets (e.g. pathways, cellular components, diseases, etc.).
+[Source](https://www.1010genome.com/rna-seq/)](images/rnaseq_data_analysis_pipeline.png)
+
+***
+
+In this part of RNA-seq exercises we will do the technical quality control of an RNA-seq experiment.
+
+Although there are complete pipelines for RNA-seq, such as [nf-core/rnaseq](https://nf-co.re/rnaseq) used by our core facility,
+we will go through all the steps manually so that you know the principles.
+
+NOTE: Because `bash` chunks don't share variables between them, you have to copy the code to terminal.
+
+***
+
+# Our experiment
+
+In this [experiment](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778),
+human airway smooth muscle cells were treated with three anti-asthma drugs.
+
+This experiment is also used in a great tutorial
+[RNA-Seq workflow: gene-level exploratory analysis and differential expression](https://f1000research.com/articles/4-1070/v2)
+of which this exercise is largely based on.
+
+Because RNA-seq is much more computationally demanding than microarrays,
+we will be working only with a subset of data and use only one chromosome (20) to align/map the reads.
+Genome, transcriptome, annotation and sample files are already downloaded, but we will show how to get them.
+
+Usually, databases such as Gene Expression Omnibus or ArrayExpress will provide you count matrices,
+which can be directly imported to R.
+You can see [here](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778) that for this experiment
+FPKM matrix is available.
+Raw reads in FASTQ format are usually stored in [Sequence Read Archive](https://www.ncbi.nlm.nih.gov/sra).
+([here](https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA229998&o=acc_s%3Aa) for this experiment).
+On the experiment page in GEO, you can find the link to SRA on the bottom of page ("SRA Run Selector").
+
+However, for you to know how to deal with raw data, we will try the RNA-seq workflow parts starting with raw reads
+in FASTQ format and ending with count matrix (first two parts in the workflow above).
+For that purpose we will use only four samples (two untreated and two dexamethasone treated)
+and subset each of them to 1 250 000 reads.
+
+Then for differential expression and gene set analysis (last two parts in the workflow above)
+we will use R objects of count matrices of the full dataset which are available in the R package
+[`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html).
+Of course we would be able to work with the full dataset and finish with the same R objects,
+but that would take a large amount of computational time.
+
+# Config
+
+Here we will set paths to files and directories.
+
+```{bash}
+# This is a root directory for data.
+BASE_DATA_DIR="../_data"
+mkdir $BASE_DATA_DIR
+
+# Here you will find experiment data.
+EXPERIMENT_DATA_DIR="$BASE_DATA_DIR/experiment"
+mkdir $EXPERIMENT_DATA_DIR
+
+# Directory to store trimmed data.
+TRIMMED_DATA_DIR="$BASE_DATA_DIR/experiment_trimmed"
+mkdir $TRIMMED_DATA_DIR
+
+# Directory for FastQC output.
+FASTQC_DIR="fastqc"
+mkdir $FASTQC_DIR
+
+# Directory for MultiQC output. Will be created automatically by MultiQC.
+MULTIQC_DIR="multiqc"
+
+# Directory for logs.
+LOG_DIR="logs"
+mkdir $LOG_DIR
+
+# Directory for temporary files.
+TMP_DIR="$BASE_DATA_DIR/tmp"
+mkdir $TMP_DIR
+
+# Adapter files.
+TRIMMOMATIC_ADAPTERS_PATH="/usr/share/trimmomatic/TruSeq*"
+ADAPTERS_FASTA_FILE="adapters.fa"
+ADAPTERS_TSV_FILE="adapters.tsv"
+
+SAMPLE_NAMES=("SRR1039508" "SRR1039509" "SRR1039512" "SRR1039513")
+```
+
+# Downloading experiment data from SRA
+
+To download data from SRA, you need to use a special tool [fasterq-dump](https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump)
+from a collection [SRA Tools](https://github.com/ncbi/sra-tools).
+
+NOTE: Do not run this as data are already downloaded and you have copied the subset FASTQs to your personal directory.
+You can just review the code `r emo::ji("slightly_smiling_face")`
+
+Unfortunately, there is an old version of `sratools` installed on your VM.
+If you really want to try to download the experiment data, follow the instructions below.
+At least you will see how useful is `conda` package manager (for bioinformatic tools) `r emo::ji("slightly_smiling_face")`
+
+I was unable to download the experiment data because of segmentation fault,
+and so I have utilized `conda` package manager (see E01-intro) and installed the latest version of `sratools` from bioconda channel:
+
+```{bash}
+# Create a new virtual environment called 'sratools'.
+conda create -n sratools
+# Switch to the new venv.
+conda activate sratools
+# Install sratools from bioconda channel.
+conda install -c bioconda sra-tools
+```
+
+In `$PATH` environment variable, path to the old version of `fasterq-dump` is preceding the path to the new venv `sratools`,
+and so when you run `fasterq-dump`, the old version is still executed:
+
+```{bash}
+which fasterq-dump
+```
+
+```
+/opt/bio-class/sratoolkit.2.9.6-ubuntu64/bin/fasterq-dump
+```
+
+```{bash}
+fasterq-dump --version
+```
+
+```
+fasterq-dump : 2.9.6
+```
+
+```{bash}
+echo $PATH
+```
+
+```
+...:/opt/bio-class/sratoolkit.2.9.6-ubuntu64/bin:...:/opt/bio-class/miniconda/envs/sratools/bin
+```
+
+Let's move on with the most trivial solution and just replace `fasterq-dump` with the full path to the new version:
+
+```{bash}
+/opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump --version
+```
+
+```
+"/opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump" version 2.10.3
+```
+
+We are ready to use the new version of `fasterq-dump`.
+We will loop through sample IDs and for each sample obtain two files ending with `_1.fastq` and `_2.fastq`
+(because this experiment uses paired-end sequencing).
+To further reduce computing, we will take only 1 250 000 reads (one read = 4 lines in FASTQ file) from each downloaded FASTQ file.
+
+```{bash}
+for sample_id in ${SAMPLE_NAMES[@]}; do
+  echo "Processing sample $sample_id ..."
+
+  /opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump \
+    --outdir $EXPERIMENT_DATA_DIR \
+    --temp $TMP_DIR \
+    --skip-technical \
+    --threads 2 \
+    --mem 8000MB \
+    --log-level info \
+    --progres \
+    --force \
+    $sample_id
+
+  cat $EXPERIMENT_DATA_DIR/${sample_id}_1.fastq | head -n 5000000 > $EXPERIMENT_DATA_DIR/${sample_id}_1_subset.fastq
+  cat $EXPERIMENT_DATA_DIR/${sample_id}_2.fastq | head -n 5000000 > $EXPERIMENT_DATA_DIR/${sample_id}_2_subset.fastq
+done
+```
+
+# Technical quality control - raw reads
+
+Now we will look at a technical quality of out RNA-seq experiment.
+[`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) is probably most used for this purpose.
+On the website you can look at example reports with [good](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/good_sequence_short_fastqc.html), [bad](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/bad_sequence_fastqc.html), and other types of data.
+Very helpful is `FastQC` [documentation](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/) explaining output from each step.
+
+`FastQC` is also checking for adapter contamination, but it needs a tab-separated values (TSV) file (format: `name[tab]sequence`) instead of FASTA.
+[`Trimmomatic`](http://www.usadellab.org/cms/?page=trimmomatic) is a tool used for trimming sequencing adapters and low quality bases from reads.
+We will use it later for this purporse, but for now we utilize its FASTA files of adapters and use it in technical quality control.
+We join all FASTAs to a single one and convert it to TSV with a simple Python script `fasta_to_table.py`.
+
+```{bash}
+cat $TRIMMOMATIC_ADAPTERS_PATH > $ADAPTERS_FASTA_FILE
+echo "" >> $ADAPTERS_FASTA_FILE
+head $ADAPTERS_FASTA_FILE
+python3 fasta_to_table.py $ADAPTERS_FASTA_FILE > $ADAPTERS_TSV_FILE
+head $ADAPTERS_TSV_FILE
+```
+
+Another great tool is [`MultiQC`](https://multiqc.info/) which is able to aggregate output from multiple
+tools/samples into a single beautiful report.
+See [this list of supported tools](https://multiqc.info/#supported-tools) and its [documentation](https://multiqc.info/docs/#multiqc-modules).
+
+Let's run `FastQC` now:
+
+```{bash}
+fastqc -t 2 -a $ADAPTERS_TSV_FILE -o $FASTQC_DIR $EXPERIMENT_DATA_DIR/*_subset.fastq
+```
+
+<p>
+  <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#div_info_fastqc" aria-expanded="false" aria-controls="div_info_fastqc">
+    Show parameters info
+  </button>
+</p>
+
+<div class="collapse div-collapse-info" id="div_info_fastqc">
+
+- `-t 2`{.bash}
+  - Number of threads to use for processing. Our VM has only 2 cores available, thus 2 threads are the maximum for optimal performance.
+- `-a $ADAPTERS_TSV_FILE`{.bash}
+  - Path to TSV file with adapter sequences.
+- `-o $FASTQC_DIR`{.bash}
+  - Output directory.
+- `$EXPERIMENT_DATA_DIR/*_subset.fastq`{.bash}
+  - Input FASTQ files.
+
+</div>
+
+`FastQC` has created a report for each of input FASTQ files.
+You can inspect them in `fastqc` directory.
+
+But better will be to aggregate these reports with `MultiQC`:
+
+```{bash}
+multiqc --outdir $MULTIQC_DIR --filename "multiqc_raw.html" $FASTQC_DIR
+```
+
+<p>
+  <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#div_info_multiqc" aria-expanded="false" aria-controls="div_info_multiqc">
+    Show parameters info
+  </button>
+</p>
+
+<div class="collapse div-collapse-info" id="div_info_multiqc">
+
+- `--outdir $MULTIQC_DIR`{.bash}
+  - Output directory.
+- `--filename "multiqc_raw.html"`{.bash}
+  - Output filename.
+- `$FASTQC_DIR`{.bash}
+  - Directory to recursively search for files for aggregation.
+    `MultiQC` is smart and automatically recognizes from which tool does file come from.
+
+</div>
+
+# Trimming the reads
+
+Usually the first step of sequencing data preprocessing is trimming.
+It removes adapter (technical) part of reads and filter/trim reads based on their PHRED quality score.
+
+However, trimming is not always needed.
+[Here](https://link.springer.com/article/10.1186/s12859-016-0956-2) (see Conclusions) and [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3871669/)
+are papers evaluating the effect of trimming on various downstream analysis.
+**You should always closely look at technical quality control reports and then decide whether trimming is really needed.**
+In case of high quality data (overall good quality of base calls), you should only trim adapters (if there are any)
+and don't perform trimming based on quality.
+
+In the reports from `FastQC` (aggregated by `MultiQC`), you can see the high quality of data and missing adapter contamination.
+Anyway, for the sake of exercising, we will do the trimming.
+
+There are several tools for trimming and we will be using [`Trimmomatic`](http://www.usadellab.org/cms/?page=trimmomatic)
+([manual](http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf)) which is designed for Illumina data.
+You should know the technical details about sequencing (used kit, machine, read length) and also look at results from `FastQC`,
+and decide how to set the `Trimmomatic`'s parameters.
+
+Short explanation of parameters:
+
+- ILLUMINACLIP:FASTA with adapters:seed mismatches:palindrome clip threshold:simple clip threshold
+  - Remove Illumina adapters and also look at adapter read-through.
+- LEADING:quality
+  - Cut bases off the start of a read, if below a threshold quality.
+- TRAILING:quality
+  - Cut bases off the end of a read, if below a threshold quality.
+- SLIDINGWINDOW:window size:required quality
+  - Perform a sliding window trimming, cutting once the average quality within the window falls below a threshold.
+- MINLEN:length
+  - Drop the read if it is below a specified length
+
+To keep the pairing of reads, `Trimmomatic` will drop an entire read pair if one of the reads doesn't pass filtering.
+The "good" read from such pair will be saved in a separate file (see `Trimmomatic` parameters below).
+
+```{bash}
+for sample_id in ${SAMPLE_NAMES[@]}; do
+  echo "Processing sample $sample_id ..."
+  
+  sample_1_file="${sample_id}_1_subset.fastq"
+  sample_2_file="${sample_id}_2_subset.fastq"
+  
+  TrimmomaticPE \
+    -threads 2 \
+    -phred33 \
+    $EXPERIMENT_DATA_DIR/$sample_1_file \
+    $EXPERIMENT_DATA_DIR/$sample_2_file \
+    $TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_1P.fastq \
+    $TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_1U.fastq \
+    $TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_2P.fastq \
+    $TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_2U.fastq \
+    ILLUMINACLIP:$ADAPTERS_FASTA_FILE:2:30:8 \
+    LEADING:13 \
+    TRAILING:13 \
+    SLIDINGWINDOW:4:19 \
+    MINLEN:36 \
+    2> $LOG_DIR/${sample_id}_trimmomatic.log
+done
+```
+
+<p>
+  <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#div_info_trimmomatic" aria-expanded="false" aria-controls="div_info_trimmomatic">
+    Show parameters info
+  </button>
+</p>
+
+<div class="collapse div-collapse-info" id="div_info_trimmomatic">
+
+- `-phred33`{.bash}
+  - Base quality coding is phred33 ([info](https://en.wikipedia.org/wiki/FASTQ_format#Encoding)).
+- `$EXPERIMENT_DATA_DIR/$sample_1_file"`{.bash}
+  - Input forward reads.
+- `$EXPERIMENT_DATA_DIR/$sample_2_file`{.bash}
+  - Input reverse reads.
+- `$TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_1P.fastq`{.bash}
+  - Output forward reads.
+- `$TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_1U.fastq`{.bash}
+  - Output unpaired forward reads (their reverse partner was dropped).
+- `$TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_2P.fastq`{.bash}
+  - Output reverse reads.
+- `$TRIMMED_DATA_DIR/${sample_id}_subset_trimmomatic_2U.fastq`{.bash}
+  - Output unpaired reverse reads (their forward partner was dropped).
+- `ILLUMINACLIP:$ADAPTERS_FASTA_FILE:2:30:8`{.bash}
+  - Parameters for removing adapters.
+- `LEADING:13`{.bash}
+  - Cut 13 bases off the start of a read, if below a threshold quality.
+- `TRAILING:13`{.bash}
+  - Cut 13 bases off the end of a read, if below a threshold quality.
+- `SLIDINGWINDOW:4:19`{.bash}
+  - Sliding window of 4 bases and threshold quality of 19.
+    If mean quality in the sliding windows goes under 19, read will be trimmed at this position.
+- `MINLEN:36`{.bash}
+  - Minimum length of read. If less than, it will be dropped.
+    In our experiment, reads have the same length, so this is probably not utilized.
+- `2> $LOG_DIR/trimmomatic.log`{.bash}
+  - Write log to file (`Trimmomatic` is using stderr for that.).
+    We will later include this log in `MultiQC` report.
+
+</div>
+
+NOTE: You can check the evaluation of other trimming tools in the [second paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3871669/) above.
+But `Trimmomatic` seems to be quite good `r emo::ji("slightly_smiling_face")`
+
+# Technical quality control - trimmed reads
+
+Now we will use `FastQC` and `MultiQC` again, on trimmed reads (only paired-end).
+We also include log files from `Trimmomatic`.
+
+```{bash}
+fastqc -t 2 -a $ADAPTERS_TSV_FILE -o $FASTQC_DIR $TRIMMED_DATA_DIR/*P*.fastq
+multiqc --outdir $MULTIQC_DIR --filename "multiqc_trimmed.html" $FASTQC_DIR $LOG_DIR/*_trimmomatic.log
+```
+
+Almost no difference in the technical quality, right?
+As I said before, we are working with high quality data, and thus it is unlikely to see any improvement.
+
+# HTML rendering
+
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(rmarkdown)
+library(knitr)
+library(glue)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
+render("01_quality_control.Rmd", output_file = "01_quality_control.html")
+```
