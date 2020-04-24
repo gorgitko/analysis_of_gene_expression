@@ -1,8 +1,14 @@
 .div-collapse-info {
-    border: 1px dashed black;
-    padding: 5px;
-    text-align: justify;
-    margin-top: 5px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  padding-top: 0.5em;
+  line-height: 1.42857143;
+  word-break: break-all;
+  word-wrap: break-word;
+  color: #333333;
+  margin-bottom: 1em;
+  padding-right: 1em;
+  word-break: break-word;
 }
 
 p {
