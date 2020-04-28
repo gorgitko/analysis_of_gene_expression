@@ -86,7 +86,7 @@ The second step is an alignment of reads to reference genome or transcriptome.
 This tells us from which genes (or more precisely, from which part of genome) our reads are coming from.
 Then we use the information about the alignment to do a quantification, that is, we calculate how many reads are aligned to genes and use
 this information to obtain a transcript abundance.
-Finally, we use the transcript abundance for differential expression, that is, a relative change in the trascript abundance
+Finally, we use the transcript abundance for differential expression, that is, a relative change in the transcript abundance
 (i.e. gene expression) between experimental conditions.
 Results from the differential expression can be used for higher-level analysis - for example a functional profiling, in which
 we are looking at changes at the level of whole gene sets (e.g. pathways, cellular components, diseases, etc.).
@@ -112,19 +112,20 @@ This experiment is also used in a great tutorial
 [RNA-Seq workflow: gene-level exploratory analysis and differential expression](https://f1000research.com/articles/4-1070/v2)
 of which this exercise is largely based on.
 
-Because RNA-seq is much more computationally demanding than microarrays,
-we will be working only with a subset of data and use only one chromosome (20) to align/map the reads.
-Genome, transcriptome, annotation and sample files are already downloaded, but we will show how to get them.
-
 Usually, databases such as Gene Expression Omnibus or ArrayExpress will provide you count matrices,
 which can be directly imported to R.
 You can see [here](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778) that for this experiment
 FPKM matrix is available.
-Raw reads in FASTQ format are usually stored in [Sequence Read Archive](https://www.ncbi.nlm.nih.gov/sra).
+Raw reads in FASTQ format are usually stored in [Sequence Read Archive](https://www.ncbi.nlm.nih.gov/sra)
 ([here](https://www.ncbi.nlm.nih.gov/Traces/study/?acc=PRJNA229998&o=acc_s%3Aa) for this experiment).
-On the experiment page in GEO, you can find the link to SRA on the bottom of page ("SRA Run Selector").
+On the experiment page in [GEO](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778),
+you can find the link to SRA on the bottom of page ("SRA Run Selector").
 
-However, for you to know how to deal with raw data, we will try the RNA-seq workflow parts starting with raw reads
+Because RNA-seq is much more computationally demanding than microarrays,
+we will be working only with a subset of data and use only one chromosome (20) to align/map the reads.
+Genome, transcriptome, annotation and sample files are already downloaded, but we will show how to get them.
+
+For you to know how to deal with raw data, we will try the RNA-seq workflow parts starting with raw reads
 in FASTQ format and ending with count matrix (first two parts in the workflow above).
 For that purpose we will use only four samples (two untreated and two dexamethasone treated)
 and subset each of them to 1 250 000 reads.
@@ -263,7 +264,7 @@ done
 
 # Technical quality control - raw reads
 
-Now we will look at a technical quality of out RNA-seq experiment.
+Now we will look at a technical quality of our RNA-seq experiment.
 [`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) is probably most used for this purpose.
 On the website you can look at example reports with [good](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/good_sequence_short_fastqc.html), [bad](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/bad_sequence_fastqc.html), and other types of data.
 Very helpful is `FastQC` [documentation](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/) explaining output from each step.
@@ -311,7 +312,7 @@ fastqc -t 2 -a $ADAPTERS_TSV_FILE -o $FASTQC_DIR $EXPERIMENT_DATA_DIR/*_subset.f
 </div>
 
 `FastQC` has created a report for each of input FASTQ files.
-You can inspect them in `fastqc` directory.
+You can inspect them in the `fastqc` directory.
 
 But better will be to aggregate these reports with `MultiQC`:
 
@@ -337,10 +338,13 @@ multiqc --outdir $MULTIQC_DIR --filename "multiqc_raw.html" $FASTQC_DIR
 
 </div>
 
+Now inspect the report `multiqc_raw.html` in `multiqc` directory.
+Overall, data has very high quality.
+
 # Trimming the reads
 
 Usually the first step of sequencing data preprocessing is trimming.
-It removes adapter (technical) part of reads and filter/trim reads based on their PHRED quality score.
+It removes adapter (technical) part of reads and filter/trim reads based on their [PHRED](https://en.wikipedia.org/wiki/Phred_quality_score) quality score.
 
 However, trimming is not always needed.
 [Here](https://link.springer.com/article/10.1186/s12859-016-0956-2) (see Conclusions) and [here](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3871669/)
@@ -368,7 +372,7 @@ Short explanation of parameters:
 - SLIDINGWINDOW:window size:required quality
   - Perform a sliding window trimming, cutting once the average quality within the window falls below a threshold.
 - MINLEN:length
-  - Drop the read if it is below a specified length
+  - Drop the read if it is below a specified length.
 
 To keep the pairing of reads, `Trimmomatic` will drop an entire read pair if one of the reads doesn't pass filtering.
 The "good" read from such pair will be saved in a separate file (see `Trimmomatic` parameters below).
