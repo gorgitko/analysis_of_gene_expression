@@ -194,50 +194,22 @@ and so I have utilized `conda` package manager (see E01-intro) and installed the
 ```{bash}
 # Create a new virtual environment called 'sratools'.
 conda create -n sratools
+# Install sratools from bioconda channel to sratools venv.
+conda install -n sratools -c bioconda sra-tools
+```
+
+There is a [bug](https://github.com/conda/conda/issues/9392) in `conda` causing path to activated venv not to be prepended, but appended to `$PATH`
+environment variable.
+So if you activate `sratools` venv now, the path to the old version of `fasterq-dump` will still be found first.
+The current workaround is first to deactivate the current venv (`base` in this case) and then activate our new venv:
+
+```{bash}
+conda deactivate
 # Switch to the new venv.
 conda activate sratools
-# Install sratools from bioconda channel.
-conda install -c bioconda sra-tools
 ```
 
-In `$PATH` environment variable, path to the old version of `fasterq-dump` is preceding the path to the new venv `sratools`,
-and so when you run `fasterq-dump`, the old version is still executed:
-
-```{bash}
-which fasterq-dump
-```
-
-```
-/opt/bio-class/sratoolkit.2.9.6-ubuntu64/bin/fasterq-dump
-```
-
-```{bash}
-fasterq-dump --version
-```
-
-```
-fasterq-dump : 2.9.6
-```
-
-```{bash}
-echo $PATH
-```
-
-```
-...:/opt/bio-class/sratoolkit.2.9.6-ubuntu64/bin:...:/opt/bio-class/miniconda/envs/sratools/bin
-```
-
-Let's move on with the most trivial solution and just replace `fasterq-dump` with the full path to the new version:
-
-```{bash}
-/opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump --version
-```
-
-```
-"/opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump" version 2.10.3
-```
-
-We are ready to use the new version of `fasterq-dump`.
+Now we are ready to use the new version of `fasterq-dump`.
 We will loop through sample IDs and for each sample obtain two files ending with `_1.fastq` and `_2.fastq`
 (because this experiment uses paired-end sequencing).
 To further reduce computing, we will take only 1 250 000 reads (one read = 4 lines in FASTQ file) from each downloaded FASTQ file.
