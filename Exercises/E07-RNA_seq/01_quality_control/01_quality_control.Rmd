@@ -218,7 +218,7 @@ To further reduce computing, we will take only 1 250 000 reads (one read = 4 lin
 for sample_id in ${SAMPLE_NAMES[@]}; do
   echo "Processing sample $sample_id ..."
 
-  /opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump \
+  fasterq-dump \
     --outdir $EXPERIMENT_DATA_DIR \
     --temp $TMP_DIR \
     --skip-technical \
@@ -233,6 +233,42 @@ for sample_id in ${SAMPLE_NAMES[@]}; do
   cat $EXPERIMENT_DATA_DIR/${sample_id}_2.fastq | head -n 5000000 > $EXPERIMENT_DATA_DIR/${sample_id}_2_subset.fastq
 done
 ```
+
+Let's inspect the first read pair of one of the downloaded samples:
+
+```{bash}
+cat ../_data/experiment/SRR1039508_1.fastq | head -n 4
+```
+
+```
+@SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+CATTGCTGATACCAANNNNNNNNGCATTCCTCAAGGTCTTCCTCCTTCCCTTACGGAATTACA
++SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+HJJJJJJJJJJJJJJ########00?GHIJJJJJJJIJJJJJJJJJJJJJJJJJHHHFFFFFD
+```
+
+```{bash}
+cat ../_data/experiment/SRR1039508_2.fastq | head -n 4
+```
+
+```
+@SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+CAGATGAGGCGTGTTGGCCAGAGAGCCATTGTCAACAGCAGAGATGNNNNNNNNNNNNAATCC
++SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+HJJJJJJJJJJHIIIJJJJJJJJJJJJJJJJJJJJJJJHIJIJHII#################
+```
+
+You can see that each read in FASTQ format occupies four rows:
+
+1. Header: contains read ID, technical data from sequencer and read length.
+2. Read bases.
+3. Header again.
+4. [Base quality](https://en.wikipedia.org/wiki/Phred_quality_score) encoded as ASCII characters.
+   There are different [encoding tables](https://en.wikipedia.org/wiki/FASTQ_format#Encoding), but
+   newer Illumina sequencers (1.8+) are using encoding called Phred+33.
+
+Read pairs (forward and reverse reads) are synchronised by their positions in the corresponding files -
+you can see that read IDs are same in the files above.
 
 # Technical quality control - raw reads
 

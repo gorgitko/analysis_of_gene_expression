@@ -2968,7 +2968,7 @@ conda activate sratools</code></pre>
 <pre class="bash"><code>for sample_id in ${SAMPLE_NAMES[@]}; do
   echo &quot;Processing sample $sample_id ...&quot;
 
-  /opt/bio-class/miniconda/envs/sratools/bin/fasterq-dump \
+  fasterq-dump \
     --outdir $EXPERIMENT_DATA_DIR \
     --temp $TMP_DIR \
     --skip-technical \
@@ -2982,6 +2982,25 @@ conda activate sratools</code></pre>
   cat $EXPERIMENT_DATA_DIR/${sample_id}_1.fastq | head -n 5000000 &gt; $EXPERIMENT_DATA_DIR/${sample_id}_1_subset.fastq
   cat $EXPERIMENT_DATA_DIR/${sample_id}_2.fastq | head -n 5000000 &gt; $EXPERIMENT_DATA_DIR/${sample_id}_2_subset.fastq
 done</code></pre>
+<p>Let’s inspect the first read pair of one of the downloaded samples:</p>
+<pre class="bash"><code>cat ../_data/experiment/SRR1039508_1.fastq | head -n 4</code></pre>
+<pre><code>@SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+CATTGCTGATACCAANNNNNNNNGCATTCCTCAAGGTCTTCCTCCTTCCCTTACGGAATTACA
++SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+HJJJJJJJJJJJJJJ########00?GHIJJJJJJJIJJJJJJJJJJJJJJJJJHHHFFFFFD</code></pre>
+<pre class="bash"><code>cat ../_data/experiment/SRR1039508_2.fastq | head -n 4</code></pre>
+<pre><code>@SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+CAGATGAGGCGTGTTGGCCAGAGAGCCATTGTCAACAGCAGAGATGNNNNNNNNNNNNAATCC
++SRR1039508.1 HWI-ST177:290:C0TECACXX:1:1101:1225:2130 length=63
+HJJJJJJJJJJHIIIJJJJJJJJJJJJJJJJJJJJJJJHIJIJHII#################</code></pre>
+<p>You can see that each read in FASTQ format occupies four rows:</p>
+<ol style="list-style-type: decimal">
+<li>Header: contains read ID, technical data from sequencer and read length.</li>
+<li>Read bases.</li>
+<li>Header again.</li>
+<li><a href="https://en.wikipedia.org/wiki/Phred_quality_score">Base quality</a> encoded as ASCII characters. There are different <a href="https://en.wikipedia.org/wiki/FASTQ_format#Encoding">encoding tables</a>, but newer Illumina sequencers (1.8+) are using encoding called Phred+33.</li>
+</ol>
+<p>Read pairs (forward and reverse reads) are synchronised by their positions in the corresponding files - you can see that read IDs are same in the files above.</p>
 </div>
 <div id="technical-quality-control---raw-reads" class="section level1">
 <h1>Technical quality control - raw reads</h1>
