@@ -92,6 +92,8 @@ Results from the differential expression can be used for higher-level analysis -
 we are looking at changes at the level of whole gene sets (e.g. pathways, cellular components, diseases, etc.).
 [Source](https://www.1010genome.com/rna-seq/)](images/rnaseq_data_analysis_pipeline.png)
 
+You may find useful [this](https://github.com/crazyhottommy/RNA-seq-analysis) awesome list of RNA-seq related tutorials and readings.
+
 ***
 
 In this part of RNA-seq exercises we will do the technical quality control of an RNA-seq experiment.
