@@ -1,0 +1,756 @@
+---
+title: "E07 - RNA-seq / 03 - exploratory analysis (Analysis of Gene Expression 2020 @ VSCHT)"
+author: "Jiri Novotny"
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    # code_folding: "show"
+    df_print: "paged"
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 4
+    number_sections: false
+    theme: "united"
+    self_contained: true
+    # highlight: "tango"
+    css: "../../stylesheet.css"
+---
+
+---
+date: '`r glue("Document generated: {Sys.Date()}")`'
+---
+
+```{r, eval = TRUE, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
+```{r, eval = TRUE, echo = FALSE}
+HIGHLIGHT_TYPE <- "highlightjs"
+```
+
+```{r, eval = TRUE, child = "../../tooltip_child.Rmd"}
+```
+
+```{js, echo = FALSE, eval = TRUE}
+$(document).ready(function () {
+  var regex = new RegExp("^NOTE:\\s");
+  var p_note = $("p").filter(function () {
+      return regex.test($(this).text()); 
+  });
+  
+  p_note.addClass("bg-success");
+});
+```
+
+***
+
+Copy, please, these files and directories to your personal directory:
+
+```{bash, eval = FALSE}
+cp -r /data/shared/AGE2020/Exercises/E07-RNA_seq/03_exploratory_analysis ~/AGE2020/Exercises/E07-RNA_seq
+```
+
+And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E07-RNA_seq/03_exploratory_analysis")`
+
+***
+
+# Introduction
+
+In the previous tutorial we learned how to go from raw RNA-seq reads to count matrix imported to R.
+We were using a subset of reads from the [airway experiment](https://www.ncbi.nlm.nih.gov/pubmed/24926665).
+However, a full version of this experiment is available in the
+[`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html) package
+(as the `SummarizedExperiment` object). We will further work with this object.
+
+# Data preparation
+
+Some vector/matrix operations can be speed-up by parallelization.
+Package [`BiocParallel`](http://bioconductor.org/packages/release/bioc/html/BiocParallel.html)
+offers parallelized versions of functions from the `apply` family.
+For example, parallelized version of `lapply()` is `bplapply()`.
+Many functions in `DESeq2` can be run parallelized.
+
+We create a `BPPARAM` variable containing information about parallelization parameters (2 threads).
+We will reuse this object later.
+If we call `register()` with our `BPPARAM`, some packages (e.g. `DESeq2`), will then run parallelized automatically, using our `BPPARAM`.
+
+```{r}
+library(BiocParallel)
+
+BPPARAM <- MulticoreParam(workers = 2)
+register(BPPARAM)
+```
+
+Now let's load the `SummarizedExperiment` object of the airway data:
+
+```{r, message = FALSE}
+source("../../age_library.R")
+library(magrittr)
+library(airway)
+data("airway")
+se <- airway
+se
+colData(se)
+```
+
+So far we have been working with four samples simply divided to `untrt` and `trt` groups (`trt` was dexamethasone).
+Now there is an additional division of samples by cell line (`cell` column).
+
+You can see that the `se` object is an instance of class `RangedSummarizedExperiment`.
+In this object there is an additional list (`GRangesList`) holding genomic coordinates (`GRanges`) of rows (features - genes) of the count matrix (assays).
+`GRangesList` can be accessed by `rowRanges()` function:
+
+```{r}
+rowRanges(se)
+```
+
+You can see that `GRangesList` has a length of 64102 (= number of rows in `se`) and its keys are ENSEMBL IDs.
+
+We don't go deeper now, for more information see `?RangedSummarizedExperiment`.
+I would just note that you can use `subset()` function to filter features based on `GRanges` columns (e.g. `start`, `end`),
+and that could be handy.
+
+***
+
+Let's go back to our experimental data.
+We want to be sure that `untrt` is the reference level for the `dex` variable:
+
+```{r}
+se$dex <- relevel(se$dex, "untrt")
+se$dex
+```
+
+From `se` object we can immediately create a `DESeqDataSet` object:
+
+```{r}
+library(DESeq2)
+dds <- DESeqDataSet(se, design = ~ cell + dex)
+```
+
+Let's annotate genes by using the code from previous tutorial.
+Note that a custom function for this repeating code would be neat `r emo::ji("slightly_smiling_face")`
+
+```{r}
+library(org.Hs.eg.db)
+ann <- AnnotationDbi::select(org.Hs.eg.db, keys = rownames(dds), keytype = "ENSEMBL", columns = c("SYMBOL", "GENENAME"))
+ann <- ann[!duplicated(ann$ENSEMBL), ]
+rownames(ann) <- ann$ENSEMBL
+ann <- ann[rownames(dds), ]
+stopifnot(all(rownames(ann) == rownames(dds)))
+rowData(dds) <- cbind(rowData(dds), ann)
+```
+
+In RNA-seq, count matrices are usually quite sparse, i.e. some genes have zero counts
+in almost all samples. We can quickly remove these genes (rows) and consequently
+speed-up an analysis and reduce the size of the object.
+We remove all rows having zero or one count across the samples:
+
+```{r}
+nrow(dds)
+dds <- dds[rowSums(counts(dds)) > 1, ]
+nrow(dds)
+```
+
+BAM! More than half of the rows disappeared.
+
+We can now prepare the `dds` object for the next steps.
+`DESeq()` function will do several things, shortly:
+
+- The estimation of size factors, controlling for differences in the counts due varying sequencing depth of the samples.
+  This is further explained in a [section below](#deseq2-normalized_counts:_median_of_ratios_method).
+- Fitting a final generalized linear model, which gives estimates of the log-fold changes.
+
+```{r}
+dds <- DESeq(dds, parallel = TRUE)
+```
+
+***
+
+# Count transformations
+
+## Count normalization
+
+*Some parts of the following text and images are taken from
+[here](https://github.com/hbctraining/DGE_workshop/blob/master/lessons/02_DGE_count_normalization.md).*
+
+The counts of mapped reads for each gene is proportional to the expression of RNA ("interesting")
+in addition to many other factors ("uninteresting"). Normalization is the process of scaling raw count
+values to account for the "uninteresting" factors.
+In this way the expression levels are more comparable between and/or within samples.
+
+While normalization is essential for differential expression analyses, it is also necessary for exploratory data analysis,
+visualization of data, and whenever you are exploring or comparing counts between or within samples.
+**However, do not use normalized counts for differential expression testing.
+Packages for DE testing (such as `DESeq2`) expects raw counts and apply custom algorithms for normalization.**
+
+### Normalization factors
+
+The main factors often considered during normalization are:
+
+#### Sequencing depth
+
+![Accounting for sequencing depth is necessary for comparison of gene expression **between samples**.
+In the example below, each gene appears to have doubled in expression in *Sample A* relative to *Sample B*,
+however this is a consequence of *Sample A* having double the sequencing depth.
+**NOTE:** Each pink and green rectangle represents a read aligned to a gene.
+Reads connected by dashed lines represent reads spanning an intron.](_rmd_images/normalization_methods_depth.png)
+
+#### Gene length
+ 
+![Accounting for gene length is necessary for comparing expression **between different
+genes within the same sample**. In the example, *Gene X* and *Gene Y* have similar levels of expression,
+but the number of reads mapped to *Gene X* would be many more than the number mapped to *Gene Y* because *Gene X* is longer.](_rmd_images/normalization_methods_length.png){height=500px}
+ 
+#### RNA composition
+
+![A few highly differentially expressed genes between samples, differences in the number of
+genes expressed between samples, or presence of contamination can skew some types of normalization methods.
+Accounting for RNA composition is recommended for accurate comparison of expression between samples,
+and is particularly important when performing differential expression analyses
+([source](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-10-r106)).
+In the example, if we were to divide each sample by the total number of counts to normalize, the counts would be
+greatly skewed by the DE gene, which takes up most of the counts for *Sample A*, but not *Sample B*.
+Most other genes for *Sample A* would be divided by the larger number of total counts and appear to be less
+expressed than those same genes in *Sample B*.](_rmd_images/normalization_methods_composition.png){height=500px}
+
+### Common normalization methods
+
+Several common normalization methods exist to account for these differences:
+
+| Normalization method | Description | Accounted factors | Recommendations for use |
+| ---- | ---- | ---- | ---- |
+| **CPM/FPM** (counts/fragments per million) | read counts/fragments scaled by total number of reads/fragments | sequencing depth | gene count comparisons between replicates of the same sample group; **NOT for within sample comparisons or DE analysis** |
+| **TPM** (transcripts per kilobase million) | counts per length of transcript (kb) per million reads mapped | sequencing depth and gene length | gene count comparisons within a sample or between samples of the same sample group; **NOT for DE analysis** |
+| **RPKM/FPKM** (reads/fragments per kilobase of exon per million reads/fragments mapped) | similar to TPM, but **the total number of RPKM/FPKM normalized counts for each sample will be different** | sequencing depth and gene length | gene count comparisons between genes within a sample; **NOT for between sample comparisons or DE analysis** |
+| DESeq2's **median of ratios** | counts divided by sample-specific size factors determined by median ratio of gene counts relative to geometric mean per gene | sequencing depth and RNA composition | gene count comparisons between samples and for **DE analysis**; **NOT for within sample comparisons** |
+
+### Between sample comparison of the same gene
+
+For between sample comparison, we have to estimate library size, i.e. sequencing depth.
+
+#### Counts/fragments per million (CPM/FPM)
+
+Counts/fragments per million (CPM/FPM) mapped reads/fragments are counts ($C_i$) scaled by the number of reads/fragments you sequenced ($N$) times one million.
+This unit is related to the FPKM without length normalization and a factor of $10^3$:
+
+$$CPM_i = \frac{C_i}{\frac{N}{10^6}} = \frac{C_i}{N} \cdot 10^6$$
+
+This is the most simple normalization accounting only for sequencing depth.
+It is usable only for gene count comparisons between replicates of the same sample group
+where significant changes in gene expression are not expected.
+
+#### DESeq2-normalized counts: Median of ratios method
+
+Since tools for differential expression analysis are comparing the counts between sample groups for the same gene,
+gene length does not need to be accounted for by the tool.
+However, **sequencing depth** and **RNA composition** do need to be taken into account.
+
+To normalize for sequencing depth and RNA composition, `DESeq2` uses the median of ratios method.
+On the user-end there is only one step, but on the back-end there are multiple steps involved, as described below.
+
+NOTE: The steps below describe in detail some of the steps performed by DESeq2 when you run a single function to get DE genes.
+Basically, for a typical RNA-seq analysis, **you would not run these steps individually**.
+
+**Step 1: create a pseudo-reference sample (row-wise geometric mean)**
+
+For each gene, a pseudo-reference sample is created that is equal to the geometric mean across all samples.
+
+| gene | sampleA | sampleB | pseudo-reference sample  |
+| ----- |:-----:|:-----:|:-----:|
+| EF2A | 1489 | 906 | sqrt(1489 * 906) = **1161.5** |
+| ABCD1 | 22 | 13 | sqrt(22 * 13) = **17.7** |
+| ... | ... | ... | ... |
+
+**Step 2: calculates ratio of each sample to the reference**
+
+For every gene in a sample, the ratios (sample/pseudo-reference) are calculated (as shown below).
+This is performed for each sample in the dataset. **Since the majority of genes are not differentially expressed, 
+the majority of genes in each sample should have similar ratios within the sample.**
+
+| gene | sampleA | sampleB | pseudo-reference sample  | ratio of sampleA/ref | ratio of sampleB/ref |
+| ----- |:-----:|:-----:|:-----:| :-----: | :-----: |
+| EF2A | 1489 | 906 | 1161.5 | 1489/1161.5 = **1.28** | 906/1161.5 = **0.78** |
+| ABCD1 | 22 | 13 | 16.9 | 22/16.9 = **1.30** | 13/16.9 = **0.77** |
+| MEFV | 793 | 410 | 570.2 | 793/570.2 = **1.39** | 410/570.2 = **0.72**
+| BAG1 | 76 | 42 | 56.5 | 76/56.5 = **1.35** | 42/56.5 = **0.74**
+| MOV10 | 521 | 1196 | 883.7 | 521/883.7 = **0.590** | 1196/883.7 = **1.35** |
+| ... | ... | ... | ... |
+
+**Step 3: calculate the normalization factor for each sample (size factor)**
+
+The median value (column-wise for the above table) of all ratios for a given sample is taken as the normalization factor
+(size factor) for that sample, as calculated below.
+Notice that the differentially expressed genes should not affect the median value:
+
+`normalization_factor_sampleA <- median(c(1.28, 1.3, 1.39, 1.35, 0.59))`
+
+`normalization_factor_sampleB <- median(c(0.78, 0.77, 0.72, 0.74, 1.35))`
+
+The median of ratios method makes the assumption that not ALL genes are differentially expressed; therefore,
+the normalization factors should account for sequencing depth and RNA composition of the sample
+(large outlier genes will not represent the median ratio values).
+**This method is robust to imbalance in up-/down-regulation and large numbers of differentially expressed genes.**
+
+NOTE: Usually these size factors are around 1, if you see large variations between samples it is important to take note
+since it might indicate the presence of extreme outliers.
+
+**Step 4: calculate the normalized count values using the normalization factor**
+
+This is performed by dividing each raw count value in a given sample by that sample's normalization factor to generate
+normalized count values. This is performed for all count values (every gene in every sample). For example, if the median
+ratio for SampleA was 1.3 and the median ratio for SampleB was 0.77, you could calculate normalized counts as follows:
+
+SampleA median ratio = 1.3
+
+SampleB median ratio = 0.77
+
+**Raw Counts**
+
+| gene | sampleA | sampleB |  
+| ----- |:-----:|:-----:|
+| EF2A | 1489 | 906 | 
+| ABCD1 | 22 | 13 | 
+| ... | ... | ... | 
+
+**Normalized counts**
+
+| gene | sampleA | sampleB |
+| ----- |:-----:|:-----:|
+| EF2A | 1489 / 1.3 = **1145.39** | 906 / 0.77 = **1176.62** | 
+| ABCD1 | 22 / 1.3 = **16.92** | 13 / 0.77 = **16.88** | 
+| ... | ... | ... | 
+
+NOTE: Please note that normalized count values are not whole numbers.
+
+Normalized counts can be retrieved by:
+
+```{r}
+counts(dds, normalized = TRUE) %>% head()
+```
+
+### Within/between sample comparison
+
+For between gene comparison, we have to estimate both library size and "gene size", i.e. some measure of transcript length.
+The simplest method is to take the median of transcript lengths, which is calculated as the sum (in base pairs) of each transcript's exons.
+More sophisticated methods/tools such as `Salmon`, `kallisto` or `Sailfish` are using "effective length", which
+takes into account the fact that not every transcript in the population can produce a fragment of every length starting at every position.
+
+#### RPKM/FPKM (not recommended)
+
+RPKM/FPKM normalize for both sequencing depth and gene length:
+
+1. Count up the total mapped reads/fragments in a sample ($N$) and divide that number by 1 000 000 – this is our "per million" scaling factor.
+2. Divide the read/fragment counts ($C_i$) by the "per million" scaling factor.
+   This normalizes for sequencing depth, giving you reads/fragments per million (RPM/FPM).
+3. Divide the RPM/FPM values by the length of the gene, in kilobases. This gives you RPKM/FPKM.
+
+$$FPKM_i = \frac{C_i}{\frac{N}{10^6} \cdot \frac{L_i}{10^3}} = \frac{C_i}{L_i\cdot N} \cdot 10^9$$
+
+In the next section you will see why RPKM/FPKM is not suitable for between sample comparison.
+As you may have already noticed, it's because of the $N$ varying between samples.
+
+#### TPM
+
+*Taken from this great [blog post](https://www.rna-seqblog.com/rpkm-fpkm-and-tpm-clearly-explained/):*
+
+TPM is very similar to RPKM and FPKM. The only difference is the order of operations. Here's how you calculate TPM:
+
+1. Divide the read counts ($C_i$) by the length of each gene in kilobases ($L_i$). This gives you reads per kilobase (RPK).
+2. Count up all the RPK values in a sample and divide this number by 1 000 000. This is your "per million" scaling factor.
+3. Divide the RPK value by the "per million" scaling factor. This gives you TPM.
+
+$$TPM_i = \frac{C_i}{L_i} \cdot \frac{10^6}{\sum{\frac{C_i}{L_i}}}$$
+
+So you see, when calculating TPM, the only difference from FPKM is that you normalize for gene length first, and then normalize for sequencing depth second.
+However, the effects of this difference are quite profound.
+
+When you use TPM, the sum of all TPMs in each sample are the same ($\sum{\frac{C_i}{L_i}}$). This makes it easier to compare the proportion of reads that
+mapped to a gene in each sample. In contrast, with RPKM and FPKM, the sum of the normalized reads ($N$) in each sample may be different,
+and this makes it harder to compare samples directly.
+
+Here's an example. If the TPM for gene A in Sample 1 is 3.33 and the TPM in sample B is 3.33, then I know that the exact same proportion of total reads
+mapped to gene A in both samples. This is because the sum of the TPMs in both samples always add up to the same number
+(so the denominator required to calculate the proportions is the same, regardless of what sample you are looking at.)
+
+With RPKM or FPKM, the sum of normalized reads in each sample can be different. Thus, if the RPKM for gene A in Sample 1 is 3.33 and the RPKM in Sample 2 is 3.33,
+I would not know if the same proportion of reads in Sample 1 mapped to gene A as in Sample 2.
+This is because the denominator required to calculate the proportion could be different for the two samples.
+
+While TPM and RPKM/FPKM normalization methods both account for sequencing depth and gene length,
+RPKM/FPKM are not recommended. **The reason is that the normalized count values output by the RPKM/FPKM method are not comparable between samples.** 
+
+Using RPKM/FPKM normalization, the total number of RPKM/FPKM normalized counts for each sample will be different.
+Therefore, you cannot compare the normalized counts for each gene equally between samples.
+
+Deeper explanation of FPKM and TPM problems can be found [here](https://haroldpimentel.wordpress.com/2014/05/08/what-the-fpkm-a-review-rna-seq-expression-units/).
+
+##### Calculating TPM in R
+
+To calculate TPM, we need to know gene lengths.
+Probably the easiest way is to calculate a median of transcript lengths of each gene.
+We can use a package [`GenomicFeatures`](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html),
+which includes a special class `TxDb` holding information about genomic ranges.
+This object can be created from GTF or GFF file.
+
+```{r, message = FALSE}
+library(GenomicFeatures)
+
+txdb <- makeTxDbFromGFF("../_data/genome/Homo_sapiens.GRCh37.75.gtf", format = "gtf")
+
+# For each gene we get a GRanges object of its transcripts.
+# This object holds genomic range of each transcript.
+txs_by_gene <- transcriptsBy(txdb, "gene")
+# We only want genes which are both in our DESeqDataSet and txs_by_gene.
+common_genes <- intersect(rownames(dds), names(txs_by_gene))
+dds <- dds[common_genes, ]
+txs_by_gene <- txs_by_gene[common_genes]
+
+head(txs_by_gene)
+
+# We are only interested in transcript names.
+# For each gene we get a list of its transcript names.
+txs_by_gene <- lapply(txs_by_gene, function(x) {
+    mcols(x, use.names = TRUE)[, "tx_name"]
+})
+
+# We can use the parallelized version of lapply(), but it sometimes causes errors.
+# txs_by_gene <- bplapply(txs_by_gene, function(x) {
+#   mcols(x, use.names = TRUE)[, "tx_name"]
+# }, BPPARAM = BPPARAM)
+
+head(txs_by_gene)
+
+# For each transcript we get a GRanges object of its exons.
+exons_by_tx <- exonsBy(x = txdb, by = "tx", use.names = TRUE)
+
+head(exons_by_tx)
+
+# For each transcript we get a sum of lengths of its exons.
+tx_lengths <- sum(width(exons_by_tx))
+
+head(tx_lengths)
+
+# For each gene we get a median length of its transcripts.
+gene_lengths <- lapply(txs_by_gene, function(x) median(tx_lengths[x])) %>% unlist()
+# gene_lengths <- bplapply(txs_by_gene, function(x) median(tx_lengths[x]), BPPARAM = BPPARAM) %>% unlist()
+
+# We sort gene lengths by the order of dds rows.
+gene_lengths <- gene_lengths[rownames(dds)]
+
+head(gene_lengths)
+
+stopifnot(all(rownames(dds) == names(gene_lengths)))
+```
+
+Now we can use the `gene_lengths` to calculate the TPM values.
+Following code is just a matrix version of the TPM formula:
+
+```{r}
+# First we calculate Ci/Li from the TPM formula.
+x <- counts(dds) / gene_lengths
+tpm <- t(t(x) * 1e6 / colSums(x))
+head(tpm)
+```
+
+Because the TPM matrix has the same dimension, rownames and colnames as the count matrix in `dds`, we can add it to assays:
+
+```{r}
+assay(dds, "tpm") <- tpm
+```
+
+## Removing the mean-variance trend - log2/vst/rlog transformation
+
+Taken from [here](https://f1000research.com/articles/4-1070/v2), shortened:
+
+Many common statistical methods for exploratory analysis of multidimensional data, for example clustering and
+principal components analysis (PCA), work best for data that generally has the same range of variance at
+different ranges of the mean values. For RNA-seq raw counts, however, the variance grows with the mean.
+For example, if one performs PCA directly on a matrix of size-factor-normalized read counts, the result typically
+depends only on the few most strongly expressed genes because they show the largest absolute differences between samples.
+A simple and often used strategy to avoid this is to take the logarithm of the normalized count values plus a small pseudocount;
+however, now the genes with the very lowest counts will tend to dominate the results because, due to the strong Poisson noise
+inherent to small count values, and the fact that the logarithm amplifies differences for the smallest values,
+these low count genes will show the strongest relative differences between samples.
+
+As a solution, `DESeq2` offers transformations for count data that stabilize the variance across the mean.
+One such transformation is the regularized-logarithm transformation or rlog2.
+For genes with high counts, the rlog transformation will give similar result to the ordinary log2 transformation of normalized counts.
+For genes with lower counts, however, the values are shrunken towards the genes' averages across all samples.
+The rlog-transformed data can be used directly for computing distances between samples and making PCA plots.
+
+Another transformation that similarly improves distance calculation across samples,
+the variance stabilizing transformation implemented in the `vst()` function, is discussed alongside the rlog in the
+[`DESeq2` vignette](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+
+In `rlog()` function we specify `blind = FALSE`, which means that differences across donors and treatment
+should not add to the variance-mean profile of the experiment.
+
+```{r}
+rld <- rlog(dds, blind = FALSE)
+```
+
+`rld` is object of class `DESeqTransform`. Counts are retrieved by `assay()` function.
+Later we will use the `rld` object for exploratory analysis, but not for differential expression testing.
+That's why we have created an another object than `dds`.
+
+We can now look what effect different transformations have.
+In the `vsn` package there is an useful function `meanSdPlot()` which
+plots mean and standard deviation of each gene across the samples.
+
+```{r}
+library(ggplot2)
+
+vsn::meanSdPlot(counts(dds, normalized = TRUE) + 1, plot = FALSE, rank = FALSE)$gg + ggtitle("Normalized counts")
+vsn::meanSdPlot((counts(dds, normalized = TRUE) + 1) %>% log2(), plot = FALSE, rank = FALSE)$gg + ggtitle("log2(normalized counts + 1)")
+vsn::meanSdPlot(assay(rld), plot = FALSE, rank = FALSE)$gg + ggtitle("rlog-normalized counts")
+```
+
+You can see that in normalized, but untransformed counts, genes with the highest mean
+also have the highest standard deviation. This is the mean-variance trend in RNA-seq data.
+
+Log2 transformation makes it better, but now counts with the smallest values dominate in
+standard deviation, because log2 amplified their values the most.
+
+Rlog transformation seems to be the best, as it correctly shrunk genes with low counts to average across all samples.
+
+We can also look at a sample-to-sample count plot:
+
+```{r}
+par(mfrow = c(1, 3))
+plot(counts(dds, normalized = TRUE)[, 1:2] + 1, pch = 16, cex = 0.3)
+plot((counts(dds, normalized = TRUE)[, 1:2] + 1) %>% log2(), pch = 16, cex = 0.3)
+plot(assay(rld)[, 1:2], pch = 16, cex = 0.3)
+```
+
+Again, the mean-variance trend is visible in untransformed counts.
+Log2 transformation makes it better, but many low count genes now show
+the strongest relative differences between samples.
+Rlog correctly transforms them, as they mean across all samples is
+very low and they are just a technical noise.
+
+***
+
+# Exploratory analysis
+
+Exploratory analysis will help us to assess the main characteristics of our data.
+We can check if our experiment makes sense at biological level and if it was done correctly
+at technical level. Don't forget to use the rlog-transformed data (`rld` object).
+
+## Principal Component Analysis (PCA)
+
+Principal Component Analysis (PCA) is a technique used to emphasize variation and bring out
+strong patterns in a dataset (dimensionality reduction).
+
+`DESeq2` package has a `plotPCA()` function for that.
+You can specify the parameter `intgroup` to color points by column from the sample sheet.
+
+```{r}
+plotPCA(rld, intgroup = "dex")
+plotPCA(rld, intgroup = "cell")
+```
+
+It seems that samples are correctly divided by treatment.
+There is an evident difference between `N080611` (blue) and other cell lines.
+
+Note that `plotPCA()` is returning a `ggplot2` object, which can be saved
+and further modified:
+
+```{r}
+p <- plotPCA(rld, intgroup = "dex")
+p + ggtitle("PCA plot") + theme_bw()
+```
+
+You can also only return a dataframe with principal components and add more aesthetics to the plot:
+
+```{r}
+p <- plotPCA(rld, intgroup = "dex", returnData = TRUE)
+head(p)
+p <- data.frame(p, cell = rld$cell, SampleName = rld$SampleName)
+head(p)
+ggplot(p, aes(x = PC1, y = PC2)) +
+  # We want to show points, color them by cell and shape them by dex.
+  geom_point(aes(color = cell, shape = dex), size = 5) +
+  # One unit of x is equal to one unit of y.
+  coord_fixed() +
+  ggtitle("PCA plot") +
+  # Annotate points.
+  ggrepel::geom_text_repel(aes(label = SampleName)) +
+  # Black and white theme.
+  theme_bw()
+```
+
+## Hierarchical clustering
+
+Hierarchical clustering is clustering samples by their (Euclidean) distance.
+Heatmap is used to show how samples are clustered (dendrogram) and what is their distance
+from each other (color).
+
+We will use a package `heatmaply`, which offers an interactive heatmap.
+But first we need to calculate a distance matrix of the samples.
+
+```{r, message = FALSE}
+sample_dists <- assay(rld) %>% t() %>% dist() %>% as.matrix()
+head(sample_dists)
+
+library(heatmaply)
+
+# We have to be sure that column order of the distance matrix is the same as in sample sheet.
+treatment <- colData(dds)[colnames(sample_dists), "dex"]
+treatment
+cell_line <- colData(dds)[colnames(sample_dists), "cell"]
+cell_line
+
+heatmaply(sample_dists, col_side_colors = treatment, row_side_colors = cell_line)
+```
+
+You can see that clustering of the samples has an interpretable biological meaning -
+they cluster by the treatment.
+
+Instead of the distance matrix we can also calculate a sample correlation matrix:
+
+```{r}
+sample_cor <- assay(rld) %>% cor()
+sample_cor
+
+# Order im correlation matrix could be different, so better is to get the coloring values again.
+treatment <- colData(dds)[colnames(sample_dists), "dex"]
+cell_line <- colData(dds)[colnames(sample_dists), "cell"]
+
+heatmaply(sample_cor, col_side_colors = treatment, row_side_colors = cell_line)
+```
+
+All samples show pretty high correlations and this suggests there are no outlying samples.
+Again, they cluster by treatment.
+
+**Together, these plots suggest to us that the data make biologically sense and we can safely proceed to the differential expression analysis.**
+
+# Boxplots
+
+Boxplots are a great way to graphically show differences between groups.
+Rlog-transformed data are used for this purpose.
+**However, always use a proper statistical model (in our case `DESeq2`) to test for differential expression.**
+Boxplots are great for exploring, but not objective for assessing the differences.
+
+We will use `ggboxplot()` function from the [`ggpubr`](https://rpkgs.datanovia.com/ggpubr/index.html) package.
+This package provides several useful publication-ready `ggplot` plots.
+
+However, `ggplot` is generally aimed on plotting data in long format, where
+each observation (i.e. `gene, counts, sample ID, sample group, etc.`) has its own row.
+Our data (count matrix) is in wide format: each value has only gene and sample ID assigned.
+
+We will use the package `tidyr` to convert count matrix in wide format to long format.
+
+NOTE: Long format consumes much more memory.
+
+```{r}
+count_matrix <- assay(rld)
+# First we add gene annotation from rowData.
+count_matrix <- cbind(count_matrix, rowData(rld)[, c("SYMBOL", "GENENAME")]) %>% as.data.frame()
+# tidyr::pivot_longer() function is converting wide data to the long format.
+# key = name of column in long data with column names of wide data
+# value = name of column in long data with values of wide data
+# The last arguments indicate columns in wide data which don't contain values.
+long_data <- tidyr::pivot_longer(
+  count_matrix,
+  # We want to convert ("expand") these columns to the long format.
+  -c(SYMBOL, GENENAME),
+  # We want to add observation IDs (colnames) to this column.
+  names_to = "sample_id",
+  # We want to add observation values (colnames) to this column.
+  values_to = "rlog_count"
+)
+
+# We can remove the temporary count matrix to free memory.
+rm(count_matrix)
+
+head(long_data)
+```
+
+As you can see, for each sample and gene we have its counts and annotation on separated row.
+But we are still missing the data from the sample sheet.
+To do it, we will join our long data with the sample sheet, using the `sample_id` column.
+`left_join(x, y)` function from `dplyr` package is doing that:
+
+> Return all rows from x, and all columns from x and y.
+Rows in x with no match in y will have NA values in the new columns.
+If there are multiple matches between x and y, all combinations of the matches are returned.
+
+![Visual example of joining two tables. `Table 1` and `Table 2` could be our long data and sample sheet. `id` column is similar to our `Sample_ID` column. In the resulting table on bottom, to `Table 1` there are added rows and columns of the rows whose `id` matches in `Table 2`.](_rmd_images/join_example.png)
+
+```{r}
+sample_sheet <- colData(rld) %>% as.data.frame()
+sample_sheet$sample_id <- rownames(sample_sheet)
+long_data <- dplyr::left_join(long_data, sample_sheet, by = "sample_id")
+# We will also remove rows with NA gene symbol.
+long_data <- long_data[!is.na(long_data$SYMBOL), ]
+head(long_data)
+```
+
+Now our long data are complete and we can proceed to boxplots.
+Note that we want to work with single genes, so we have to filter our long data.
+First we will plot boxplots of cell lines and treatments:
+
+```{r}
+plot_boxplot_ggplot2(
+  long_data[long_data$SYMBOL %in% c("CCND1", "CCND2", "CCND3"), ],
+  x = "dex",
+  y = "rlog_count",
+  feature_col = "SYMBOL",
+  color_by = "dex",
+  main = "Boxplot of rlog transformed counts",
+  x_lab = "Sample group",
+  y_lab = "rlog(counts)",
+  do_t_test = FALSE
+)
+
+plot_boxplot_ggplot2(
+  long_data[long_data$SYMBOL == "CCND1", ],
+  x = "cell",
+  y = "rlog_count",
+  feature_col = "SYMBOL",
+  feature = "CCND1",
+  color_by = "cell",
+  facet_by = "dex",
+  main = "Boxplot of rlog transformed counts",
+  x_lab = "Cell line",
+  y_lab = "rlog(counts)",
+  do_t_test = FALSE
+)
+```
+
+However, our data contains very few samples in each group,
+so in this case boxplots don't make much sense.
+
+***
+
+# Finishing up
+
+It's a good practice to include all warnings (`warnings()`) and errors (`traceback()`), and also information
+about your environment - R version, libraries, etc. (`sessionInfo()`) - on the end of your script.
+We also save our current variables to a single file from which we can later restore them.
+
+```{r, eval = TRUE}
+save.image("03_exploratory_analysis.RData")
+
+warnings()
+traceback()
+sessionInfo()
+```
+
+***
+
+# HTML rendering
+
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(rmarkdown)
+library(knitr)
+library(glue)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE)
+render("03_exploratory_analysis.Rmd", output_file = "03_exploratory_analysis.html")
+```
