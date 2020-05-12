@@ -1,0 +1,392 @@
+---
+title: "E07 - RNA-seq / 04 - differential expression (Analysis of Gene Expression 2020 @ VSCHT)"
+author: "Jiri Novotny"
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    # code_folding: "show"
+    df_print: "paged"
+    toc: true
+    toc_float: true
+    toc_collapsed: false
+    toc_depth: 4
+    number_sections: false
+    theme: "united"
+    self_contained: true
+    # highlight: "tango"
+    css: "../../stylesheet.css"
+---
+
+---
+date: '`r glue("Document generated: {Sys.Date()}")`'
+---
+
+```{r, eval = TRUE, include = FALSE, echo = FALSE}
+if (!require(emo))
+  devtools::install_github("hadley/emo")
+```
+
+```{r, eval = TRUE, echo = FALSE}
+HIGHLIGHT_TYPE <- "highlightjs"
+```
+
+```{r, eval = TRUE, child = "../../tooltip_child.Rmd"}
+```
+
+```{js, echo = FALSE, eval = TRUE}
+$(document).ready(function () {
+  var regex = new RegExp("^NOTE:\\s");
+  var p_note = $("p").filter(function () {
+      return regex.test($(this).text()); 
+  });
+  
+  p_note.addClass("bg-success");
+});
+```
+
+***
+
+Copy, please, these files and directories to your personal directory:
+
+```{bash, eval = FALSE}
+cp -r /data/shared/AGE2020/Exercises/E07-RNA_seq/04_differential_expression ~/AGE2020/Exercises/E07-RNA_seq
+```
+
+And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E07-RNA_seq/04_differential_expression")`
+
+You also need to install additional R packages:
+
+```{r, eval = FALSE}
+BiocManager::install(c("ashr", "EnhancedVolcano"))
+```
+
+***
+
+# Introduction
+
+In the previous tutorial we learned how to do normalization and transformation of counts and how to use
+these "new" counts for exploratory analysis.
+We used PCA and hierarchical clustering to explore if experiment was done right.
+Our finding was that everything is OK and we can safely proceed to differential expression analysis.
+
+# Data preparation
+
+We will reuse the saved environment from the previous tutorial.
+
+```{r, message = FALSE}
+library(DESeq2)
+library(BiocParallel)
+library(magrittr)
+library(glue)
+
+load("../03_exploratory_analysis/03_exploratory_analysis.RData")
+register(BPPARAM)
+```
+
+# Differential expression
+
+We have already fitted linear model used for testing differential expression.
+The design was:
+
+```{r}
+design(dds)
+```
+
+We can show the names of contrasts.
+Contrasts are used to compare gene expression between sample groups.
+
+```{r}
+resultsNames(dds)
+```
+
+You can see that `DESeq2` generated contrasts between reference levels (the first ones) vs. all other levels
+from all explanatory variables specified in the design. You can check the reference levels:
+
+```{r}
+dds$cell
+dds$dex
+```
+
+Later you will see how to obtain results for any contrast, not just for reference vs. XX.
+
+NOTE: For a perfect explanation of formulas, design matrices, contrasts, additive effects, interaction terms etc., see
+Chapter 5 - Linear Models in [PH525x series - Biomedical Data Science](http://genomicsclass.github.io/book/).
+The whole materials are awesome, and by the way one of the authors is Mike Love, the developer of `DESeq2`.
+
+## Two group comparisons
+
+We assume that effects of `cell` and `dex` are additive, i.e. they do not interact.
+That means the effect of changes in a predictor on a response is independent of the effect(s) of changes in other predictor(s).
+
+So, for example, the contrast `cell_N061011_vs_N052611` mean:
+is there a significant change in expression of cell line `N061011` in comparison with cell line `N052611`,
+regardless the treatment, which has the same effect for all cell lines?
+
+Similarly, the contrast `dex_trt_vs_untrt` mean:
+is there a significant change in expression of `trt` samples in comparison with `untrt` samples,
+regardless the cell line, which has the same effect for both treatments?
+
+`results()` function is used to extract results for a specific contrast.
+You can use the contrast name from `resultsNames(dds)` or specify a custom contrast.
+
+```{r}
+res_dex <- results(dds, name = "dex_trt_vs_untrt", parallel = TRUE)
+res_dex
+```
+
+What do all these columns mean?
+
+- **baseMean**: mean of normalized counts across all samples.
+- **log2FoldChange**: estimated LFC.
+- **lfcSE**: standard error of LFC.
+- **stat**: Wald statistic: $\frac{\text{log2FoldChange}}{\text{lfcSE}}$
+- **pvalue**: p-value.
+- **padj**: p-value adjusted for multiple comparisons. Default correction method is FDR.
+
+We can look at `res_dex` summary of differentially expressed genes (DEGs), defined by
+`padj < 0.1`:
+
+```{r}
+summary(res_dex, alpha = 0.1)
+```
+
+What does `alpha` actually mean? It sets the acceptable proportion of
+false positives among all DEGs.
+So, for example, if we consider a fraction of 10% false positives acceptable,
+we can consider all genes with an adjusted p-value below 10% = 0.1 as DEGs.
+
+## Using custom contrasts
+
+Note that result names are created from comparisons of levels of each variable to its reference level,
+e.g. `N061011` vs. `N052611`. `constrast` parameter is used to specify a custom contrast.
+It is a character vector of length three: `c("condition", "level_to_compare", "base_level")`
+
+We can, for example, compare cell lines `N061011` and `N080611`:
+
+```{r}
+res_cell <- results(dds, contrast = c("cell", "N061011", "N080611"))
+res_cell
+```
+
+## Interactions
+
+What if you want to know whether there is a difference between specific cell lines having a specific treatment?
+One possibility is to use interaction terms in design formula, but easier is to make a combined
+variable from `cell` and `dex`:
+
+```{r}
+dds$cell_dex <- glue("{dds$cell}_{dds$dex}") %>% factor()
+colData(dds)
+```
+
+Now you can use the design `~ cell_dex` and compare, for example, `N61311_trt` vs. `N61311_untrt`.
+However, in our dataset there are no replicates of these groups, so we can't use `DESeq2` to test them for differential expression:
+
+```{r, eval = FALSE}
+dds_interaction <- dds
+# We can change the design of DESeqDataSet, but it won't automatically recompute all the statistics.
+design(dds_interaction) <- ~ cell_dex
+# We have to run DESeq() function again, but it will fail due to missing replicates.
+dds_interaction <- DESeq(dds_interaction, parallel = TRUE)
+```
+
+You can see that `DESeq2` doesn't allow us to use this design, because it doesn't contain replicates, which
+are neccessary for DESeq's statistical model. So always use biological replicates in your experiments :)
+
+NOTE: The combination of factors is even recommended in
+`DESeq2` [vignette](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#interactions).
+Generally it is more interpretable.
+To see how interactions could be complicated, see example 3 in [`?results()`](https://rdrr.io/bioc/DESeq2/man/results.html).
+
+NOTE: For an in-depth explanation of interaction terms,
+see [this chapter](http://genomicsclass.github.io/book/pages/interactions_and_contrasts.html) from the PH525x course mentioned above.
+
+## Independent filtering
+
+For weakly expressed genes, we have no chance of seeing differential expression,
+because the low read counts suffer from so high Poisson noise that any biological effect is
+drowned in the uncertainties from the read counting. At first sight, there may seem to be
+little benefit in filtering out these genes. After all, the test found them to be non-significant anyway.
+However, these genes have an influence on the multiple testing adjustment, whose performance
+improves if such genes are removed.
+
+Independent filtering can be [fine-tuned](http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#independent-filtering-of-results)
+in `results()` function parameters.
+
+As a consequence, some independently filtered genes have `NA` in `padj` column:
+
+```{r}
+res_dex[is.na(res_dex$padj), ] %>% head()
+```
+
+You can see that their mean of normalized counts across the samples is close to zero.
+
+# Reporting the results
+
+So now we have the table of differential expression (`res_dex`).
+That's good, but:
+
+- We need to filter differentially expressed genes (DEGs):
+  - Genes which LFC is significant ($padj <= threshold$).
+  - Genes having $|LFC| >= threshold$.
+
+We set our filtering criteria:
+
+```{r}
+PADJ_THRESHOLD <- 0.1
+LFC_THRESHOLD <- 1
+```
+
+> This is very subjective and in some cases you may want to report statistics
+for all genes, not only DEGs.
+
+- We can generate more accurate LFC estimates using procedure called shrinkage.
+- In the results table there are only ENSEMBL IDs - extended annotation is more practical.
+- Having this table only in R is not very comfortable, so we will export it to CSV and HTML.
+- Graphical report is very informative. We can use MA and volcano plot.
+
+## Shrinking LFCs
+
+*Taken from [here](https://github.com/hbctraining/DGE_workshop/blob/master/lessons/05_DGE_DESeq2_analysis2.md):*
+
+To generate more accurate LFC estimates, `DESeq2` allows for the shrinkage of the LFC estimates
+toward zero when the information for a gene is low, which could include:
+
+- Low counts.
+- High dispersion values.
+
+LFC shrinkage uses information from all genes to generate more accurate estimates.
+Specifically, the distribution of LFC estimates for all genes is used (as a prior) to shrink the LFC estimates
+of genes with little information or high dispersion toward more likely (lower) LFC estimates.
+
+NOTE: Shrinking the LFCs will **not change** the total number of genes that are identified as
+significantly differentially expressed. The shrinkage of fold change is to help with downstream assessment of results.
+For example, if you wanted to subset your significant genes based on fold change for further evaluation, you may want
+to use shrunken values. Additionally, for functional analysis tools such as Gene Set Enrichment Analysis which require
+fold change values as input you would want to provide shrunken values.
+
+```{r}
+res_dex_shrink <- lfcShrink(dds, res = res_dex, type = "ashr", parallel = TRUE)
+```
+
+## MA plot
+
+The MA plot shows the mean of the normalized counts versus the LFCs for all genes tested.
+The genes that are significantly DE are colored to be easily identified.
+This is also a great way to illustrate the effect of the LFC shrinkage.
+
+```{r}
+plotMA(res_dex, alpha = PADJ_THRESHOLD, main = "Unshrunken results", ylim = c(-5, 5))
+plotMA(res_dex_shrink, alpha = PADJ_THRESHOLD, main = "Shrunken results", ylim = c(-5, 5))
+```
+
+In addition to the comparison described above, this plot allows us to evaluate the magnitude of fold changes
+and how they are distributed relative to mean expression.
+Generally, we would expect to see significant genes across the full range of expression levels.
+
+## Annotate the results table
+
+First we will annotate the results table by adding columns from `rowData()`:
+
+```{r}
+# Check if the results table contains the same genes as rowData.
+stopifnot(all(rownames(res_dex_shrink) == rownames(rowData(dds))))
+
+res_dex_shrink <- cbind(res_dex_shrink, rowData(dds)[, c("SYMBOL", "GENENAME")])
+# Order the results table by padj.
+res_dex_shrink <- res_dex_shrink[order(res_dex_shrink$padj), ]
+head(res_dex_shrink)
+```
+
+## Volcano plot
+
+Volcano plots are commonly used to display the results of RNA-seq or other omics experiments.
+A volcano plot is a type of scatterplot that shows statistical significance (p-value) versus magnitude of change (LFC).
+It enables quick visual identification of genes with large LFCs that are also statistically significant.
+In a volcano plot, the most upregulated genes are towards the right, the most downregulated genes are towards the left,
+and the most statistically significant genes are towards the top.
+
+We will use a package [`EnhancedVolcano`](https://bioconductor.org/packages/release/bioc/html/EnhancedVolcano.html),
+which produces [highly customizable](https://bioconductor.org/packages/release/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html)
+volcano plots in publication-ready quality.
+
+```{r, fig.height = 8, fig.width = 8}
+EnhancedVolcano::EnhancedVolcano(
+  # A dataframe.
+  toptable = res_dex_shrink,
+  # Vector of gene names.
+  lab = res_dex_shrink$SYMBOL,
+  # Which column from toptable parameter to use for x and y values.
+  x = "log2FoldChange",
+  y = "padj",
+  # We want to label only first 50 genes from toptable. We already sort toptable by padj,
+  # so we label first 50 most significant genes.
+  selectLab = res_dex_shrink[1:50, "SYMBOL"],
+  # pvalue or padj cuttof (applied on y parameter).
+  pCutoff = PADJ_THRESHOLD,
+  # LFC cutoff (applied on x parameter).
+  FCcutoff = LFC_THRESHOLD,
+  title = "Volcano plot",
+  subtitle = "dex treated vs. untreated",
+  ylab = "-log10(adjusted p-value)",
+  # To avoid overlapping gene labels, draw arrows for these.
+  drawConnectors = TRUE
+)
+```
+
+## CSV output
+
+We can output filtered DEGs to comma-separated file.
+These DEGs will match our filtering criteria `r glue("|LFC| >= {LFC_THRESHOLD}")`
+and `r glue("FDR <= {PADJ_THRESHOLD}")`.
+We also filter genes not passing the independent filtering (their `padj` is `NA`).
+
+```{r}
+deg_filter <- (!is.na(res_dex_shrink$padj)) & (res_dex_shrink$padj <= PADJ_THRESHOLD) & (abs(res_dex_shrink$log2FoldChange) >= LFC_THRESHOLD)
+res_dex_shrink_filtered <- res_dex_shrink[deg_filter, ]
+nrow(res_dex_shrink_filtered)
+
+write.csv(res_dex_shrink_filtered, file = "dex_trt_vs_untrt_DEG.csv")
+```
+
+If you will use RMarkdown to report your analysis, you can also output
+pretty HTML tables using the [`DT`](https://rstudio.github.io/DT/) library:
+
+```{r}
+DT::datatable(
+  as.data.frame(res_dex_shrink_filtered),
+  filter = "top"
+)
+```
+
+***
+
+# Finishing up
+
+It's a good practice to include all warnings (`warnings()`) and errors (`traceback()`), and also information
+about your environment - R version, libraries, etc. (`sessionInfo()`) - on the end of your script.
+We also save our current variables to a single file from which we can later restore them.
+
+```{r, eval = TRUE}
+save.image("04_differential_expression.RData")
+
+warnings()
+traceback()
+sessionInfo()
+```
+
+***
+
+# HTML rendering
+
+This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(rmarkdown)
+library(knitr)
+library(glue)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE)
+render("04_differential_expression.Rmd", output_file = "04_differential_expression.html")
+```
