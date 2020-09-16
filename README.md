@@ -53,6 +53,49 @@
 
 ## [E07](Exercises/E07-RNA_seq) - RNA-seq
 
+- This exercise is using [experimental data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778) from human airway smooth muscle cells treatment,
+and is largely based on a great tutorial
+[RNA-Seq workflow: gene-level exploratory analysis and differential expression](https://f1000research.com/articles/4-1070/v2),
+from which preprocessed R data are used.
+
 ### [01](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
 
-- Downloading from SRA (`fasterq-dump`), `FastQC`, `MultiQC`, `Trimmomatic`.
+- Downloading from SRA (`fasterq-dump`).
+- Technical quality control (`FastQC`, `MultiQC`).
+- Read trimming (`Trimmomatic`).
+
+### [02](Exercises/E07-RNA_seq/02_quantification/02_quantification.html) - quantification ([Rmd](Exercises/E07-RNA_seq/02_quantification/02_quantification.Rmd))
+
+- Downloading reference files (genome, annotation, etc.).
+- Filtering out rRNA and tRNA (`SortMeRNA`).
+- Two quantification pipelines:
+  - Aligning to genome (`GSNAP`), quality control of the alignment (`RSeQC`, `preseq`) and counting overlaps (`featureCounts`).
+  - Mapping to transcriptome (`Salmon`).
+- Importing count matrix to R (`tximport`, `DESeq2`).
+- Using `DESeqDataSet`.
+
+### [03](Exercises/E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.html) - exploratory analysis ([Rmd](Exercises/E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.Rmd))
+
+- Running `DESeq2`.
+- Gene annotation.
+- Count transformations, TPM calculation.
+- PCA, hierarchical clustering, boxplots.
+
+### [04](Exercises/E07-RNA_seq/04_differential_expression/04_differential_expression.html) - differential expression ([Rmd](Exercises/E07-RNA_seq/04_differential_expression/04_differential_expression.Rmd))
+
+- Using `DESeq2` - contrasts, interactions, independent filtering, LFC shrinkage.
+- Reporting results: MA plot, volcano plot, boxplots, `ReportingTools`.
+
+### [05](Exercises/E07-RNA_seq/05_gene_set_analysis/05_gene_set_analysis.html) - Gene Set Enrichment Analysis (ORA, GSEA, SPIA) ([Rmd](Exercises/E07-RNA_seq/05_gene_set_analysis/05_gene_set_analysis.Rmd))
+
+- Gene set databases.
+- Data preparation.
+- ORA (`goseq`).
+- GSEA by Subramanian (`clusterProfiler`) + visualization.
+- Signaling pathway impact analysis (`SPIA`).
+- Viewing data in KEGG (`pathview`).
+- Online tools.
+
+## [E08](Exercises/E08-scRNA_seq/scRNA_seq.html) - single-cell RNA-seq ([Rmd](Exercises/E08-scRNA_seq/scRNA_seq.Rmd))
+
+- Introduction, software overview, and links to tutorials, lists and other readings.
