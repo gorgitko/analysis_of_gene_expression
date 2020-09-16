@@ -1,6 +1,10 @@
 # Analysis of Gene Expression @ University of Chemistry and Technology in Prague
 
-## [E01](Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd))
+- Authors:
+  - Jiri Novotny
+  - Michal Kolar
+
+## [E01](Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd)) - _Jiri Novotny_
 
 - `sshfs` - mount directory on remote server
 - `tmux` - termimal multiplexer
@@ -11,7 +15,7 @@
   - Introduction to RMarkdown.
     - [Tab design](Exercises/E01-intro/tab_design.html) ([Rmd](Exercises/E01-intro/tab_design.Rmd)).
 
-## [E02](Exercises/E02-intro_to_advanced_R/intro_to_advanced_R.html) - Intro to advanced R ([Rmd](Exercises/E02-intro_to_advanced_R/intro_to_advanced_R.Rmd))
+## [E02](Exercises/E02-intro_to_advanced_R/intro_to_advanced_R.html) - Intro to advanced R ([Rmd](Exercises/E02-intro_to_advanced_R/intro_to_advanced_R.Rmd)) - _Jiri Novotny_
 
 - Introduction to tidyverse
   - `magrittr` - pipe operator
@@ -30,7 +34,7 @@
   - `pheatmap` - pretty heatmaps in base R
 - Parallelization
 
-## [E03](Exercises/E03-qPCR/qPCR.html) - qPCR ([Rmd](Exercises/E03-qPCR/qPCR.Rmd))
+## [E03](Exercises/E03-qPCR/qPCR.html) - qPCR ([Rmd](Exercises/E03-qPCR/qPCR.Rmd)) - _Jiri Novotny_
 
 - Main purpose of this exercise is to practice basic R on a small dataset and to
   implement a basic set of (mainly visualization) functions, which will be used
@@ -38,20 +42,20 @@
 - Implemented functions are located in [age_library.R](Exercises/age_library.R),
   skeletons are in [age_library_empty.R](Exercises/age_library_empty.R).
 
-## [E04](Exercises/E04-microarrays/microarrays.html) - microarrays ([Rmd](Exercises/E04-microarrays/microarrays.Rmd))
+## [E04](Exercises/E04-microarrays/microarrays.html) - microarrays ([Rmd](Exercises/E04-microarrays/microarrays.Rmd)) - _Jiri Novotny_
 
 - Exercise on Affymetrix microarray analysis.
 - Reading in data, technical and biological quality control, normalization, differential expression, reporting.
 
-## [E05](Exercises/E05-multiple_testing_issue/multiple_testing_issue.html) - multiple testing issue ([Rmd](Exercises/E05-multiple_testing_issue/multiple_testing_issue.Rmd))
+## [E05](Exercises/E05-multiple_testing_issue/multiple_testing_issue.html) - multiple testing issue ([Rmd](Exercises/E05-multiple_testing_issue/multiple_testing_issue.Rmd)) - _Michal Kolar_
 
 - Demonstration of multiple testing issue correction methods on fair/skewed coins.
 
-## [E06](Exercises/E06-IGV) - IGV browser
+## [E06](Exercises/E06-IGV) - IGV browser - _Michal Kolar_
 
 - Files for practising [IGV](http://software.broadinstitute.org/software/igv/) usage.
 
-## [E07](Exercises/E07-RNA_seq) - RNA-seq
+## [E07](Exercises/E07-RNA_seq) - RNA-seq - _Jiri Novotny_
 
 - This exercise is using [experimental data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778) from human airway smooth muscle cells treatment,
 and is largely based on a great tutorial
@@ -96,6 +100,6 @@ from which preprocessed R data are used.
 - Viewing data in KEGG (`pathview`).
 - Online tools.
 
-## [E08](Exercises/E08-scRNA_seq/scRNA_seq.html) - single-cell RNA-seq ([Rmd](Exercises/E08-scRNA_seq/scRNA_seq.Rmd))
+## [E08](Exercises/E08-scRNA_seq/scRNA_seq.html) - single-cell RNA-seq ([Rmd](Exercises/E08-scRNA_seq/scRNA_seq.Rmd)) - _Jiri Novotny_
 
 - Introduction, software overview, and links to tutorials, lists and other readings.
