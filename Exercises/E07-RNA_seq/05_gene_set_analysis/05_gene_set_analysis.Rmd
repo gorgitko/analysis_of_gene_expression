@@ -172,7 +172,7 @@ We will get this named vector from `DESeq2` results.
 We reuse the boolean vector we used before for filtering DEGs from the results table (`res_dex_shrink`):
 
 ```{r}
-genes <- ifelse(deg_filter, 1, 0)
+genes <- as.integer(deg_filter)
 names(genes) <- rownames(res_dex_shrink)
 head(genes)
 ```
@@ -320,9 +320,8 @@ There are always problems when you are converting gene IDs.
 Generally, you lost some genes, because they don't have the other gene ID,
 or oppositely you obtain duplicates.
 
-We will remove duplicated ENTREZIDs, add ENTREZIDs to `res_dex_shrink`,
-remove duplicatedcreate a named vector where names are ENTREZIDs
-and values are Wald statistics, and sort it in decreasing order:
+We will remove duplicated ENTREZIDs, add ENTREZIDs to `res_dex_shrink`, and create a named vector where names are ENTREZIDs
+and values are Wald statistics, sorted in decreasing order:
 
 ```{r}
 entrez_ids <- entrez_ids[!duplicated(entrez_ids$ENTREZID), ]
