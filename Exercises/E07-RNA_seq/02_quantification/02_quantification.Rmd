@@ -1190,6 +1190,6 @@ library(knitr)
 library(glue)
 
 # You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
+opts_chunk$set(warning = FALSE, message = FALSE)
 render("02_quantification.Rmd", output_file = "02_quantification.html")
 ```
