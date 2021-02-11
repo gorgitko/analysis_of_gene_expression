@@ -1,8 +1,8 @@
 # Analysis of Gene Expression @ University of Chemistry and Technology in Prague
 
 - Authors:
-  - Jiri Novotny <jiri.novotny@img.cas.cz>
-  - Michal Kolar <kolarmi@img.cas.cz>
+  - Jiri Novotny &lt;jiri.novotny@img.cas.cz&gt;
+  - Michal Kolar &lt;kolarmi@img.cas.cz&gt;
 
 ## [E01](Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd)) - _Jiri Novotny_
 
