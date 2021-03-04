@@ -1,0 +1,61 @@
+---
+title: "Example of tab design (Analysis of Gene Expression @ VSCHT)"
+author:
+  - Jiri Novotny jiri.novotny@img.cas.cz
+  - Michal Kolar kolarmi@img.cas.cz
+  - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    number_sections: false
+    toc: false
+    df_print: "paged"
+params:
+  date: "`r Sys.Date()`"
+---
+
+<!--
+To convert a header to tab, place {.tabset} behind.
+We won't name the first header - it will just be a "root" for our tabs.
+-->
+
+# {.tabset}
+
+## Tab 1 {.tabset}
+
+### Tab 1-1
+
+<!-- You can use regular headers inside tabs -->
+#### Header in Tab 1-1
+
+Content of tab 1-1
+
+### Tab 1-2
+
+Content of tab 1-2
+
+## Tab 2 {.tabset}
+
+### Tab 2-1
+
+Content of tab 2-1
+
+### Tab 2-2
+
+Content of tab 2-2
+
+```{r, echo = FALSE, eval = FALSE, message = FALSE, warning = FALSE}
+library(conflicted)
+library(rmarkdown)
+library(knitr)
+library(glue)
+library(here)
+
+if (!require(rmdformats)) {
+  BiocManager::install("rmdformats")
+}
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE)
+render(here("E02-intro_to_R/tab_design.Rmd"), output_file = here("E02-intro_to_R/tab_design.html"))
+```

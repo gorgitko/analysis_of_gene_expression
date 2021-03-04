@@ -1,0 +1,58 @@
+<style>
+  p {
+    text-align: justify;
+  }
+
+  ul, ol {
+    font-size: 16px;
+  }
+
+  #content.my-content {
+    max-width: 1024px;
+  }
+
+  #content.fullwidth {
+    margin-left: 0;
+  }
+</style>
+
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://unpkg.com/tippy.js@6"></script>
+
+<script>
+var my_collapse_fn = function(e) {
+  console.log("click");
+  $("#sidebar").toggle();
+  $("#content").toggleClass("fullwidth");
+}
+
+$(document).ready(function() {
+  $("#content").addClass("my-content");
+
+  setTimeout(function() {
+    $("pre.sourceCode").each(function() {
+      var pre = $(this);
+      var lang = pre[0].classList[1];
+
+      if (typeof lang !== "undefined") {
+        tippy(pre[0], {
+          content: lang.toUpperCase(),
+          placement: "left"
+        });
+      }
+    });
+  }, 500);
+});
+</script>
+
+<div id="my_menu_collapse" style="z-index: 9999;position: absolute;align-content: center;top: 5px;left: 5px; cursor: pointer;" onclick="my_collapse_fn()">
+<span class="glyphicon glyphicon-menu-hamburger" style="display: fixed;"></span>
+</div>
+
+```{r klippy, echo = FALSE, include = TRUE}
+if (!require(klippy)) {
+  BiocManager::install("rlesur/klippy")
+}
+
+klippy::klippy(c("r", "bash", "python"))
+```

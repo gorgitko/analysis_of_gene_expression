@@ -1,33 +1,37 @@
 ---
 title: "E01 - Intro (Analysis of Gene Expression @ VSCHT)"
-author: "Jiri Novotny"
+author:
+  - Jiri Novotny jiri.novotny@img.cas.cz
+  - Michal Kolar kolarmi@img.cas.cz
+  - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
-  html_document:
-    # code_folding: "show"
-    df_print: "paged"
-    toc: true
-    toc_float: true
-    toc_collapsed: false
+  rmdformats::readthedown:
+    highlight: "kate"
+    lightbox: true
+    thumbnails: true
+    gallery: true
     toc_depth: 4
-    number_sections: false
-    theme: "united"
     self_contained: true
-    css: "../stylesheet.css"
+    number_sections: false
+    toc_collapsed: false
+    df_print: "paged"
+params:
+  date: "`r Sys.Date()`"
 ---
 
----
-date: '`r glue("Document generated: {Sys.Date()}")`'
----
-
-```{r, include = FALSE, echo = FALSE}
-if (!require(emo))
-  devtools::install_github("hadley/emo")
+```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
-# Welcome to Analysis of Gene Expression (AGE)!
+```{r, include = FALSE, echo = FALSE}
+library(conflicted)
+library(emo)
+library(here)
+```
 
-Here you will find some introductory information, e.g. virtual machines, conda package manager etc.
+# Welcome to the Analysis of Gene Expression (AGE)!
+
+Here you will find some introductory information, e.g. virtual machines, R programming tips etc.
 
 ## Contact
 
@@ -39,96 +43,106 @@ Jiri Novotny: jiri.novotny@img.cas.cz
 
 # Virtual machines
 
-We will work at virtual machines (VM) provided by [Metacentrum/CESNET](https://cloud.gitlab-pages.ics.muni.cz/documentation/quick-start/).
-**The instructions how to set up your VM are [here](https://github.com/bio-platform/bio-class).**
-However, most of you already have experience with VM from *Genomics: Algorithms and Analysis* class.
+We will work at virtual machines (VM) provided by [Metacentrum](https://cloud2.metacentrum.cz/).
+**The instructions how to set up your VM are in MS Teams
+[class notebook](https://vscht.sharepoint.com/sites/143-O365-AGE/_layouts/15/Doc.aspx?sourcedoc={eda58aae-2580-4edd-b598-96db0c74fce2}&action=edit&wd=target%28_Content%20Library%2FOrganization.one%7C953d92bb-56b0-45a5-bd2d-409979e0959e%2FVirtual%20Machines%20%28VMs%5C%29%7Cb44057ea-406b-4556-bf9c-90dc38447daa%2F%29&wdorigin=703)**
+(or in [this GitHub repository](https://github.com/bio-platform/bio-class-deb10) from Metacentrum Cloud Team).
+Some you already have experience with VMs from *Genomics: Algorithms and Analysis* class.
+
+## SSH config on your local machine
+
+SSH config defined in `~/.ssh/config` on your local machine provides you a simple management of SSH hosts.
+In case of the VM for AGE, you can save it there as (replace `Hostname` and `User` by yours):
+
+```
+Host age
+  Hostname 192.168.8.153
+  User jirinovo
+```
+
+Then you can simply SSH to your VM using `ssh age`.
 
 ## AGE files
 
 We have two persistent storages mounted by `startNFS` command:
 
 - `/data/shared` for shared data, and
-- `/data/persistent/<user>` for your personal data.
+- `/data/persistent/<user>/bio-class-deb10` for your personal data.
 
 To avoid data lose, I would recommend you to use the persistent storage.
-You can create a symlink in your home directory:
+For easier access from your home directory, create symlinks there:
 
 ```{bash}
-ln -s /data/persistent/<user> /home/<user>/persistent
+ln -s /data/shared ~/shared
+ln -s /data/persistent/$USER/bio-class-deb10 ~/persistent
 ```
 
-Files for AGE are stored in `/data/shared/AGE2020`.
-Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others `r emo::ji("slightly_smiling_face")`, please,
-create your personal directory in which you will
-copy exercise files on the beginning of each exercise:
+Files for AGE are stored in `/data/shared/AGE2021`.
+Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others
+`r emo::ji("slightly_smiling_face")`, please, create your personal directory in which you will
+copy files on the beginning of each exercise:
 
 ```{bash}
-mkdir -p /data/persistent/<user>/AGE2020/Exercises
+mkdir -p ~/persistent/AGE2021/Exercises
 ```
 
-And make a symlink in your home to this directory:
+And make a symlink in your home directory:
 
 ```{bash}
-ln -s /data/persistent/<user>/AGE2020 ~/AGE2020
+ln -s ~/persistent/AGE2021 ~/AGE2021
 ```
 
 Now, please, copy these files and directories to your personal directory:
 
 ```{bash}
-cp -r /data/shared/AGE2020/Exercises/{age_library.R,stylesheet.css,E01-intro} ~/AGE2020/Exercises
+cp -r ~/shared/AGE2021/Exercises/{_assets,E01-intro} ~/AGE2021/Exercises
 ```
 
-It is also needed to switch your R working directory to the current exercise:
+And make a new RStudio project using the existing directory (`~/AGE2021/Exercises`):
 
-```{r}
-setwd("~/AGE2020/Exercises/E01-intro")
-```
+![File > New Project...](`r here("E01-intro/images/new_project_01.png")`)
 
-## [`sshfs`](https://github.com/libfuse/sshfs) - mount a directory on remote server
+![Choose "Existing Directory"](`r here("E01-intro/images/new_project_02.png")`)
 
-`sshfs` allows to mount directories on a remote server, through the SSH protocol.
-On Ubuntu (and derived) distros, install it by `sudo apt install sshfs`.
+![Navigate to and select directory "~/AGE2021/Exercises"](`r here("E01-intro/images/new_project_03.png")`)
 
-It is recommended to use `sshfs` as a regular user, not root.
-For that, create a directory on your local machine, owned by you. For example:
+## Accessing files on your VM
 
-```{bash}
-mkdir ~/age_vm
-```
+Basically you have three options:
 
-Then you can mount a remote directory: `sshfs user@hostname:directory ~/age_vm` 
-
-In case of VM for AGE, you can have a saved connection in `~/.ssh/config` on your local machine:
-
-```
-Host age
-    Hostname 192.168.8.153
-    User jirinovo
-```
-
-Then you can use, for example, `sshfs age:/home/jirinovo ~/age_vm`
+1. RStudio file browser. Each file can be downloaded separately, multiple files are put into ZIP.
+   Files can be uploaded one by one or you can upload ZIP, which is then automatically extracted.
+2. Some GUI file manager supporting SFTP, such as [Krusader](https://krusader.org/) or [WinSCP](https://winscp.net/eng/index.php).
+3. [sshfs](https://github.com/libfuse/sshfs), which can mount a directory from a remote server.
+   That means you can use the remote directory just like your local one and you are only limited by your network bandwidth.
+   On Ubuntu (and derived) distros, you can install `sshfs` with `sudo apt install sshfs` (i.e. do that on your local machine).
+   It is recommended to use `sshfs` as a regular user, not root. For that, create a directory on your local machine, e.g.
+   `mkdir ~/age_vm`. Then you can mount a remote directory: `sshfs user@hostname:directory ~/age_vm`.
+   Or if you setup `~/.ssh/config` as described above, you can just write `sshfs age:/home/jirinovo ~/age_vm`
 
 ***
 
-## [`tmux`](https://github.com/tmux/tmux/wiki) - terminal multiplexer
+## [tmux](https://github.com/tmux/tmux/wiki) - terminal multiplexer
 
-`tmux` is a very helpful utility to manage multiple persistent shell sessions.
+Normally, your SSH session will be lost if you turn off your computer or lost network connection.
+[tmux](https://github.com/tmux/tmux/wiki) is a very helpful utility to manage multiple persistent shell sessions.
 It is somewhat similar to quite old `screen`, but `tmux` is a better choice in my opinion.
-You can install `tmux` by `sudo apt install tmux`.
 
 `tmux` has a following hierarchy:
 
-![In sessions, you create windows which can be split to panes.](images/tmux.png)
+```{r echo = FALSE, eval = TRUE, fig.cap = "In sessions, you create windows which can be split to panes.", out.width = "100%"}
+knitr::include_graphics(here("E01-intro/images/tmux.png"))
+```
 
 **The important thing is that `tmux` sessions are persistent until you restart the server.**
-And so you can return back to your work after a network outage, or run a long-term task and
-quit the SSH connection.
+And so you can return back to your work after network outage, or run a long-term task and
+quit your computer.
 
 There are three ways how to issue commands inside a `tmux` session:
 
 - **Shortcuts**: triggered by a prefix key followed by a command key.
-  By default, `tmux` uses `Ctrl + b` as the prefix key.
-  For example, to create a new window, you press `Ctrl + b` followed by `c`.
+  By default, `tmux` uses `Ctrl + b` as the `Prefix` key.
+  For example, to create a new window you press `Ctrl + b` followed by `c` (in short: `Prefix + c`).
 - **Command mode**: Enter command mode by pressing `Prefix` then `:`.
   This will open a command prompt at the bottom of the screen, which will accept `tmux` commands.
   For example, `kill-window` will kill the current window.
@@ -136,54 +150,75 @@ There are three ways how to issue commands inside a `tmux` session:
   Usually these commands are prefaced by `tmux`.
   For example, `tmux kill-window` will do the same as in the command mode above.
 
-To start a new session: `tmux new -s my_session`
+Some basic commands:
 
-You can read a quick guide [here](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and
+- Start a new session: `tmux new -s my_session`
+- Attach to an existing session: `tmux attach -t my_session`
+- Create a new window in the current session: `tmux new-window` or `Prefix + c`
+- Go to next window: `Prefix + n`
+- Go to first/second/... window: `Prefix + 0`, `Prefix + 1`, ... (windows are numbered from zero)
+- Detach from the current session: `tmux detach` or `Prefix + d`
+- List windows in the current session: `Prefix + w`
+- List sessions: `Prefix + s`
+- Enter the copy mode (listing the window output): `Prefix + [`, exit with `q` or `Escape`
+  - In the copy mode you can scroll by keyboard arrows or page up/down.
+  - You can also search in output down or up by `Ctrl + s` and `Ctrl + r`, respectively.
+    When you type your search string and press `Enter`, you can simply go to next match by `n`.
+
+> `Ctrl` and `Alt` keys are usually written as `C-` and `M-`, respectively.
+
+You can read quick guides [here](https://www.hamvocke.com/blog/a-quick-and-easy-guide-to-tmux/) and
 [here](https://www.linode.com/docs/networking/ssh/persistent-terminal-sessions-with-tmux/) (more useful shortcuts there).
 Also, there is a nice [cheatsheet](https://tmuxcheatsheet.com/).
 
 ***
 
-# Conda: virtual environment and package manager
+## [conda](https://docs.conda.io/en/latest/): virtual environment and package manager
 
-You may have heard about [conda](https://docs.conda.io/en/latest/), which is defaultly installed on your VM.
+You may have heard about [conda](https://docs.conda.io/en/latest/), which is already installed on your VM.
+In case you need to install some additional software, `conda` is one of the easiest ways to do so.
+Also on your personal computers (especially running Windows) it can install software, which is normally hard to get working.
+In case of bioinformatics, `conda` has become the preferred way for distribution of various tools.
 
 - [Tutorial](https://conda.io/docs/user-guide/getting-started.html)
 - [Cheatsheet](https://conda.io/projects/conda/en/latest/_downloads/843d9e0198f2a193a3484886fa28163c/conda-cheatsheet.pdf)
-- [Nature blog](http://blogs.nature.com/naturejobs/2017/11/03/techblog-bioconda-promises-to-ease-bioinformatics-software-installation-woes/)
-- [bioRxiv paper](https://www.biorxiv.org/content/early/2017/10/27/207092)
+- [Nature Methods paper](https://www.nature.com/articles/s41592-018-0046-7)
 
-## Virtual environment (venv)
+### Virtual environments (venvs)
 
-`Conda` is able to create so-called "virtual environments" (venvs).
-Those are environments isolated from system where you can install software packages.
-You can also export these venvs so everyone is able to recreate them with the same package versions.
+`conda` is able to create so-called "virtual environments" (venvs).
+Those are environments isolated from system in which you can install software packages.
+You can also export packages installed in a venv so everyone is able to recreate the venv with the same package versions.
 
-Venvs are just directories with subdirectories following the [UNIX file system hierarchy](https://www.geeksforgeeks.org/unix-file-system/).
-The root venv is called `base` and is located in `conda` installation directory
+Venvs are just directories with structure partially following the [UNIX file system hierarchy](https://www.geeksforgeeks.org/unix-file-system/)
+(e.g. `/bin`, `/etc`, ...). The root venv is called `base` and is located in `conda` installation directory
 (by default `~/miniconda3`, on your VM `/opt/bio-class/miniconda`).
 
-## Conda packages
+Basically, when you activate or deactivate a venv, `conda` is taking care of changes in `PATH` environment variable,
+which is used to search for executables. How is `conda` doing that? Simply by prepending `/path/to/venv/directory` to `PATH`,
+so software in a venv is found earlier than, for example, your system wide software.
+
+### conda packages
 
 Conda packages contain precompiled software for specific OS, together with other data files like text, images etc.
 Each package also knows its own dependencies, which are automatically installed.
-Packages are available in channels ("directories"), which are maintained by users, e.g. there are channels [`bioconda`](https://anaconda.org/bioconda),
-[`intel`](https://anaconda.org/intel), [`R`](https://anaconda.org/r) etc.
+Packages are available in channels ("directories"), which are maintained by users,
+e.g. there are channels [bioconda](https://anaconda.org/bioconda), [intel](https://anaconda.org/intel), [R](https://anaconda.org/r) etc.
 Packages are hosted in the [Anaconda cloud](https://anaconda.org/). Hosting is free for public packages, paid for private ones.
-Because `conda` is installed locally in your home directory, you can use it on machines where you would normally need administrator access to install software.
+Because `conda` is normally installed locally in your home directory, you can use it on machines where you would normally need administrator access to install software.
 That is very useful for computing on Metacentrum (and other computational grids)!
 
 Fortunately at your VM, you have root permissions and most of the required software is already installed.
 But still, `conda` makes installation of software, which requires compilation, super easy.
 And also, by using venvs, you can install multiple versions of software to your VM.
 
-## Conda vs. Miniconda vs. Anaconda
+### conda vs. Miniconda vs. Anaconda
 
 - `conda`: the package manager itself.
 - [Miniconda](https://docs.conda.io/en/latest/miniconda.html): minimal distribution of `conda`.
 - [Anaconda Distribution](https://www.anaconda.com/distribution/): scientific distribution of `conda` with included packages (all of them can be installed with `conda`).
 
-## Conda basics
+### conda basics
 
 There is no need to install `conda` on your VM, however, if you would need it somewhere else, I will recommend you to go with
 [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
@@ -205,23 +240,23 @@ You can also specify packages which will be immediately installed to a new venv,
 
 `conda deactivate my_new_venv`
 
-**Install packages**
+**Install packages in venv**
 
 `conda install fastqc salmon`
 
 You can also specify the package version: `conda install fastqc=0.10.1`
 
-**Update packages**
+**Update packages in venv**
 
 `conda update salmon`
 
 Or all packages at once: `conda update --all`
 
-**Remove packages**
+**Remove packages in venv**
 
 `conda uninstall fastqc`
 
-**List packages installed in current venv**
+**List packages installed in the current venv**
 
 `conda list`
 
@@ -229,11 +264,14 @@ Or all packages at once: `conda update --all`
 
 `conda info --envs`
 
+**Update conda** (you must be in `base` venv)
+
+`conda update conda`
+
 **Channels**
 
-After fresh installation, `conda` will search for packages in `defaults` channel,
-where are only basic packages.
-For example, when you try to install `fastqc` on fresh `conda` installation...
+After fresh installation, `conda` will search for packages in `defaults` channel, where are only basic packages.
+For example, when you try to install `fastqc` on a fresh `conda` installation...
 
 ```
 $ conda install fastqc
@@ -271,38 +309,68 @@ channels:
   - defaults
 ```
 
-- [`conda-forge`](https://conda-forge.org/) contains various packages, which are automatically built from GitHub repositories.
+- [conda-forge](https://conda-forge.org/) contains various packages, which are automatically built from GitHub repositories.
   There are many popular tools and libraries, such as `graphicsmagick` or `libgfortran`.
-- [`bioconda`](https://bioconda.github.io/) is channel for bioinformatics.
+- [bioconda](https://bioconda.github.io/) is channel for bioinformatics.
   All the popular bioinfotools can be found there, such as previously shown `fastqc`.
 
 Current channels are stored in `~/.condarc`.
 Packages can have the same names, but can lie in different channels.
-In such a case, package is installed from more priority channel (top > down).
+In such a case, package is installed from a more priority channel (top > down).
 
 If you want to install package from a non-current channel,
 you have to specify it: `conda install -c intel numpy`
+
+## Fish shell
+
+For a more comfortable experience in Linux shell, I can recommend [Fish shell](https://fishshell.com/), the *f*riendly *i*nteractive *sh*ell,
+which is already installed on your VMs.
+
+> Beware that Fish's syntax is not compatible with the standard sh or bash!
+  For example, command substitution is written as `(command)` instead of `$(command)`.
+
+## micro editor
+
+If you need to edit some file in Linux shell, I can recommend [micro](https://micro-editor.github.io/) editor, which is also installed on your VMs.
+It's a lighweight alternative to the classic [GNU nano](https://www.nano-editor.org/), with keybindings and features very similar to editors with graphical user interface.
 
 ***
 
 # Programming in R
 
-We expect you to have knowledge of base R.
-You can refresh your skills:
+We expect you to have a basic knowledge of [R](https://www.r-project.org/).
+Here are some links to refresh or gain your skills.
+
+## Basics
 
 - [swirl](https://swirlstats.com/students.html) - interactive tutorial directly in R session. **Highly recommended**.
+- [R Nuts and Bolts](https://bookdown.org/rdpeng/rprogdatascience/r-nuts-and-bolts.html)
 - [Base R cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/master/base-r.pdf)
-- [fasteR](https://github.com/matloff/fasteR) - Fast Lane to Learning R
+
+## More complete tutorials/books
+
+- [Modern Statistics for Modern Biology](https://www.huber.embl.de/msmb/index.html)
+- [R for Data Science](https://r4ds.had.co.nz/)
+- [Coding Club](https://ourcodingclub.github.io/tutorials.html)
+- [STAT 545](https://stat545.com/) - mainly about [tidyverse](https://www.tidyverse.org/).
+- [R tutorial from University of Georgia](https://www.cyclismo.org/tutorial/R/index.html)
 - [Programming with R](http://swcarpentry.github.io/r-novice-inflammation/)
 - [R for Reproducible Scientific Analysis](http://swcarpentry.github.io/r-novice-gapminder/)
-- ([Advanced R](https://adv-r.hadley.nz/) - advanced topics.)
+- [RMarkdown for Scientists](https://rmd4sci.njtierney.com/)
 
-**Useful links**
+## Advanced R
 
+- [Advanced R](https://adv-r.hadley.nz/) and [solutions](http://advanced-r-solutions.rbind.io/index.html) for its exercises.
+- [What They Forgot to Teach You About R](https://rstats.wtf/)
+- [R Inferno](https://www.burns-stat.com/pages/Tutor/R_inferno.pdf) - R pitfalls `r emo::ji("exploding_head")`
+
+## Other useful links
+
+- [Quick R reference with examples](https://onepager.togaware.com/survivor.html)
 - [**Awesome list of cheatsheets**](https://rstudio.com/resources/cheatsheets/).
   Some of them are also accessible in RStudio: `Help -> Cheatsheets`
 - [RStudio cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/master/rstudio-ide.pdf)
-- [rdrr.io](https://rdrr.io/) - very nice package reference from multiple sources (CRAN, Bioconductor, GitHub, etc.).
+- [rdrr.io](https://rdrr.io/) - a great database of package references from multiple sources (CRAN, Bioconductor, GitHub, etc.).
 - [Heatmaps in R](https://www.biostars.org/p/205417/)
   - Found here some interesting heatmap packages I hadn't know before:
     [ComplexHeatmap](https://jokergoo.github.io/ComplexHeatmap-reference/book/),
@@ -310,256 +378,26 @@ You can refresh your skills:
     [Heatplus](https://bioconductor.org/packages/release/bioc/html/Heatplus.html),
     [iheatmapr](https://docs.ropensci.org/iheatmapr/articles/full_vignettes/iheatmapr.html)
 
-***
-
-## Installing R packages
-
-For bioinformatic purposes we will be using packages from [Bioconductor](http://bioconductor.org/), which
-groups together packages for bioinformatics.
-There are several core packages developed by Bioconductor's team which
-share the same philosophy (API) and are used by other third-party packages.
-For example, [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html)
-is used for storing experiment data (expression matrix, phenotype data, genomic ranges).
-
-Bioconductor packages are installed through `BiocManager::install()` function.
-However, because some Bioconductor packages can interefere with packages from R main repository
-[CRAN](https://cran.r-project.org/), always use `BiocManager::install()` to install packages,
-regardless their source repository.
-
-It is also possible to install packages from GitHub repository with `BiocManager::install("user/repository")`, for example
-`BiocManager::install("tidyverse/stringr")`. `BiocManager` recognizes `/` as a GitHub source and uses
-`devtools::install_github()` underneath.
-
-Some packages cannot be installed from R session started by a regular user,
-so rather install packages as the root (`sudo R`).
-
-***
-
-## Debugging
-
-Because R has dynamic typing and its error tracing is not as good as in e.g. Python, its debugging
-could be very painful. Here are some tips for saving your mental health (or refer to [this](https://adv-r.hadley.nz/debugging.html)):
-
-### `traceback()`
-
-When error occurs, its message is usually not very informative.
-`traceback()` function will print a call stack of last error,
-helping you to resolve a location of the error.
-
-Let's define the group of functions, which call each other, starting from `f()`:
-
-```{r}
-f <- function(x) g(x)
-g <- function(y) h(y)
-h <- function(z) {
-  z**2
-}
-
-f(2)
-f("2")
-```
-
-Let's inspect the call stack:
-
-```{r}
-traceback()
-```
-
-Also try running `f("a")` in your prompt.
-RStudio will directly offer you to show traceback or rerun code with debug (see below).
-
-### Interactive debugger
-
-Sometimes you need more information from a location of error.
-Interactive debugger allows you to pause execution of a function and interactively explore its state.
-It is invoked by calling the `browser()` function:
-
-```{r}
-f2 <- function(x) g2(x)
-g2 <- function(y) h2(y)
-h2 <- function(z) {
-  browser()
-  z**2
-}
-
-f2("2")
-```
-
-Interactive debugger can be also invoked by RStudio, as is shown above in the `traceback()` section.
-**Unfortunately, `browser()` is not working well from within code chunks,
-so rather run debugged function from the R command line (interactive session).**
-
-### `recover()`
-
-Another way to activate `browser()` is to use `options(error = recover)`.
-Now when you get an error, you’ll get an interactive prompt that displays the
-traceback and gives you the ability to interactively debug inside any of the frames:
-
-```{r}
-options(error = recover)
-f("2")
-```
-
-To restore the default on-error behaviour, use `dump.frames`:
-
-```{r}
-options(error = dump.frames)
-```
-
-***
-
-## Introduction to RMarkdown (Rmd)
-
-```{r, eval = TRUE, include = FALSE, echo = FALSE}
-# Just a function to escape backticks in inline code.
-rinline <- function(code) {
-  html <- '<code  class="r">``` `r CODE` ```</code>'
-  sub("CODE", code, html)
-}
-```
-
-We will be using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html) for exercises.
-It allows to combine [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown) and (not only) R code
-to generate documents in HTML, PDF, Word (docx) and many more formats.
-This is [how it works](https://rmarkdown.rstudio.com/lesson-2.html):
-
-![Code chunks in RMarkdown document are evaluated by [`knitr`](https://yihui.name/knitr/) and converted to [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown),
-which is then converted by [`pandoc`](https://pandoc.org) to selected output format (in our case HTML).](images/rmarkdown_flow.png)
-
-**Useful links**
-
-- [RMarkdown cheatsheet](https://rmarkdown.rstudio.com/lesson-15.html)
-  (PDF [here](https://raw.githubusercontent.com/rstudio/cheatsheets/master/rmarkdown-2.0.pdf) and
-  [here](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf))
-- [RMarkdown book](https://bookdown.org/yihui/rmarkdown/)
-- [RMarkdown cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/)
-- [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
-- [`pandoc`'s Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown)
-- [`knitr` options](https://yihui.name/knitr/options/)
-
-***
-
-### How to use RMarkdown
-
-**Pandoc header**
-
-On the beginning of the source file you can see the header section separated by `---`. Those are options for `pandoc`.
-
-**Markdown syntax**
-
-Markdown is an easy-to-write/easy-to-read markup language.
-It is widely used by, but not only, developers for documentation (you have certainly seen it on GitHub).
-Markdown syntax is super easy and so, please, refer to [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
-(however, `pandoc` uses an [extended version](https://pandoc.org/MANUAL.html#pandocs-markdown) of Markdown).
-
-**Using HTML tags**
-
-Besides Markdown syntax, you can use anything you would normally use in HTML.
-For example, `<div style="color: red;">Some red text.</div>`
-
-<div style="color: red;">Some red text.</div>
-
-Just be careful, because RMarkdown is not a classic HTML document and you don't have full control over
-conversion to output HTML.
-
-**Code chunks**
-
-Code (R, Python, etc.) is placed in chunks. A chunk begins with triple backticks followed by `{language_name}` and
-ends with another triple backticks. Both start and end triple backticks must be on separate lines.
-
-Example of chunk with R code:
-
-<pre class="r">
-&grave;&grave;&grave;{r}
-df <- data.frame()
-&grave;&grave;&grave;
-</pre>
-
-Output from a chunk is generated below the chunk.
-
-Each chunk can have options set. For example,
-
-<pre class="r">
-&grave;&grave;&grave;{r, warning = FALSE}
-df <- data.frame()
-&grave;&grave;&grave;
-</pre>
-
-will suppress all warnings produced by this chunk. See [`knitr` options](https://yihui.name/knitr/options/).
-
-JavaScript and CSS are also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
-Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
-
-**Inline code**
-
-You can also place R code [inline](https://rmarkdown.rstudio.com/lesson-4.html) using `r rinline("code")`.
-Inline code in final document will be replaced by its output.
-
-**Rendering a document**
-
-On the end of this document you will find a chunk, which generates a HTML document from this source.
-If you are curious how an intermediate Markdown document looks like, you can specify `clean = FALSE` in `render()` function.
-
-### Useful keyboard shortcuts in RStudio
+## Keyboard shortcuts in RStudio
 
 You can view them in `Tools -> Keyboard Shortcuts Help`.
 
-- `Ctrl + Enter`: run current line or selected lines.
-- `Ctrl + Alt + R`: run all chunks.
-- `Ctrl + Alt + P`: run all chunks above.
-- `Ctrl + Shift + Enter`: run current chunk.
-- `Ctrl + Alt + N`: run next chunk.
+Personally I am using the most:
 
-### Advanced RMarkdown usage
+- `F1`: view help page of function under cursor.
+- `F2`: go to definition of function under cursor.
+- `Ctrl + Space`: autocompletion.
+- `Alt + Enter`: run current line or selected text in console.
+- `Alt + Up/Down`: move current line up/down.
+- `Ctrl + D`: delete current line.
 
-#### Pretty tables
+## What to do when RStudio is stuck
 
-We can use [`DT`](https://rstudio.github.io/DT/) package, an R interface to JavaScript library [`datatables`](https://datatables.net/).
-
-```{r, eval = TRUE}
-DT::datatable(
-  mtcars[, 1:5],
-  filter = "top",
-  class = "display",
-  rownames = TRUE
-)
-```
-
-Or [`kable`](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
-[`kableExtra`](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html) for simplier tables.
-
-```{r, eval = TRUE}
-kableExtra::kable_styling(
-  knitr::kable(head(mtcars[, 1:5])),
-  bootstrap_options = c("striped", "hover", "condensed")
-)
-```
+Sometimes something weird happens and RStudio is not responding. In most cases, R session is stuck and can't be simply restarted from RStudio.
+My solution is following: SSH to your VM and run `pkill -f rsession`. It will kill all running R sessions.
+**Be careful as unsaved files in RStudio will be lost!**
 
 ***
-
-#### Using tab design
-
-As you can see, this document has autogenerated menu on the left.
-However, `pandoc` also allows to use a tab-style menu.
-See [this](tab_design.Rmd) ([HTML](tab_design.html)) example.
-
-Personally, I have found this design very useful for reporting.
-
-***
-
-#### Generating Markdown and HTML from R
-
-The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
-For example, this chunk produces a Markdown header:
-
-<pre class="r">
-&grave;&grave;&grave;{r, results = "asis"}
-cat("\n\n# Header\n\n")
-&grave;&grave;&grave;
-</pre>
-
-I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
-
 ***
 
 # HTML rendering
@@ -567,11 +405,15 @@ I have found this to be very useful for dynamic reports, e.g. header names are c
 This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
-library(rmarkdown)
+library(conflicted)
 library(knitr)
-library(glue)
+library(here)
+
+if (!require(rmdformats)) {
+  BiocManager::install("rmdformats")
+}
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
-render("intro.Rmd", output_file = "intro.html")
+rmarkdown::render(here("E01-intro/intro.Rmd"), output_file = here("E01-intro/intro.html"))
 ```
