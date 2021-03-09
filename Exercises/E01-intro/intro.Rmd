@@ -16,8 +16,7 @@ output:
     number_sections: false
     toc_collapsed: false
     df_print: "paged"
-params:
-  date: "`r Sys.Date()`"
+date: "`r Sys.Date()`"
 ---
 
 ```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
