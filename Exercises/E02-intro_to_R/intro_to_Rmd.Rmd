@@ -1,0 +1,255 @@
+---
+title: "E02 - Intro to Rmd (Analysis of Gene Expression @ VSCHT)"
+author:
+  - Jiri Novotny jiri.novotny@img.cas.cz
+  - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+date: "`r Sys.Date()`"
+---
+
+***
+
+```{r, include = FALSE, echo = FALSE}
+# Just a function to escape backticks in inline code.
+rinline <- function(code) {
+  html <- '<code  class="r">``` `r CODE` ```</code>'
+  sub("CODE", code, html)
+}
+```
+
+# RMarkdown (Rmd)
+
+We will be using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html) for exercises.
+It allows to combine [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown) and (not only) R code
+to generate documents in HTML, PDF, Word (docx) and many more formats.
+This is [how it works](https://rmarkdown.rstudio.com/lesson-2.html):
+
+![Code chunks in RMarkdown document are evaluated by [knitr](https://yihui.name/knitr/) and converted to [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown),
+which is then compiled by [pandoc](https://pandoc.org) to selected output format (in our case HTML).
+All of this is handled automatically by `rmarkdown::render()` function (see the end of this document).](`r here("E02-intro_to_R/images/rmarkdown_flow.png")`)
+
+**Useful links**
+
+- [How RMarkdown works](https://uclouvain-cbio.github.io/WSBIM1207/sec-rr.html)
+- [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)
+- [RMarkdown cheatsheet](https://rmarkdown.rstudio.com/lesson-15.html)
+  (PDF [here](https://raw.githubusercontent.com/rstudio/cheatsheets/master/rmarkdown-2.0.pdf) and
+  [here](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf))
+- [RMarkdown cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/)
+- [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+- [pandoc's Markdown flavour](https://pandoc.org/MANUAL.html#pandocs-markdown)
+- [knitr options](https://yihui.name/knitr/options/)
+- [RMarkdown output formats](https://rmarkdown.rstudio.com/lesson-9.html)
+
+***
+
+## How to use RMarkdown
+
+**Pandoc header**
+
+On the beginning of the source file you can see the header section separated by `---`.
+Those are options for `pandoc`, mostly specifying how output should look like.
+They are written in [YAML format](https://lzone.de/cheat-sheet/YAML).
+
+You can see we are using three common parameters: `title`, `author` or `institute`.
+The first two will be shown in the header of resulting document.
+
+As the output type we are using `html_document` with several parameters:
+
+- `toc: true`: make a Table of Contents.
+- `toc_depth: 4`: how many section levels to show in the TOC.
+- `toc_float: true`: make TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
+
+For possible output types see [this](https://bookdown.org/yihui/rmarkdown/documents.html) chapter from R Markdown: The Definitive Guide.
+
+It is also possible to use inline R code in parameters. As an example, we used this to output current date:
+
+<pre class="r">date: "&grave;r Sys.Date()&grave;"</pre>
+
+**Markdown syntax**
+
+Markdown is an easy-to-write/easy-to-read markup language (see the source of this document).
+It is widely used by, but not only, developers for documentation (you have certainly seen it on GitHub).
+Markdown syntax is super easy and so, please, refer to [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+(however, `pandoc` uses an [extended version](https://pandoc.org/MANUAL.html#pandocs-markdown) of Markdown).
+
+**Using HTML tags**
+
+Besides Markdown syntax, you can use anything you would normally use in HTML.
+For example, `<div style="color: red;">Some red text.</div>`:
+
+<div style="color: red;">Some red text.</div>
+
+Just be careful, because RMarkdown is not a classic HTML document and you don't have a full control over conversion to output HTML.
+
+**Code chunks**
+
+Code (R, Python, etc.) is placed in [chunks](https://bookdown.org/yihui/rmarkdown/r-code.html).
+A chunk begins with triple backticks followed by `{language_name}` and ends with another triple backticks.
+Both start and end triple backticks must be on separate lines.
+
+Example of chunk with R code:
+
+<pre class="r">
+&grave;&grave;&grave;{r}
+df <- data.frame()
+&grave;&grave;&grave;
+</pre>
+
+Output from a chunk is generated below the chunk.
+
+Each chunk can have options set. For example,
+
+<pre class="r">
+&grave;&grave;&grave;{r, warning = FALSE}
+df <- data.frame()
+&grave;&grave;&grave;
+</pre>
+
+will suppress all warnings produced by this chunk. See [knitr options](https://yihui.name/knitr/options/).
+
+You can set these options globally via `knitr` package:
+
+```{r, eval = FALSE}
+library(knitr)
+opts_chunk$set(warning = FALSE)
+```
+
+And override them in individual chunks.
+
+JavaScript and CSS are also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
+Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
+
+**Inline code**
+
+You can also place R code [inline](https://rmarkdown.rstudio.com/lesson-4.html) using `r rinline("code")`.
+Inline code in final document will be replaced by its output.
+
+**Notebook mode**
+
+In Rstudio, you use RMarkdown documents as so-called [notebooks](https://bookdown.org/yihui/rmarkdown/notebook.html).
+That is, each code chunk can be evaluated in current R session. Let's see some examples (run them in your RStudio):
+
+```{r}
+head(mtcars)
+```
+
+```{r}
+plot(mpg ~ cyl, data = mtcars)
+```
+
+**Rendering a document**
+
+On the end of this document you will find a chunk, which generates a HTML document from this source.
+
+## Useful Rmd-related keyboard shortcuts in RStudio
+
+You can view them in `Tools -> Keyboard Shortcuts Help`.
+
+- `Ctrl + Enter`: run current line or selected lines.
+- `Ctrl + Alt + R`: run all chunks.
+- `Ctrl + Alt + P`: run all chunks above.
+- `Ctrl + Shift + Enter`: run current chunk.
+- `Ctrl + Alt + N`: run next chunk.
+
+## Some RMarkdown tips
+
+### Pretty tables
+
+We can use [DT](https://rstudio.github.io/DT/) package, an R interface to JavaScript library [datatables](https://datatables.net/).
+
+```{r}
+DT::datatable(
+  mtcars[, 1:5],
+  filter = "top",
+  class = "display",
+  rownames = TRUE
+)
+```
+
+Or [kable](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
+[kableExtra](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html) for simplier tables.
+
+```{r}
+kableExtra::kable_styling(
+  kableExtra::kbl(head(mtcars)),
+  bootstrap_options = c("striped", "hover", "condensed")
+)
+```
+
+***
+
+### Using tab design
+
+As you can see, this document has autogenerated TOC menu on the left.
+However, you can also use a tab-style menu.
+See the `tab_design.Rmd` ([HTML](tab_design.html)) example.
+
+Personally, I have found this design very useful for reporting.
+
+***
+
+### Generating Markdown and HTML from R
+
+The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
+For example, this chunk produces a Markdown header and some text below:
+
+<pre class="r">
+&grave;&grave;&grave;{r, results = "asis"}
+cat("\n\n#### I am an example header\n")
+cat("\nHello world!\n\n")
+&grave;&grave;&grave;
+</pre>
+
+```{r, echo = FALSE, results = "asis"}
+cat("\n\n#### I am an example header\n")
+cat("\nHello world!\n\n")
+```
+
+I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
+
+***
+
+# Rendering RMarkdown
+
+To render a Rmd file, use the `rmarkdown::render()` function.
+Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(knitr)
+library(here)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+rmarkdown::render(
+  here("E02-intro_to_R/intro_to_Rmd.Rmd"),
+  output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
+  clean = FALSE
+)
+```
+
+Because `clean = FALSE` in `rmarkdown::render()`, intermediate Markdown (`.md`) files are not removed and you have an opportunity to inspect them.
+These files are sources for `pandoc`, which does the actual rendering to HTML format (as specified in the header of this Rmd file, but
+`pandoc` can render to many other formats than HTML, e.g. PDF or LaTex).
+
+## Working directory in a Rmd file
+
+Unfortunately, there are discrepancies in the current working directory when you evaluate chunks in RStudio vs. render a Rmd file,
+because `knitr` will automatically set the working directory to that of Rmd file location.
+
+When you evaluate this chunk in RStudio, you get the working directory of your current project.
+
+```{r}
+current_wd <- getwd()
+current_wd
+```
+
+But as you can see in the output `intro_to_Rmd.html`, the working directory is `Exercises/E02-intro_to_R` there.
+
+So how to use consistent project-relative paths in a Rmd file?
+Use the [here](https://github.com/jennybc/here_here) package, which is described in `intro_to_R.Rmd` in Reproducible R section.

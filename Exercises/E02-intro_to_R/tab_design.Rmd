@@ -2,16 +2,13 @@
 title: "Example of tab design (Analysis of Gene Expression @ VSCHT)"
 author:
   - Jiri Novotny jiri.novotny@img.cas.cz
-  - Michal Kolar kolarmi@img.cas.cz
   - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
   html_document:
     number_sections: false
     toc: false
-    df_print: "paged"
-params:
-  date: "`r Sys.Date()`"
+date: "`r Sys.Date()`"
 ---
 
 <!--
@@ -45,17 +42,10 @@ Content of tab 2-1
 Content of tab 2-2
 
 ```{r, echo = FALSE, eval = FALSE, message = FALSE, warning = FALSE}
-library(conflicted)
-library(rmarkdown)
 library(knitr)
-library(glue)
 library(here)
-
-if (!require(rmdformats)) {
-  BiocManager::install("rmdformats")
-}
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE)
-render(here("E02-intro_to_R/tab_design.Rmd"), output_file = here("E02-intro_to_R/tab_design.html"))
+rmarkdown::render(here("E02-intro_to_R/tab_design.Rmd"), output_file = here("E02-intro_to_R/tab_design.html"))
 ```
