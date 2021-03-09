@@ -41,6 +41,13 @@ $(document).ready(function() {
       }
     });
   }, 500);
+  
+  setTimeout(function() {
+    var img = $("img.octicon");
+    img.each(function(i, el) {
+      el.parentNode.innerHTML = '<span class="octicon glyphicon glyphicon-copy"></span>'
+    });
+  }, 500);
 });
 </script>
 
@@ -53,5 +60,5 @@ if (!require(klippy)) {
   BiocManager::install("rlesur/klippy")
 }
 
-klippy::klippy(c("r", "bash", "python"))
+klippy::klippy(c("r", "bash", "python"), position = "right")
 ```

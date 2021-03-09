@@ -288,6 +288,13 @@ $(document).ready(function() {
       }
     });
   }, 500);
+  
+  setTimeout(function() {
+    var img = $("img.octicon");
+    img.each(function(i, el) {
+      el.parentNode.innerHTML = '<span class="octicon glyphicon glyphicon-copy"></span>'
+    });
+  }, 500);
 });
 </script>
 <div id="my_menu_collapse" style="z-index: 9999; position: absolute; align-content: center; top: 5px; left: 5px; cursor: pointer;" onclick="my_collapse_fn()">
@@ -295,7 +302,7 @@ $(document).ready(function() {
 </div>
 <script>
   addClassKlippyTo("pre.r, pre.bash, pre.python");
-  addKlippy('left', 'top', 'auto', '1', 'Copy code', 'Copied!');
+  addKlippy('right', 'top', 'auto', '1', 'Copy code', 'Copied!');
 </script>
 <div id="welcome-to-the-analysis-of-gene-expression-age" class="section level1">
 <h1>Welcome to the Analysis of Gene Expression (AGE)!</h1>
