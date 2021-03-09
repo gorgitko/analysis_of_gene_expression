@@ -21,7 +21,6 @@
 
 <script>
 var my_collapse_fn = function(e) {
-  console.log("click");
   $("#sidebar").toggle();
   $("#content").toggleClass("fullwidth");
 }
@@ -45,7 +44,7 @@ $(document).ready(function() {
 });
 </script>
 
-<div id="my_menu_collapse" style="z-index: 9999;position: absolute;align-content: center;top: 5px;left: 5px; cursor: pointer;" onclick="my_collapse_fn()">
+<div id="my_menu_collapse" style="z-index: 9999; position: absolute; align-content: center; top: 5px; left: 5px; cursor: pointer;" onclick="my_collapse_fn()">
 <span class="glyphicon glyphicon-menu-hamburger" style="display: fixed;"></span>
 </div>
 

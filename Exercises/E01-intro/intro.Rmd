@@ -23,12 +23,6 @@ params:
 ```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
-```{r, include = FALSE, echo = FALSE}
-library(conflicted)
-library(emo)
-library(here)
-```
-
 # Welcome to the Analysis of Gene Expression (AGE)!
 
 Here you will find some introductory information, e.g. virtual machines, R programming tips etc.
@@ -349,6 +343,7 @@ Here are some links to refresh or gain your skills.
 
 ## More complete tutorials/books
 
+- [Data Analysis for the Life Sciences](https://leanpub.com/dataanalysisforthelifesciences)
 - [Modern Statistics for Modern Biology](https://www.huber.embl.de/msmb/index.html)
 - [R for Data Science](https://r4ds.had.co.nz/)
 - [Coding Club](https://ourcodingclub.github.io/tutorials.html)
@@ -394,8 +389,13 @@ Personally I am using the most:
 ## What to do when RStudio is stuck
 
 Sometimes something weird happens and RStudio is not responding. In most cases, R session is stuck and can't be simply restarted from RStudio.
-My solution is following: SSH to your VM and run `pkill -f rsession`. It will kill all running R sessions.
-**Be careful as unsaved files in RStudio will be lost!**
+First SSH to your VM and then you can try the following:
+
+- `sudo service rstudio-server restart`. That will restart your RStudio Server. It should also kill the R session running under RStudio.
+- `pkill -f rsession`. That will kill all running R sessions.
+
+> **Be careful as unsaved files in RStudio will be lost!**
+  If RStudio still allows you to change files in tabs, Ctrl + A / Ctrl + V unsaved ones to your local text editor and after restart paste them back.
 
 ***
 ***
@@ -408,6 +408,7 @@ This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up
 library(conflicted)
 library(knitr)
 library(here)
+library(emo)
 
 if (!require(rmdformats)) {
   BiocManager::install("rmdformats")
