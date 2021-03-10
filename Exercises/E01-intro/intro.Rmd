@@ -123,9 +123,7 @@ It is somewhat similar to quite old `screen`, but `tmux` is a better choice in m
 
 `tmux` has a following hierarchy:
 
-```{r echo = FALSE, eval = TRUE, fig.cap = "In sessions, you create windows which can be split to panes.", out.width = "100%"}
-knitr::include_graphics(here("E01-intro/images/tmux.png"))
-```
+!["In sessions, you create windows which can be split to panes.](`r here("E01-intro/images/tmux.png")`)
 
 **The important thing is that `tmux` sessions are persistent until you restart the server.**
 And so you can return back to your work after network outage, or run a long-term task and

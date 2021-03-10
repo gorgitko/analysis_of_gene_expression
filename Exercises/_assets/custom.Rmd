@@ -43,6 +43,13 @@ $(document).ready(function() {
   }, 500);
   
   setTimeout(function() {
+    $("img.image-thumb[alt='']").each(function(i, el) {
+      var caption = $(el).next("p").text();
+      el.setAttribute("alt", caption);
+    });
+  }, 500);
+  
+  setTimeout(function() {
     var img = $("img.octicon");
     img.each(function(i, el) {
       el.parentNode.innerHTML = '<span class="octicon glyphicon glyphicon-copy"></span>'
