@@ -6,10 +6,10 @@ author:
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
   html_document:
-    toc: true
-    toc_depth: 4
-    toc_float: true
-date: "2021-03-09"
+toc: true
+toc_depth: 4
+toc_float: true
+date: "2021-03-10"
 ---
 
 ***
@@ -57,11 +57,11 @@ As the output type we are using `html_document` with several parameters:
 
 - `toc: true`: make a Table of Contents.
 - `toc_depth: 4`: how many section levels to show in the TOC.
-- `toc_float: true`: make TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
+- `toc_float: true`: make the TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
 
 For possible output types see [this](https://bookdown.org/yihui/rmarkdown/documents.html) chapter from R Markdown: The Definitive Guide.
 
-It is also possible to use inline R code in parameters. As an example, we used this to output current date:
+It is also possible to use inline R code in parameters. As an example, we used this to output the current date:
 
 <pre class="r">date: "&grave;r Sys.Date()&grave;"</pre>
 
@@ -71,6 +71,40 @@ Markdown is an easy-to-write/easy-to-read markup language (see the source of thi
 It is widely used by, but not only, developers for documentation (you have certainly seen it on GitHub).
 Markdown syntax is super easy and so, please, refer to [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
 (however, `pandoc` uses an [extended version](https://pandoc.org/MANUAL.html#pandocs-markdown) of Markdown).
+
+Some examples:
+
+`**This is a bold text.**`
+
+**This is a bold text.**
+
+`*This is a text in italics.*`
+
+*This is a text in italics.*
+
+`# This is a section header of level 1`
+
+`## This is a section header of level 2 (a subsection of the header above)`
+
+```
+- List item 1.
+- List item 2.
+  - Sublist of item 2.
+```
+
+- List item 1.
+- List item 2.
+  - Sublist of item 2.
+
+```
+1. First item.
+2. Second item.
+    - Sublist of second item.
+```
+
+1. First item.
+2. Second item.
+    - Sublist of second item.
 
 **Using HTML tags**
 
@@ -107,15 +141,14 @@ df <- data.frame()
 
 will suppress all warnings produced by this chunk. See [knitr options](https://yihui.name/knitr/options/).
 
-You can set these options globally via `knitr` package:
+You can set these options globally via `opts_chunk$set()` function from `knitr` package.
+For example, this will suppress warnings from all chunks, but individual chunks can override this option:
 
 
 ```r
 library(knitr)
 opts_chunk$set(warning = FALSE)
 ```
-
-And override them in individual chunks.
 
 JavaScript and CSS are also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
 Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
@@ -135,16 +168,26 @@ That is, each code chunk can be evaluated in current R session. Let's see some e
 head(mtcars)
 ```
 
+```
+##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
+## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
+## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
+## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
+## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
+## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
+## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1
+```
+
 
 ```r
 plot(mpg ~ cyl, data = mtcars)
 ```
 
-<img src="/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises/E02-intro_to_R/intro_to_Rmd_files/figure-html/unnamed-chunk-5-1.png" width="672" />
+<img src="/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises/E02-intro_to_R/intro_to_Rmd_files/figure-html/unnamed-chunk-4-1.png" width="672" />
 
 **Rendering a document**
 
-On the end of this document you will find a chunk, which generates a HTML document from this source.
+On the end of this document you will find a [chunk](#rendering-rmarkdown), which generates a HTML document from this source.
 
 ## Useful Rmd-related keyboard shortcuts in RStudio
 
@@ -173,8 +216,8 @@ DT::datatable(
 ```
 
 ```{=html}
-<div id="htmlwidget-a0f33e4ab27445afecd0" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-a0f33e4ab27445afecd0">{"x":{"filter":"top","filterHTML":"<tr>\n  <td><\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"10.4\" data-max=\"33.9\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"4\" data-max=\"8\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"71.1\" data-max=\"472\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"52\" data-max=\"335\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"2.76\" data-max=\"4.93\" data-scale=\"2\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n<\/tr>","data":[["Mazda RX4","Mazda RX4 Wag","Datsun 710","Hornet 4 Drive","Hornet Sportabout","Valiant","Duster 360","Merc 240D","Merc 230","Merc 280","Merc 280C","Merc 450SE","Merc 450SL","Merc 450SLC","Cadillac Fleetwood","Lincoln Continental","Chrysler Imperial","Fiat 128","Honda Civic","Toyota Corolla","Toyota Corona","Dodge Challenger","AMC Javelin","Camaro Z28","Pontiac Firebird","Fiat X1-9","Porsche 914-2","Lotus Europa","Ford Pantera L","Ferrari Dino","Maserati Bora","Volvo 142E"],[21,21,22.8,21.4,18.7,18.1,14.3,24.4,22.8,19.2,17.8,16.4,17.3,15.2,10.4,10.4,14.7,32.4,30.4,33.9,21.5,15.5,15.2,13.3,19.2,27.3,26,30.4,15.8,19.7,15,21.4],[6,6,4,6,8,6,8,4,4,6,6,8,8,8,8,8,8,4,4,4,4,8,8,8,8,4,4,4,8,6,8,4],[160,160,108,258,360,225,360,146.7,140.8,167.6,167.6,275.8,275.8,275.8,472,460,440,78.7,75.7,71.1,120.1,318,304,350,400,79,120.3,95.1,351,145,301,121],[110,110,93,110,175,105,245,62,95,123,123,180,180,180,205,215,230,66,52,65,97,150,150,245,175,66,91,113,264,175,335,109],[3.9,3.9,3.85,3.08,3.15,2.76,3.21,3.69,3.92,3.92,3.92,3.07,3.07,3.07,2.93,3,3.23,4.08,4.93,4.22,3.7,2.76,3.15,3.73,3.08,4.08,4.43,3.77,4.22,3.62,3.54,4.11]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>mpg<\/th>\n      <th>cyl<\/th>\n      <th>disp<\/th>\n      <th>hp<\/th>\n      <th>drat<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false,"orderCellsTop":true}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-b4ddbc08a22ba6ad292a" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-b4ddbc08a22ba6ad292a">{"x":{"filter":"top","filterHTML":"<tr>\n  <td><\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"10.4\" data-max=\"33.9\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"4\" data-max=\"8\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"71.1\" data-max=\"472\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"52\" data-max=\"335\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"2.76\" data-max=\"4.93\" data-scale=\"2\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n<\/tr>","data":[["Mazda RX4","Mazda RX4 Wag","Datsun 710","Hornet 4 Drive","Hornet Sportabout","Valiant","Duster 360","Merc 240D","Merc 230","Merc 280","Merc 280C","Merc 450SE","Merc 450SL","Merc 450SLC","Cadillac Fleetwood","Lincoln Continental","Chrysler Imperial","Fiat 128","Honda Civic","Toyota Corolla","Toyota Corona","Dodge Challenger","AMC Javelin","Camaro Z28","Pontiac Firebird","Fiat X1-9","Porsche 914-2","Lotus Europa","Ford Pantera L","Ferrari Dino","Maserati Bora","Volvo 142E"],[21,21,22.8,21.4,18.7,18.1,14.3,24.4,22.8,19.2,17.8,16.4,17.3,15.2,10.4,10.4,14.7,32.4,30.4,33.9,21.5,15.5,15.2,13.3,19.2,27.3,26,30.4,15.8,19.7,15,21.4],[6,6,4,6,8,6,8,4,4,6,6,8,8,8,8,8,8,4,4,4,4,8,8,8,8,4,4,4,8,6,8,4],[160,160,108,258,360,225,360,146.7,140.8,167.6,167.6,275.8,275.8,275.8,472,460,440,78.7,75.7,71.1,120.1,318,304,350,400,79,120.3,95.1,351,145,301,121],[110,110,93,110,175,105,245,62,95,123,123,180,180,180,205,215,230,66,52,65,97,150,150,245,175,66,91,113,264,175,335,109],[3.9,3.9,3.85,3.08,3.15,2.76,3.21,3.69,3.92,3.92,3.92,3.07,3.07,3.07,2.93,3,3.23,4.08,4.93,4.22,3.7,2.76,3.15,3.73,3.08,4.08,4.43,3.77,4.22,3.62,3.54,4.11]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>mpg<\/th>\n      <th>cyl<\/th>\n      <th>disp<\/th>\n      <th>hp<\/th>\n      <th>drat<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false,"orderCellsTop":true}},"evals":[],"jsHooks":[]}</script>
 ```
 
 Or [kable](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
@@ -293,6 +336,10 @@ kableExtra::kable_styling(
 </tbody>
 </table>
 
+Another interesting package for publication-quality tables is [gt](https://gt.rstudio.com/index.html)
+(and at the bottom of ots homepage you can find a nice list of other table-related packages).
+The [case study](https://gt.rstudio.com/articles/case-study-gtcars.html) will show you all `gt` features.
+
 ***
 
 ### Using tab design
@@ -324,12 +371,29 @@ Hello world!
 
 I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
 
+### [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) - easy interactive dashboards for R
+
+[flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) is awesome package for dashboard-style reporting.
+You can find a quick example [here](https://beta.rstudioconnect.com/jjallaire/htmlwidgets-ggplotly-geoms/htmlwidgets-ggplotly-geoms.html#geom_density).
+
+### RMarkdown themes
+
+You can see that this Rmd document has a different theme than the others used for exercises
+(those are using `readthedown` theme from [rmdformats](https://github.com/juba/rmdformats) package).
+
+Using different themes is quite easy and you can refer to [this nice overview](https://www.datadreaming.org/post/r-markdown-theme-gallery/).
+Several themes are included in `rmarkdown` package. Because we didn't specify `theme` parameter under `html_document` in header
+(see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a theme called `default`.
+You can try to change the theme to e.g. `united` and render this document again 🙂`
+
 ***
 
 # Rendering RMarkdown
 
 To render a Rmd file, use the `rmarkdown::render()` function.
 Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
+
+> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
 
 
 ```r

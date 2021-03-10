@@ -6,9 +6,9 @@ author:
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
   html_document:
-    toc: true
-    toc_depth: 4
-    toc_float: true
+toc: true
+toc_depth: 4
+toc_float: true
 date: "`r Sys.Date()`"
 ---
 
@@ -63,11 +63,11 @@ As the output type we are using `html_document` with several parameters:
 
 - `toc: true`: make a Table of Contents.
 - `toc_depth: 4`: how many section levels to show in the TOC.
-- `toc_float: true`: make TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
+- `toc_float: true`: make the TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
 
 For possible output types see [this](https://bookdown.org/yihui/rmarkdown/documents.html) chapter from R Markdown: The Definitive Guide.
 
-It is also possible to use inline R code in parameters. As an example, we used this to output current date:
+It is also possible to use inline R code in parameters. As an example, we used this to output the current date:
 
 <pre class="r">date: "&grave;r Sys.Date()&grave;"</pre>
 
@@ -77,6 +77,40 @@ Markdown is an easy-to-write/easy-to-read markup language (see the source of thi
 It is widely used by, but not only, developers for documentation (you have certainly seen it on GitHub).
 Markdown syntax is super easy and so, please, refer to [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
 (however, `pandoc` uses an [extended version](https://pandoc.org/MANUAL.html#pandocs-markdown) of Markdown).
+
+Some examples:
+
+`**This is a bold text.**`
+
+**This is a bold text.**
+
+`*This is a text in italics.*`
+
+*This is a text in italics.*
+
+`# This is a section header of level 1`
+
+`## This is a section header of level 2 (a subsection of the header above)`
+
+```
+- List item 1.
+- List item 2.
+  - Sublist of item 2.
+```
+
+- List item 1.
+- List item 2.
+  - Sublist of item 2.
+
+```
+1. First item.
+2. Second item.
+    - Sublist of second item.
+```
+
+1. First item.
+2. Second item.
+    - Sublist of second item.
 
 **Using HTML tags**
 
@@ -113,14 +147,13 @@ df <- data.frame()
 
 will suppress all warnings produced by this chunk. See [knitr options](https://yihui.name/knitr/options/).
 
-You can set these options globally via `knitr` package:
+You can set these options globally via `opts_chunk$set()` function from `knitr` package.
+For example, this will suppress warnings from all chunks, but individual chunks can override this option:
 
 ```{r, eval = FALSE}
 library(knitr)
 opts_chunk$set(warning = FALSE)
 ```
-
-And override them in individual chunks.
 
 JavaScript and CSS are also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
 Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
@@ -145,7 +178,7 @@ plot(mpg ~ cyl, data = mtcars)
 
 **Rendering a document**
 
-On the end of this document you will find a chunk, which generates a HTML document from this source.
+On the end of this document you will find a [chunk](#rendering-rmarkdown), which generates a HTML document from this source.
 
 ## Useful Rmd-related keyboard shortcuts in RStudio
 
@@ -182,6 +215,10 @@ kableExtra::kable_styling(
 )
 ```
 
+Another interesting package for publication-quality tables is [gt](https://gt.rstudio.com/index.html)
+(and at the bottom of ots homepage you can find a nice list of other table-related packages).
+The [case study](https://gt.rstudio.com/articles/case-study-gtcars.html) will show you all `gt` features.
+
 ***
 
 ### Using tab design
@@ -213,12 +250,29 @@ cat("\nHello world!\n\n")
 
 I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
 
+### [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) - easy interactive dashboards for R
+
+[flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) is awesome package for dashboard-style reporting.
+You can find a quick example [here](https://beta.rstudioconnect.com/jjallaire/htmlwidgets-ggplotly-geoms/htmlwidgets-ggplotly-geoms.html#geom_density).
+
+### RMarkdown themes
+
+You can see that this Rmd document has a different theme than the others used for exercises
+(those are using `readthedown` theme from [rmdformats](https://github.com/juba/rmdformats) package).
+
+Using different themes is quite easy and you can refer to [this nice overview](https://www.datadreaming.org/post/r-markdown-theme-gallery/).
+Several themes are included in `rmarkdown` package. Because we didn't specify `theme` parameter under `html_document` in header
+(see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a theme called `default`.
+You can try to change the theme to e.g. `united` and render this document again `r emo::ji("slightly_smiling_face")``
+
 ***
 
 # Rendering RMarkdown
 
 To render a Rmd file, use the `rmarkdown::render()` function.
 Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
+
+> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(knitr)

@@ -33,13 +33,15 @@ Content of tab 1-2
 
 ## Tab 2 {.tabset}
 
-### Tab 2-1
+### Nested tab 2-1 {.tabset}
 
-Content of tab 2-1
+#### Tab 2-1-1
 
-### Tab 2-2
+Content of tab 2-1-1
 
-Content of tab 2-2
+#### Tab 2-1-2
+
+Content of tab 2-1-2
 
 ```{r, echo = FALSE, eval = FALSE, message = FALSE, warning = FALSE}
 library(knitr)

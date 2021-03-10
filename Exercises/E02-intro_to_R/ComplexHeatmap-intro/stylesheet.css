@@ -1,0 +1,52 @@
+.div-collapse-info {
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  padding-top: 0.5em;
+  line-height: 1.42857143;
+  word-break: break-all;
+  word-wrap: break-word;
+  color: #333333;
+  margin-bottom: 1em;
+  padding-right: 1em;
+  word-break: break-word;
+}
+
+p {
+  text-align: justify !important;
+}
+
+.main-container {
+  max-width: 1366px !important;
+}
+
+.dt-buttons {
+  margin-left: 10px !important;
+}
+
+p.caption:before {
+  content: "⬆ " !important;
+  font-style: normal !important;
+  color: red !important;
+}
+
+p.caption {
+  font-weight: bold !important;
+  font-style: italic !important;
+  border-bottom: 1px solid !important;
+  margin-top: 1em !important;
+  margin-bottom: 2em !important;
+}
+
+h1, h2, h3 {
+  background-color: lightgrey !important;
+  padding: 5px 10px 5px 10px !important;
+}
+
+img {
+  border-width: 1px !important;
+  border-style: ridge !important;
+}
+
+li.tocify-item.active > a {
+    color: black !important;
+}

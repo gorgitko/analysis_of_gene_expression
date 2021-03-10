@@ -2,12 +2,11 @@
 title: "E02 - Intro to R (Analysis of Gene Expression @ VSCHT)"
 author:
   - Jiri Novotny jiri.novotny@img.cas.cz
-  - Michal Kolar kolarmi@img.cas.cz
   - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
   rmdformats::readthedown:
-    highlight: "tango"
+    highlight: "kate"
     lightbox: true
     thumbnails: true
     gallery: true
@@ -16,22 +15,10 @@ output:
     number_sections: false
     toc_collapsed: false
     df_print: "paged"
-params:
-  date: "`r Sys.Date()`"
+date: "`r Sys.Date()`"
 ---
 
-```{r, child = here("_assets/custom.html"), eval = TRUE}
-```
-
-```{r, include = FALSE, echo = FALSE}
-library(emo)
-library(here)
-
-# Just a function to escape backticks in inline code.
-rinline <- function(code) {
-  html <- '<code  class="r">``` `r CODE` ```</code>'
-  sub("CODE", code, html)
-}
+```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -39,167 +26,46 @@ rinline <- function(code) {
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r /data/shared/AGE2021/Exercises/E02-intro_to_R ~/AGE2021/Exercises
+cp -r ~/shared/AGE2021/Exercises/E02-intro_to_R ~/AGE2021/Exercises
 ```
 
 ***
 
-# RMarkdown (Rmd)
+# RMarkdown
 
-We will be using [RMarkdown](https://rmarkdown.rstudio.com/lesson-1.html) for exercises.
-It allows to combine [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown) and (not only) R code
-to generate documents in HTML, PDF, Word (docx) and many more formats.
-This is [how it works](https://rmarkdown.rstudio.com/lesson-2.html):
-
-![Code chunks in RMarkdown document are evaluated by [knitr](https://yihui.name/knitr/) and converted to [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown),
-which is then converted by [pandoc](https://pandoc.org) to selected output format (in our case HTML).](`r here("E02-intro_to_R/images/rmarkdown_flow.png")`)
-
-**Useful links**
-
-- [How RMarkdown works](https://uclouvain-cbio.github.io/WSBIM1207/sec-rr.html)
-- [RMarkdown cheatsheet](https://rmarkdown.rstudio.com/lesson-15.html)
-  (PDF [here](https://raw.githubusercontent.com/rstudio/cheatsheets/master/rmarkdown-2.0.pdf) and
-  [here](https://rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf))
-- [RMarkdown book](https://bookdown.org/yihui/rmarkdown/)
-- [RMarkdown cookbook](https://bookdown.org/yihui/rmarkdown-cookbook/)
-- [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
-- [pandoc's Markdown flavour](https://pandoc.org/MANUAL.html#pandocs-markdown)
-- [knitr options](https://yihui.name/knitr/options/)
+First you will learn how to use RMarkdown. Please, open `intro_to_Rmd.Rmd` in RStudio.
+You can also open its rendered version `intro_to_Rmd.html` in your web browser.
 
 ***
 
-## How to use RMarkdown
+# The must read sections
 
-**Pandoc header**
+Take this material as an overview of good R techniques and packages.
+It is quite long, but some sections are really necessary to go through, as we will utilize them in following exercises and assignments:
 
-On the beginning of the source file you can see the header section separated by `---`.
-Those are options for `pandoc`, mostly specifying how output (e.g. HTML) should look like.
+- [Reproducible R](#reproducible-r)
+  - [Project-oriented workflow](#project-oriented-workflow)
+  - [Runtime-information](#put-runtime-information-to-the-end-of-your-scriptrmd-file)
+  - [Do not automatically/reload your R session](#do-not-automatically-reload-your-r-session)
+  - [Prevent package namespace conflicts](#prevent-package-namespace-conflicts)
+    - You don't have to use the `conflicted` package described there, just be aware that a function name could be the same
+      in different packages, and so using package prefixes (e.g. `dplyr::select()`) is the best way to avoid such conflicts.
+- [Installing R packages](#installing-r-packages)
+- [Try to utilize vectorized operations](#try-to-utilize-vectorized-operations)
+- Introduction to tidyverse
+  - Tidy (long) data
+  - `magrittr`
+  - `tibble`
+  - `dplyr`
+  - `tidyr`
+  - `stringr`
+  - `glue`
+  - `ggplot2`
+- [Other useful packages](#other-useful-packages)
+  - `ComplexHeatmap`
+  - `BiocParallel` - mainly to know what is `BPPARAM`
 
-**Markdown syntax**
-
-Markdown is an easy-to-write/easy-to-read markup language.
-It is widely used by, but not only, developers for documentation (you have certainly seen it on GitHub).
-Markdown syntax is super easy and so, please, refer to [Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
-(however, `pandoc` uses an [extended version](https://pandoc.org/MANUAL.html#pandocs-markdown) of Markdown).
-
-**Using HTML tags**
-
-Besides Markdown syntax, you can use anything you would normally use in HTML.
-For example, `<div style="color: red;">Some red text.</div>`
-
-<div style="color: red;">Some red text.</div>
-
-Just be careful, because RMarkdown is not a classic HTML document and you don't have a full control over conversion to output HTML.
-
-**Code chunks**
-
-Code (R, Python, etc.) is placed in chunks. A chunk begins with triple backticks followed by `{language_name}` and
-ends with another triple backticks. Both start and end triple backticks must be on separate lines.
-
-Example of chunk with R code:
-
-<pre class="r">
-&grave;&grave;&grave;{r}
-df <- data.frame()
-&grave;&grave;&grave;
-</pre>
-
-Output from a chunk is generated below the chunk.
-
-Each chunk can have options set. For example,
-
-<pre class="r">
-&grave;&grave;&grave;{r, warning = FALSE}
-df <- data.frame()
-&grave;&grave;&grave;
-</pre>
-
-will suppress all warnings produced by this chunk. See [knitr options](https://yihui.name/knitr/options/).
-
-You can set these options globally via `knitr` package:
-
-```{r, eval = FALSE}
-library(knitr)
-opts_chunk$set(warning = FALSE)
-```
-
-And override them in individual chunks.
-
-JavaScript and CSS are also [supported](https://bookdown.org/yihui/rmarkdown/language-engines.html#javascript-and-css).
-Code in chunks of type `js` and `css` will be put to `<script>` and `<style>` tags inside `<head>`.
-
-**Inline code**
-
-You can also place R code [inline](https://rmarkdown.rstudio.com/lesson-4.html) using `r rinline("code")`.
-Inline code in final document will be replaced by its output.
-
-**Rendering a document**
-
-On the end of this document you will find a chunk, which generates a HTML document from this source.
-If you are curious how an intermediate Markdown document looks like, you can specify `clean = FALSE` in `render()` function
-and then inspect the `intro_to_R.md` file.
-
-## Useful Rmd-related keyboard shortcuts in RStudio
-
-You can view them in `Tools -> Keyboard Shortcuts Help`.
-
-- `Ctrl + Enter`: run current line or selected lines.
-- `Ctrl + Alt + R`: run all chunks.
-- `Ctrl + Alt + P`: run all chunks above.
-- `Ctrl + Shift + Enter`: run current chunk.
-- `Ctrl + Alt + N`: run next chunk.
-
-## Some RMarkdown tips
-
-### Pretty tables
-
-We can use [DT](https://rstudio.github.io/DT/) package, an R interface to JavaScript library [datatables](https://datatables.net/).
-
-```{r}
-DT::datatable(
-  mtcars[, 1:5],
-  filter = "top",
-  class = "display",
-  rownames = TRUE
-)
-```
-
-Or [kable](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
-[kableExtra](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html) for simplier tables.
-
-```{r}
-kableExtra::kable_styling(kableExtra::kbl(head(mtcars)), bootstrap_options = c("striped", "hover", "condensed"))
-```
-
-***
-
-### Using tab design
-
-As you can see, this document has autogenerated menu on the left.
-However, `pandoc` also allows to use a tab-style menu.
-See [this](tab_design.Rmd) ([HTML](tab_design.html)) example.
-
-Personally, I have found this design very useful for reporting.
-
-***
-
-### Generating Markdown and HTML from R
-
-The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
-For example, this chunk produces a Markdown header:
-
-<pre class="r">
-&grave;&grave;&grave;{r, results = "asis"}
-cat("\n\n# Header\n\n")
-&grave;&grave;&grave;
-</pre>
-
-```{r, include = FALSE, results = "asis"}
-cat("\n\n#### I am an example header\n")
-cat("\nHello world!\n\n")
-```
-
-I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
+> Don't be just observers and try to modify the examples, so you will understand how things work! `r emo::ji("wink")`
 
 ***
 
@@ -208,31 +74,34 @@ I have found this to be very useful for dynamic reports, e.g. header names are c
 Well, this could be a chapter on its own, but only a few **important** tips will be given,
 basically to avoid things like [these](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/):
 
-![](`r here("E02-intro_to_R/images/not_reproducible.png")`)
+![[Source](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/)](`r here("E02-intro_to_R/images/not_reproducible.png")`)
 
 - `setwd("C:\Users\jenny\path\that\only\I\have")` will obviously work only on the computer of creator.
 - `rm(list = ls())` will not perform the full restart of R, it will just remove user-defined objects.
   In addition, what if I accidentally run your script and it will remove a week of hard computations on my computer?
 
+Almost all aspects of using R for reproducible research are summarized in [these slides](https://annakrystalli.me/talks/r-in-repro-research-dc.html#1).
+
 ## Project-oriented workflow
 
 As you know, we have created the RStudio project for AGE exercises, with its top-level directory being `~/AGE2021/Exercises`
-(you can find the `Exercises.Rproj` file there). Whenever you open the project in RStudio, it will automatically set the working directory
-to the top-level of the project.
+(you can find the `Exercises.Rproj` file there).
+Whenever you open a project in RStudio, it will automatically set the working directory to its top-level.
 
 Now that you have this information, you can think of "I will stop using `setwd()` and always use paths relative to top-level directory".
 Unfortunately, some packages are evil and set your working directory silently, which leads to unexpected and hard-to-debug errors
-(one example is `knitr` described in the RMarkdown chapter below).
-Luckily, for a consistent navigation in your project, [here](https://github.com/jennybc/here_here) package was created.
+(one example is `knitr` described in `intro_to_Rmd.Rmd`).
+Luckily, for a consistent navigation in your projects, [here](https://github.com/jennybc/here_here) package was created.
 
 Let's see how it works. The main function is `here::here()`:
 
 ```{r, warning = FALSE}
+library(here)
 here()
 here("E02-intro_to_R", "images")
 ```
 
-It will join path relative to the project's top-level directory with its absolute path.
+It joins paths relative (`E02-intro_to_R/images`) to the project's top-level directory with its absolute path (`r here()`).
 But what happens if we change the working directory?
 
 ```{r, warning = FALSE, eval = FALSE}
@@ -271,25 +140,53 @@ Some path:
 Hmm, nothing happened after `setwd()`, right? This way, no hidden `setwd()` can surprise you `r emo::ji("sunglasses")`
 
 How is it possible `here` always knows where is the top-level of project located?
-Well, `here` is smart: it will scan your project directory structure and do some heuristics.
+Well, `here` is smart: it scans your project directory structure and do some heuristics.
 The most basic one is searching for file ending with `.Rproj`.
 Wait! Is that one of the reasons why we have created our RStudio project? Yes, exactly `r emo::ji("nerd_face")`
+
+If you want to save space and typing, you can also define variables with `here` paths and use them to construct paths relative to them:
+
+```{r}
+output_dir <- here("some/output/directory")
+here(output_dir, "analysis_1")
+```
 
 You can find more information about project-oriented workflow [here](https://rstats.wtf/project-oriented-workflow.html)
 and about safe `here` paths [here](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/) and
 [here](https://rstats.wtf/safe-paths.html).
 
-## Do not automatically/reload your R session
+## Put runtime information to the end of your script/Rmd file
+
+It is a good practice to do so for the sake of reproducibility. This code outputs all important information about your R session
+(see the [Cleanup](#cleanup) section for actual rendered output):
+
+- Warnings.
+- Traceback of errors.
+- Loaded packages and their versions, external libraries (BLAS etc.).
+
+```{r, eval = FALSE, warning = TRUE, message = TRUE}
+warnings()
+traceback()
+sessionInfo()
+```
+
+Instead of `sessionInfo()` you can utilize the `sessioninfo` package, which offers a prettier output:
+
+```{r, eval = FALSE}
+sessioninfo::session_info()
+```
+
+## Do not automatically reload your R session
 
 Otherwise you can expect the unexpected.
 
 ![[Always start R with a blank state.](https://rstats.wtf/save-source.html#always-start-r-with-a-blank-slate)](https://rstats.wtf/img/rstudio-workspace.png)
 
-> Because your are using R through RStudio Server, don't worry when you close your browser - R session will remain running.
+> Because you are using R through RStudio Server, don't worry when you close your browser - R session will remain running.
 
 ## Prevent package namespace conflicts
 
-When you load a package with `library()`, all exported objects from that packages will be attached to the global namespace, while replacing existing objects.
+When you load a package with `library()`, all exported objects from that packages are attached to the global namespace, while replacing existing objects.
 Let's see an example (restart your R session before). Function named `select()` is very common, for example it is present in these two packages:
 
 ```{r}
@@ -371,7 +268,13 @@ function (.data, ...)
 > `conflicted` should be loaded as the first package.
 
 > Unfortunately, I encountered some RStudio freezes during the usage of `conflicted`.
-  In that case refer to the chapter "What to do when RStudio is stuck" in E01-intro.
+  In that case refer to the section "What to do when RStudio is stuck" in E01-intro.
+
+Alternatively, the following packages offer a clearer mechanism of package loading.
+They allow to import only specific objects from a package, similar to Python's `from package import function as fn`
+
+- [box](https://klmr.me/box/)
+- [import](https://import.rticulate.org/)
 
 ***
 
@@ -385,13 +288,13 @@ and [renv](https://rstudio.github.io/renv/index.html) is a great tool for that. 
 - It searches your project files for `library()` and `package::` usages and exports packages with exact versions to a file called `renv.lock`.
   Based on this file, everyone is able to install all packages needed for a project.
 
-It is somehow similar to `conda` `r emo::ji("slightly_smiling_face")`
+`renv` is somehow similar to virtual environments in `conda` `r emo::ji("slightly_smiling_face")`
 
 ***
 
 ## Use [targets](https://docs.ropensci.org/targets/): a Make-like pipeline toolkit for R
 
-> The `targets` package is a Make-like pipeline toolkit for Statistics and data science in R.
+> The `targets` package is a Make-like pipeline toolkit for statistics and data science in R.
   With `targets`, you can maintain a reproducible workflow without repeating yourself.
   `targets` skips costly runtime for tasks that are already up to date, runs the necessary
   computation with implicit parallel computing, and abstracts files as R objects.
@@ -425,7 +328,7 @@ However, some of them are system-wide and must be installed from R running with 
 If you install a package from R session launched from user shell (that is the R session in RStudio),
 it will be installed to your personal library in home directory.
 However, some packages must be installed to system library (usually the base R packages like `Matrix`),
-so you need to run R as the root (`sudo R`) and then install/update packages.
+so you need to run R as root user from terminal (`sudo R`) and then install/update packages.
 
 ***
 
@@ -437,29 +340,39 @@ could be very painful. Here are some tips for saving your mental health (or refe
 ## `traceback()`
 
 When error occurs, its message is usually not very informative.
-`traceback()` function will print a call stack of last error,
+`traceback()` function prints a call stack of last error,
 helping you to resolve a location of the error.
 
 Let's define the group of functions, which call each other, starting from `f()`:
 
-```{r, error = TRUE}
+```{r}
 f <- function(x) g(x)
 g <- function(y) h(y)
 h <- function(z) {
   z**2
 }
+```
 
+Now we can try calling `f()`. It will fail for `"2"`, obviously:
+
+```{r, error = TRUE}
 f(2)
 f("2")
 ```
 
-Let's inspect the call stack:
+We can inspect the call stack:
 
-```{r}
+```{r, eval = FALSE}
 traceback()
 ```
 
-Also try running `f("a")` in your prompt.
+```
+3: h(y) at <text>#2
+2: g(x) at <text>#1
+1: f("2")
+```
+
+Also try running `f("2")` in your prompt.
 RStudio will directly offer you to show traceback or rerun code with debug (see below).
 
 ## Interactive debugger
@@ -508,49 +421,63 @@ options(error = dump.frames)
 R's fundamental feature is vectorization. All basic data types (`numeric`, `character`, etc.) are vectors and most of base functions are vectorized.
 For example, this is unnecessary in R:
 
-# TODO
-
 ```{r}
-my_vector <- c(1, 2, 3, 4, 5)
-results <- c()
-for (i in my_vector) {
-  results[i] <- my_vector[i] ** 2
-}
-results
-```
-
-```{r}
-my_vector <- 1:1e6
+my_vector <- 1:2e6
 
 system.time({
-  results <- c()
+  results <- list()
   for (i in my_vector) {
-    results[i] <- my_vector[i] + 1
+    results[[i]] <- my_vector[i] + 1
   }
 })
 ```
+
+Compared to that, `lapply()` is much more faster: 
+
 ```{r}
+rm(results)
 system.time({
   results <- lapply(my_vector, function(x) x + 1)
 })
 ```
 
-
-Instead you should use the addition operation, which is vectorized:
+Anyway in this sort of dumb example, you should use the vectorized addition operation instead:
 
 ```{r}
-my_vector + 1
+head(my_vector + 1)
 ```
 
-Try to avoid for-loops whenever possible, because:
+So try to avoid for-loops if possible, because:
 
-- They have side effects:
-  - Leaving iterating variable in environment. From the example above, the variable `i` has value `r i`.
-  - They could change other variables from from within a loop.
-- They could be also slow. Those are mostly cases when in each loop you add something new to a vector or matrix, which, then,
-  needs to be re-sized, causing a re-allocation of memory.
-  Two great posts on this topic are [here](https://privefl.github.io/blog/why-loops-are-slow-in-r/) and
-  [here](http://www.noamross.net/archives/2014-04-16-vectorization-in-r-why/) (chapter 4).
+**For-loops have side effects**
+
+- Leaving iterating variable in environment. From the example above, the variable `i` still has value `r i`.
+- They could change other variables from from within a loop.
+
+**For-loops could be slow**
+
+Those are mostly cases when in each loop you add something new to a vector or matrix, which, then,
+needs to be re-sized, causing a re-allocation of memory.
+Two great posts on this topic are [here](https://privefl.github.io/blog/why-loops-are-slow-in-r/) and
+[here](http://www.noamross.net/archives/2014-04-16-vectorization-in-r-why/) (chapter 4).
+  
+Taking into account the pre-allocation of output list, we can rewrite the for-loop above as:
+  
+```{r}
+system.time({
+  results <- vector(mode = "list", length = length(my_vector))
+  for (i in my_vector) {
+    results[[i]] <- my_vector[i] + 1
+  }
+})
+```
+  
+Now it is even faster than `lapply()` `r emo::ji("astonished_face")`.
+But as you can see, you have to take care of pre-allocation, which is something apply-family functions are doing for you (see below).
+
+**For-loops cannot be easily parallelized**
+
+There are several packages, which offer an easy parallelization of apply-family functions (see below).
 
 So, what to use in R instead of for-loops?
 
@@ -558,14 +485,12 @@ So, what to use in R instead of for-loops?
 
 Some of the examples are `mean()`, `sum()`, `cumsum()` or vectorized if `ifelse()`:
 
-# TODO
-
 ```{r}
 my_vector <- 1:5
 mean(my_vector)
 sum(my_vector)
 cumsum(my_vector)
-ifelse(my_vector)
+ifelse(my_vector < 2, "< 2", ">= 2")
 ```
 
 ## Apply-family functions
@@ -573,7 +498,7 @@ ifelse(my_vector)
 These functions take data (vector, list, dataframe, ...) as an input and apply a function on each of its element.
 Let's introduce the most basic ones:
 
-`sapply()` apply a function to each element of vector or list and returns a vector:
+`sapply()` apply a function to each element of a vector or list and returns a vector:
 
 ```{r}
 sapply(my_vector, function(x) {
@@ -593,12 +518,34 @@ lapply(mtcars, head)
 ```
 
 `apply()` takes as an input dataframe or matrix and applies a function on either rows or columns, returning a single value for each of them.
-Row-apply and column-apply are specified by the `MARGIN` parameter: `1` for rows and `2` for columns.
+Row-apply and column-apply are specified by `MARGIN` parameter: `1` for rows and `2` for columns.
 
 ```{r}
 apply(mtcars, MARGIN = 1, mean)
 apply(mtcars, MARGIN = 2, mean)
 ```
+
+
+### Parallelization
+
+There are several packages offering parallelization of common apply-family functions,
+for example [parallel](https://www.rdocumentation.org/packages/parallel) (part of base R),
+[doParallel](https://cran.r-project.org/web/packages/doParallel/index.html),
+[future.apply](https://cran.r-project.org/web/packages/future.apply/index.html) or
+[BiocParallel](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)
+(described in more detail in [this](#biocparallel) section).
+
+Just a brief example of parallel `lapply()` using two CPU cores:
+
+```{r, eval = FALSE}
+parallel::mclapply(my_vector, mc.cores = 2, FUN = function(x) {
+  x ** 2
+})
+```
+
+Quite the same code as for `lapply()`, right? Just be aware that parallelization doesn't always bring you
+the desired speedup, because first, computation environments have to be setup.
+In short, objects need to be copied to a new thread or R process and that brings some overhead.
 
 ***
 
@@ -607,23 +554,23 @@ apply(mtcars, MARGIN = 2, mean)
 Until now you have been probably using only the base R.
 [Tidyverse](https://www.tidyverse.org/) can be seen as a dialect of R and is described as follows:
 
-> The tidyverse is an opinionated collection of R packages designed for data science.
+> The `tidyverse` is an opinionated collection of R packages designed for data science.
   All packages share an underlying design philosophy, grammar, and data structures.
 
-Tidyverse is very popular these days, but as some ([here](https://github.com/matloff/TidyverseSkeptic)
+`Tidyverse` is very popular these days, but as some ([here](https://github.com/matloff/TidyverseSkeptic)
 and [here](http://r4stats.com/2017/03/23/the-tidyverse-curse/)) have noted,
 it is not suitable for R beginners, meaning you should first know how base R is working and only then learn `tidyverse`.
 
 **Useful links**
 
 - [List of tidyverse packages](https://www.tidyverse.org/packages/)
-- [R for Data Science](https://r4ds.had.co.nz/) - an amazing tutorial book for R which is mainly using tidyverse.
+- [R for Data Science](https://r4ds.had.co.nz/) - an amazing tutorial book for R which is mainly using `tidyverse`.
 - [**Awesome list of cheatsheets**](https://rstudio.com/resources/cheatsheets/).
   Some of them are also accessible in RStudio: `Help -> Cheatsheets`
 
 ## Tidy (long) data
 
-Tidyverse packages are not meant to replace the base R.
+`Tidyverse` packages are not meant to replace the base R.
 Especially, they are not suited for matrix manipulation, and are specifically used for **long data**
 (also called **tidy data**). More about tidy data can be found [here](https://r4ds.had.co.nz/tidy-data.html).
 
@@ -646,12 +593,13 @@ For each sample (column) and each gene (row) we have its value (cell).
 This form of data is usable for functions operating on matrices (e.g. PCA), but as you will see later, not for e.g. plotting
 (besides base R plotting).
 
-This dataframe has wide format, and thus it is not tidy.
+This dataframe is wide, and thus it is not tidy.
 You can see that rownames and colnames are, in fact, values of variables `Gene` and `Sample`, respectively.
 So how would this dataframe look like in tidy format? Don't be surprised now, we will get to this code later.
 
 ```{r}
 library(magrittr)
+library(tidyverse)
 
 df_long <- df_wide %>%
   tibble::rownames_to_column("Gene") %>%
@@ -679,7 +627,7 @@ dplyr::left_join(df_long, sample_sheet, by = "Sample")
 ```
 
 **As you will see later, this long form of data is extremely useful for plotting.**
-In this blog [post](http://varianceexplained.org/r/tidy-genomics/), there is a nice example of using tidy data and tidyverse in genomics.
+In this blog [post](http://varianceexplained.org/r/tidy-genomics/), there is a nice example of using tidy data and `tidyverse` in genomics.
 
 ## Non-standard evaluation (NSE)
 
@@ -689,11 +637,11 @@ Let's go ahead a bit and look at this `select()` function from `dplyr` package (
 dplyr::select(mtcars, cyl, mpg) %>% head()
 ```
 
-You can see that `select()` is filtering columns of the dataframe.
-But it has a strange syntax, hasn't it? We have used variables, which are not defined.
+You can see that `select()` is filtering columns of a dataframe.
+But it has a strange syntax, hasn't it? We have used variables, which are not defined in our current environment.
 Don't be scared by this dark magic - it is based on R's [lazy evaluation](https://colinfay.me/tidyeval-1/)
 ([details](https://www.r-bloggers.com/about-lazy-evaluation/))
-and it's called **[non-standard evaluation](https://tidynomicon.tech/nse.html)** (NSE).
+and it is called **[non-standard evaluation](https://tidynomicon.tech/nse.html)** (NSE).
 **In short, R only evaluates the expression if the expression is actually used.**
 Just a quick example:
 
@@ -710,7 +658,7 @@ That is because R is evaluating variables (or more generally expressions) only w
 
 Also R has quite advanced metaprogramming abilities, so inside a function, we can do things like:
 "Get the name (symbol) of variable, which was passed to the function.".
-So for example using our example function `my_fn()`, you can find out that you passed
+So for example, you can find out that you passed
 variable named `a` as the argument `x` and expression `mean(b)` as the argument `y`:
 
 ```{r}
@@ -721,6 +669,7 @@ my_fn <- function(x, y, z) {
 
 my_fn(a, mean(b), c)
 ```
+
 Magic! `r emo::ji("man_mage")`
 
 This is very roughly how most `tidyverse` functions work. They are using NSE to look first at variables inside a passed object (columns = variables).
@@ -730,18 +679,31 @@ When variables are not found inside the object, function will look for variables
 So in the example above, `cyl` and `mpg` variables are evaluated in the context of `mtcars` object and environment
 defined in `select()` function call.
 
-NSE is a quite advanced topic and its knowledge is mainly needed for implementation of custom functions, which share the tidyverse philosophy.
+Of note, there are some base R functions which also use NSE. Some examples:
+
+```{r}
+cyl2 <- with(mtcars, {cyl ** 2})
+head(cyl2)
+subset(mtcars, hp < 90)
+```
+
+NSE is a quite advanced topic and its knowledge is mainly needed for implementation of custom functions, which share the `tidyverse` philosophy.
 See `vignette("programming")` and [friendlyeval](https://github.com/MilesMcBain/friendlyeval),
 a friendly interface for NSE programming.
 
-Now we will quickly look at the most popular tidyverse packages.
+Now we will quickly look at the most popular `tidyverse` packages.
 
-## [`magrittr`](https://magrittr.tidyverse.org/) - pipe operator
+***
+
+## [magrittr](https://magrittr.tidyverse.org/) - a pipe operator
 
 The pipe operator is probably the basic compound of shell programming.
-Fortunately for us, it is also implemented in R.
+Fortunately for us, it is also implemented in R package [magrittr](https://magrittr.tidyverse.org/).
 
-The pipe operator (see <code>?&grave;%>%&grave;</code>) is forwarding output from left hand side (LHS) to input on right hand side (RHS).
+> The pipe operator will become an [official part of the R](https://michaelbarrowman.co.uk/post/the-new-base-pipe/) in the next version 4.1.0!
+  Anyways, besides a bit worse performance, `magrittr` will still offer more flexibility.
+
+The pipe operator (see <code>?&grave;%>%&grave;</code>) is forwarding output from the left hand side (LHS) to input on the right hand side (RHS).
 The default behaviour is to pipe output to the first argument of a RHS function.
 
 So instead of using nested functions like
@@ -758,7 +720,7 @@ rownames(mtcars) %>% head()
 
 And there are even [more types of pipes](https://magrittr.tidyverse.org/reference/index.html).
 
-Piped object is available on RHS as the `.` object.
+Piped object is available on the RHS as the `.` object.
 It is used when you want:
 
 - To use an argument different than first of the RHS function:
@@ -774,7 +736,8 @@ mtcars %>% .$cyl
 mtcars %>% .[1:5, 1:3]
 ```
 
-- To use a lambda expression. They behave like a function with single parameter `.`:
+- To use a lambda expression, which behaves like a function with a single parameter `.`.
+  Don't wrap your head around - just wrap an expression on the RHS to `{}` if you need to use nested functions, e.g. `mtcars %>% {head(rownames(.))}`
 
 ```{r}
 mtcars %>% {head(.$cyl)}
@@ -804,69 +767,82 @@ But for the sake of consistency, rather use operator aliases:
 1 %>% add(2) %>% subtract(3)
 ```
 
-However, how would you use, for example, `==` or `*` operator?
+It is not possible to use some operators without aliases, e.g. `==` or `*`:
 
 ```{r, error = TRUE}
 1 %>% == 2
 1 %>% * 3
 ```
 
-You have to use aliases:
-
 ```{r}
 1 %>% equals(2)
 1 %>% multiply_by(3)
 ```
 
-In fact, all aliases are actually shorthands for writing operators as "classic" functions, e.g. <code>&grave;*&grave;(x, y)</code>.
-So the examples above can be also written as:
+> In fact, operators are called [infix functions](https://colinfay.me/playing-r-infix-functions/) and all aliases are actually shorthands
+  for writing operators as "classic" functions, e.g. <code>&grave;*&grave;(x, y)</code>. So the examples above can be also written as:
 
 ```{r}
 1 %>% `==`(2)
 1 %>% `*`(3)
 ```
 
+But rather don't do that `r emo::ji("smile")`
+
 ***
 
-## [`tibble`](https://tibble.tidyverse.org/) - enhanced data.frame
+## [tibble](https://tibble.tidyverse.org/) - an enhanced data.frame
 
-There are some differences to `data.frame` (see link above and examples [here](https://r4ds.had.co.nz/tibbles.html)),
+There are some differences between [tibble](https://tibble.tidyverse.org/) and base R `data.frame`
+(see link above and examples [here](https://r4ds.had.co.nz/tibbles.html)),
 but the most visible difference is in printing of a tibble:
 
 ```{r}
 tibble::as_tibble(mtcars)
 ```
 
-`tibble` is showing the data types of variables.
-Also you can see that there aren't rownames -
+`tibble` is showing the data types of variables. Also you can see that there aren't rownames -
 this is strange, but it is one of the features of `tibble`.
 Authors of `tibble` package are convinced that rownames should be represented by variable (column) and
 not by object's attribute, accessible by `rownames()` method.
 
-**This is bad particularly for usage of tidyverse together with Bioconductor, where
+**This is bad particularly for usage of `tidyverse` together with Bioconductor, where
 rownames are an essential component.**
 Many tidyverse functions return a `tibble` or drop rownames, but most of times we rather want `data.frame`
 with defined rownames.
-`tibble` can be converted to `data.frame` by `as.data.frame()` function.
+`tibble` can be converted to a `data.frame` by `as.data.frame()` function.
 
 **To preserve rownames in a new column, use the `tibble::rownames_to_column("name_of_new_column")` function.**
 
 Useful is the `tribble()` function for more readable creation of (small) tables in code:
 
 ```{r}
-tibble::tribble(
+my_tibble <- tibble::tribble(
   ~column_A, ~column_B,
   "a",   1,
   "b",   2,
   "c",   3
 )
+my_tibble
 ```
 
-## [`dplyr`](https://dplyr.tidyverse.org/) - data manipulation
+`tibble` is also useful for handling of nested `data.frame`-like objects or lists:
 
-`dplyr` is probably the most popular package from tidyverse.
+```{r}
+my_tibble$column_C <- list(LETTERS, LETTERS, LETTERS)
+my_tibble$column_D <- list(mtcars, mtcars, mtcars)
+my_tibble
+my_tibble$column_C[[1]]
+head(my_tibble$column_D[[1]])
+```
+
+***
+
+## [dplyr](https://dplyr.tidyverse.org/) - data manipulation
+
+[dplyr](https://dplyr.tidyverse.org/) is probably the most popular package from `tidyverse.`
 It helps to solve the most common data manipulation challenges and
-its sibling [`dbplyr`](https://dbplyr.tidyverse.org/articles/dbplyr.html)
+its sibling [dbplyr](https://dbplyr.tidyverse.org/articles/dbplyr.html)
 also supports remote data stored in a database (MySQL, PostreSQL, SQLite, and others).
 
 Some functions in `dplyr` have names similar to functions from other packages.
@@ -874,11 +850,15 @@ Some functions in `dplyr` have names similar to functions from other packages.
 
 - [Cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/master/data-transformation.pdf)
 
-### [`select()`](https://dplyr.tidyverse.org/reference/select.html) - select (filter) columns
+We will use a shortened `mtcars` dataset for examples:
 
 ```{r}
-library(dplyr)
 mtcars_sm <- head(mtcars)
+```
+
+### [select()](https://dplyr.tidyverse.org/reference/select.html) - select (filter) columns
+
+```{r}
 dplyr::select(mtcars_sm, cyl, mpg)
 ```
 
@@ -888,16 +868,15 @@ By using `-` you can also specifify columns to **omit**:
 dplyr::select(mtcars_sm, -cyl, -mpg)
 ```
 
-We can select a range of variables.
-Numerical range is also supported, e.g. `1:5`.
+We can select a range of variables. Numerical range is also supported, e.g. `1:5`.
 Omitting a range is also possible - in this example you would use `-(disp:drat)`.
 
 ```{r}
 dplyr::select(mtcars_sm, disp:drat)
 ```
 
-There are also very useful [select helpers](https://www.rdocumentation.org/packages/tidyselect/topics/select_helpers).
-For omitting they can be also combined with `-`.
+There are also very useful [select helpers](https://tidyselect.r-lib.org/).
+For column omitting they can be also combined with `-`.
 
 Select columns starting with "c":
 
@@ -954,7 +933,7 @@ However, sometimes you rather need a vector: `pull()` returns a vector of specif
 dplyr::pull(mtcars_sm, cyl)
 ```
 
-### [`arrange()`](https://dplyr.tidyverse.org/reference/arrange.html) - order rows
+### [arrange()](https://dplyr.tidyverse.org/reference/arrange.html) - order rows
 
 `arrange()` orders rows by specified variables.
 
@@ -964,13 +943,13 @@ dplyr::arrange(mtcars_sm, cyl, disp)
 
 Use `desc()` or `-` for descending order:
 
-```{r}
+```{r, results = "hold"}
 dplyr::arrange(mtcars_sm, desc(cyl))
 # or
 # dplyr::arrange(mtcars_sm, -cyl)
 ```
 
-### [`filter()`](https://dplyr.tidyverse.org/reference/filter.html) - filter rows
+### [filter()](https://dplyr.tidyverse.org/reference/filter.html) - filter rows
 
 In fact, `filter()` is very similar to base R function `subset()`, but offers much more functionality.
 
@@ -986,14 +965,19 @@ So this is equivalent:
 dplyr::filter(mtcars_sm, hp > 100 & cyl == 6)
 ```
 
-Thanks to NSE we can do some magic.
-Here, we want rows where `hp` is greater than mean value of `hp` minus `10`:
+Similarly, we can use other logical operators, e.g. OR:
+
+```{r}
+dplyr::filter(mtcars_sm, hp > 100 | cyl == 6)
+```
+
+Thanks to NSE we can do some magic. Here, we want rows where `hp` is greater than mean value of `hp` minus `10`:
 
 ```{r}
 dplyr::filter(mtcars_sm, hp > mean(hp) - 10)
 ```
 
-### [`mutate()`](https://dplyr.tidyverse.org/reference/mutate.html) - add new or modify existing variables
+### [mutate()](https://dplyr.tidyverse.org/reference/mutate.html) - add new or modify existing variables
 
 Named parameters of `mutate()` function create new variables (or modify existing, if a parameter name is same).
 
@@ -1003,7 +987,7 @@ tibble::rownames_to_column(mtcars_sm, "car_name") %>%
   dplyr::select(car_name, cyl, cyl2)
 ```
 
-`mutate()` is one of the tidyverse functions, which silently drop rownames.
+`mutate()` is one of the `tidyverse` functions, which silently drop rownames.
 To preserve them, we have moved rownames to the new column `car_name`.
 
 This is how we remove the column and modify the existing one:
@@ -1012,9 +996,9 @@ This is how we remove the column and modify the existing one:
 dplyr::mutate(mtcars_sm, mpg = NULL, cyl = cyl * 2)
 ```
 
-Very useful are these "if" functions:
+Very useful are these vectorized if functions:
 
-[`if_else()`](https://dplyr.tidyverse.org/reference/if_else.html) checks for a condition and returns values for `TRUE` and `FALSE` matches.
+[if_else()](https://dplyr.tidyverse.org/reference/if_else.html) checks for a condition and returns values for `TRUE` and `FALSE` matches.
 In `missing` parameter you can also specify a return value for `NA` values.
 `if_else()` is similar to base R `ifelse()`, but checks for the same return types.
 
@@ -1023,46 +1007,20 @@ dplyr::mutate(mtcars_sm, car_category = if_else(hp >= 100, "strong", "weak")) %>
   dplyr::select(hp, car_category)
 ```
 
-You can see that return values must be the same type:
+You can see that return values must have the same type:
 
 ```{r, error = TRUE}
 dplyr::mutate(mtcars_sm, car_category = if_else(hp >= 100, "strong", 50)) %>%
   dplyr::select(hp, car_category)
 ```
 
-[`recode()`](https://dplyr.tidyverse.org/reference/recode.html) replaces values, similar to `switch()`.
-You can specify default return value for not-specified and `NA` values (`.default` and `.missing` parameters).
-Very useful for replacing factor values while preserving their order.
-
-```{r}
-dplyr::mutate(mtcars_sm, am_char = recode(am, `0` = "zero", `1` = "one")) %>%
-  dplyr::select(am, am_char)
-```
-
-[`recode_factor()`](https://dplyr.tidyverse.org/reference/recode.html) create factors with levels ordered as they appear in the recode call.
-
-```{r}
-factor(mtcars_sm$am) %>%
-  levels()
-
-# You can notice that mutate() parameters are "executed" from first to last.
-# So to "am_char" is already passed "am" as factor, as "am" is mutated before "am_char".
-dplyr::mutate(
-  mtcars_sm,
-  am = factor(am),
-  am_char = recode_factor(am, `1` = "one", `0` = "zero")
-) %>%
-  dplyr::pull(am_char) %>%
-  levels()
-```
-
-[`case_when()`](https://dplyr.tidyverse.org/reference/case_when.html) allows to specify multiple `if` statements.
+[case_when()](https://dplyr.tidyverse.org/reference/case_when.html) allows to specify multiple `if` statements.
 Statements are given in a format `condition ~ return_value` and they are matched from first to last.
 
 For `else` statement put `TRUE ~ some_value` as the last statement (if not specified, `some_value` will be `NA`).
 As `case_when()` is checking for return types, you have to use appropriate `NA` type:
 `NA_integer_`, `NA_real_`, `NA_complex_` or `NA_character_`.
-Be careful since `1` is a real number (`numeric` type), whereas `1L` is a true integer.
+Be careful since `1` is a real number (`double` type), whereas `1L` is a true integer.
 
 ```{r}
 dplyr::mutate(
@@ -1076,20 +1034,54 @@ dplyr::mutate(
   dplyr::select(hp, car_category)
 ```
 
-All these "if" functions are vectorised and can be also used for vectors:
+[recode()](https://dplyr.tidyverse.org/reference/recode.html) replaces values, similar to `switch()`.
+You can specify default return value for not-specified and `NA` values (`.default` and `.missing` parameters).
+Very useful for replacing factor values while preserving their order.
+
+```{r}
+dplyr::mutate(mtcars_sm, am_char = recode(am, `0` = "zero", `1` = "one")) %>%
+  dplyr::select(am, am_char)
+```
+
+[recode_factor()](https://dplyr.tidyverse.org/reference/recode.html) create factors with levels ordered as they appear in the recode call.
+
+```{r}
+factor(mtcars_sm$am) %>%
+  levels()
+
+dplyr::mutate(
+  mtcars_sm,
+  am = factor(am),
+  am_char = recode_factor(am, `1` = "one", `0` = "zero")
+) %>%
+  dplyr::pull(am_char) %>%
+  levels()
+```
+
+You can notice that mutate() parameters are evaluated from first to last.
+So to `am_char` is already passed `am` as factor, as `am` is mutated before `am_char`.
+
+Of course, all these functions can be also used for vectors:
 
 ```{r}
 v <- c(1, 1, 2, 3, 10)
 if_else(v < 2, "< 2", ">= 2")
 ```
 
-### [`group_by()`](https://dplyr.tidyverse.org/reference/group_by.html) and [`summarise()`](https://dplyr.tidyverse.org/reference/summarise.html)
+```{r}
+(am_factor <- factor(mtcars_sm$am))
+recode(am_factor, `0` = "zero", `1` = "one")
+recode_factor(am_factor, `1` = "one", `0` = "zero")
+```
+
+### [group_by()](https://dplyr.tidyverse.org/reference/group_by.html) and [summarise()](https://dplyr.tidyverse.org/reference/summarise.html)
 
 `group_by()` is similar to SQL operation of the same name.
 It takes an existing dataframe and converts it into a grouped dataframe where operations are performed "by group".
 
 ```{r}
-(by_cyl <- dplyr::group_by(mtcars, cyl))
+by_cyl <- dplyr::group_by(mtcars, cyl)
+by_cyl
 ```
 
 Better is to see the original `tibble` in your console, where is information about groups.
@@ -1101,6 +1093,7 @@ Let's calculate some statistics in the `cyl` groups:
 ```{r}
 dplyr::summarise(
   by_cyl,
+  n = n(),
   mpg_mean = mean(mpg),
   hp_max = max(hp),
   qsec_median = median(qsec),
@@ -1108,14 +1101,7 @@ dplyr::summarise(
 )
 ```
 
-[`n()`](https://dplyr.tidyverse.org/reference/n.html) is a special function to get counts inside groups:
-
-```{r}
-dplyr::summarise(
-  by_cyl,
-  n = n()
-)
-```
+[n()](https://dplyr.tidyverse.org/reference/n.html) is a special function to get counts inside groups:
 
 `filter()` is now acting on groups. Let's compare these two filter operations:
 
@@ -1124,14 +1110,18 @@ dplyr::filter(mtcars, mpg > mean(mpg))
 dplyr::filter(by_cyl, mpg > mean(mpg))
 ```
 
-The former keeps rows with `mpg` greater than the global average whereas the latter keeps rows with `mpg` greater than the average inside the `cyl` groups.
+The former keeps rows with `mpg` greater than the global average whereas the latter acts within the `cyl` groups, and, thus,
+keeps rows with `mpg` greater than the average inside the `cyl` groups.
 
 To remove grouping, use the `ungroup()` function.
 
-### [`*_join()`](https://dplyr.tidyverse.org/reference/join.html) and [`bind_rows()`](https://dplyr.tidyverse.org/reference/bind.html) - joining dataframes
+### [*_join()](https://dplyr.tidyverse.org/reference/join.html) and [bind_rows()](https://dplyr.tidyverse.org/reference/bind.html) - joining dataframes
 
 A collection of `*_join()` functions acts in the same way as in SQL -
 based on common keys, they join two dataframes together.
+
+See [these beautiful animations of joins](https://www.garrickadenbuie.com/project/tidyexplain/#mutating-joins)
+and [this chapter](https://r4ds.had.co.nz/relational-data.html) in R for Data Science for more explanation.
 
 ```{r}
 mtcars_prices <- tibble::tribble(
@@ -1145,8 +1135,7 @@ dplyr::left_join(mtcars_sm, mtcars_prices, by = "cyl") %>%
   dplyr::select(cyl, price)
 ```
 
-`bind_rows()` append rows to dataframe.
-It puts `NA`s to columns not present in both dataframes.
+[bind_rows()](https://dplyr.tidyverse.org/reference/bind.html) appends rows to a dataframe. It puts `NA`s to columns not present in both dataframes.
 
 ```{r}
 dplyr::bind_rows(mtcars_sm, mtcars_prices) %>%
@@ -1155,9 +1144,9 @@ dplyr::bind_rows(mtcars_sm, mtcars_prices) %>%
 
 ***
 
-## [`tidyr`](https://tidyr.tidyverse.org/) - tools for tidy data
+## [tidyr](https://tidyr.tidyverse.org/) - tools for tidy data
 
-The goal of `tidyr` is to help you to create [tidy data](https://tidyr.tidyverse.org/articles/tidy-data.html).
+The goal of [tidyr](https://tidyr.tidyverse.org/) is to help you to create [tidy data](https://tidyr.tidyverse.org/articles/tidy-data.html).
 Just to remind you, tidy data is data where:
 
 - Every column is variable.
@@ -1173,7 +1162,7 @@ Let's look at some of basic tasks `tidyr` can do:
 [Pivotting](https://tidyr.tidyverse.org/articles/pivot.html) converts between long and wide forms.
 We will reuse the wide `df_wide` dataframe.
 
-[`pivot_longer()`](https://tidyr.tidyverse.org/reference/pivot_longer.html) "lengthens" data,
+[pivot_longer()](https://tidyr.tidyverse.org/reference/pivot_longer.html) "lengthens" data,
 increasing the number of rows and decreasing the number of columns.
 
 ```{r}
@@ -1208,14 +1197,14 @@ df_long2
 ```
 
 We can see gene columns have the same prefix, and so we can utilize that:
-[select helpers](https://www.rdocumentation.org/packages/tidyselect/topics/select_helpers) are allowed here.
+[select helpers](https://tidyselect.r-lib.org/) are allowed here.
 
 ```{r}
 df_wide2 %>%
   tidyr::pivot_longer(-starts_with("Gene_"), names_to = "Sample", values_to = "Count")
 ```
 
-[`pivot_wider()`](https://tidyr.tidyverse.org/reference/pivot_wider.html) "widens" data, increasing the number of columns and decreasing the number of rows.
+[pivot_wider()](https://tidyr.tidyverse.org/reference/pivot_wider.html) "widens" data, increasing the number of columns and decreasing the number of rows.
 
 ```{r}
 tidyr::pivot_wider(df_long, names_from = "Sample", values_from = "Count")
@@ -1224,21 +1213,21 @@ tidyr::pivot_wider(df_long2, names_from = "Sample", values_from = "Count")
 
 ### Splitting and combining character columns
 
-[`separate()`](https://tidyr.tidyverse.org/reference/separate.html) turns a single character column into multiple columns.
+[separate()](https://tidyr.tidyverse.org/reference/separate.html) turns a single character column into multiple columns.
 
 ```{r}
 (df <- data.frame(x = c(NA, "a.b", "a.d", "b.c")))
 tidyr::separate(df, x, c("A", "B"), sep = "\\.")
 ```
 
-[`extract()`](https://tidyr.tidyverse.org/reference/separate.html) turns each capturing group into a new column.
+[extract()](https://tidyr.tidyverse.org/reference/separate.html) turns each capturing group into a new column.
 
 ```{r}
 (df <- data.frame(x = c(NA, "a-1-x", "a-2-y", "a-3")))
 tidyr::extract(df, x, c("A", "B", "C"), regex = "([a-z])-(\\d)-?([a-z])?")
 ```
 
-[`unite()`](https://tidyr.tidyverse.org/reference/unite.html) pastes together multiple columns into one.
+[unite()](https://tidyr.tidyverse.org/reference/unite.html) pastes together multiple columns into one.
 
 ```{r}
 (df <- data.frame(x = c(NA, "a", "b", "c"), y = c("a", "f", "g", "h")))
@@ -1247,7 +1236,7 @@ tidyr::unite(df, "x_y", x, y, sep = "_", remove = FALSE)
 
 ### Other `tidyr` functions
 
-[`drop_na()`](https://tidyr.tidyverse.org/reference/drop_na.html) drops rows containing missing values.
+[drop_na()](https://tidyr.tidyverse.org/reference/drop_na.html) drops rows containing missing values.
 
 ```{r}
 (df <- data.frame(x = c(1, NA, 2), y = c(1, 2, NA)))
@@ -1255,7 +1244,7 @@ tidyr::drop_na(df)
 tidyr::drop_na(df, x)
 ```
 
-[`replace_na()`](https://tidyr.tidyverse.org/reference/replace_na.html) replaces missing values.
+[replace_na()](https://tidyr.tidyverse.org/reference/replace_na.html) replaces missing values.
 
 For dataframes, specify a list of columns and replacements.
 
@@ -1269,20 +1258,21 @@ For vectors, specify a replacement value.
 tidyr::replace_na(c(1, NA, 3), 2)
 ```
 
-## [`stringr`](https://stringr.tidyverse.org/) - consistent wrappers for common string operations
+***
 
-`stringr` is a replacement for base R collection of string manipulation functions (e.g. `grep()`, `gsub()`, etc., see `?grep`).
-In my opinion, `stringr` API is more user-friendly.
-All its functions start with `str_` prefix and are vectorised over input string and pattern.
+## [stringr](https://stringr.tidyverse.org/) - consistent wrappers for common string operations
+
+[stringr](https://stringr.tidyverse.org/) is a nice replacement for base R collection of string manipulation functions (e.g. `grep()`, `gsub()`, etc., see `?grep`).
+In my opinion, `stringr` API is more user-friendly. All its functions start with `str_` prefix and are vectorised over input string and pattern.
 
 **Useful links**
 
 - [Cheatsheet](https://raw.githubusercontent.com/rstudio/cheatsheets/master/strings.pdf)
 - [RegExplain](https://www.garrickadenbuie.com/project/regexplain/) -
-  RStudio addin providing a friendly interface for working with regular expressions and functions from stringr.
+  RStudio addin providing a friendly interface for working with regular expressions and functions from `stringr`.
 - [Regex101](https://regex101.com/) - cool web application for regex testing.
 
-Because [`stringr` homepage](https://stringr.tidyverse.org/) offers a nice collection of examples,
+Because `stringr` [homepage](https://stringr.tidyverse.org/) offers a nice collection of examples,
 I will just copy-paste them here and possibly add more information.
 
 ```{r}
@@ -1292,13 +1282,13 @@ x <- c("why", "video", "cross", "extra", "deal", "authority")
 str_length(x)
 ```
 
-[`str_c(..., sep = "", collapse = NULL)`](https://stringr.tidyverse.org/reference/str_c.html) concatenates a vector of strings.
+[str_c(..., sep = "", collapse = NULL)](https://stringr.tidyverse.org/reference/str_c.html) concatenates a vector of strings.
 
 ```{r}
 str_c(x, collapse = ", ")
 ```
 
-[`str_sub(string, start = 1L, end = -1L)`](https://stringr.tidyverse.org/reference/str_sub.html) extracts a substring by a position.
+[str_sub(string, start = 1L, end = -1L)](https://stringr.tidyverse.org/reference/str_sub.html) extracts a substring by a position.
 Positions can be also negative.
 
 ```{r}
@@ -1306,7 +1296,7 @@ str_sub(x, 1, 2)
 str_sub(x, -2)
 ```
 
-[`str_detect(string, pattern, negate = FALSE)`](https://stringr.tidyverse.org/reference/str_detect.html) tells you if there’s any match to the pattern.
+[str_detect(string, pattern, negate = FALSE)](https://stringr.tidyverse.org/reference/str_detect.html) tells you if there’s any match to the pattern.
 Handy in `dplyr::filter()`.
 
 ```{r}
@@ -1314,14 +1304,14 @@ str_detect(x, "[aeiou]")
 str_detect(x, "[aeiou]", negate = TRUE)
 ```
 
-[`str_count(x, pattern)`](https://stringr.tidyverse.org/reference/str_count.html) counts the number of patterns.
+[str_count(x, pattern)](https://stringr.tidyverse.org/reference/str_count.html) counts the number of patterns.
 
 ```{r}
 str_count(x, "[aeiou]")
 ```
 
-[`str_subset(string, pattern, negate = FALSE)`](https://stringr.tidyverse.org/reference/str_subset.html) extracts the matching components.
-[`str_which(string, pattern, negate = FALSE)`](https://stringr.tidyverse.org/reference/str_subset.html) gives indices of the matching components.
+[str_subset(string, pattern, negate = FALSE)](https://stringr.tidyverse.org/reference/str_subset.html) extracts the matching components.
+[str_which(string, pattern, negate = FALSE)](https://stringr.tidyverse.org/reference/str_subset.html) gives indices of the matching components.
 
 ```{r}
 str_subset(x, "[aeiou]")
@@ -1329,21 +1319,20 @@ str_subset(x, "[aeiou]", negate = TRUE)
 str_which(x, "[aeiou]")
 ```
 
-[`str_locate(string, pattern)`](https://stringr.tidyverse.org/reference/str_locate.html) gives the position of the match.
+[str_locate(string, pattern)](https://stringr.tidyverse.org/reference/str_locate.html) gives the position of the match.
 
 ```{r}
 str_locate(x, "[aeiou]")
 ```
 
-[`str_extract(string, pattern)`](https://stringr.tidyverse.org/reference/str_extract.html) extracts the text of the match.
-Return value = vector.
+[str_extract(string, pattern)](https://stringr.tidyverse.org/reference/str_extract.html) extracts the text of the match and returns a vector.
 
 ```{r}
 x
 str_extract(x, "[aeiou]")
 ```
 
-[`str_match(string, pattern)`](https://stringr.tidyverse.org/reference/str_match.html) extracts parts of the match defined by parentheses
+[str_match(string, pattern)](https://stringr.tidyverse.org/reference/str_match.html) extracts parts of the match defined by parentheses
 (capturing groups).
 Return value = matrix, with rows being input vector values, and columns being capturing groups.
 First column represents the full match.
@@ -1353,9 +1342,9 @@ x
 str_match(x, "(.)[aeiou](.)")
 ```
 
-[`str_replace(string, pattern, replacement)`](https://stringr.tidyverse.org/reference/str_replace.html) replaces the matches with new text.
+[str_replace(string, pattern, replacement)](https://stringr.tidyverse.org/reference/str_replace.html) replaces the matches with new text.
 `replacement` also supports references of the form `\1`, `\2`, etc., which will be replaced with the contents of the respective matched group (created by `()`).
-[`str_remove(string, pattern)`](https://stringr.tidyverse.org/reference/str_remove.html) is an alias for `str_replace(string, pattern, "")`.
+[str_remove(string, pattern)](https://stringr.tidyverse.org/reference/str_remove.html) is an alias for `str_replace(string, pattern, "")`.
 
 ```{r}
 str_replace(x, "[aeiou]", "?")
@@ -1365,15 +1354,17 @@ str_remove(x, "[aeiou]")
 str_remove_all(x, "[aeiou]")
 ```
 
-[`str_split(string, pattern, n = Inf, simplify = FALSE)`](https://stringr.tidyverse.org/reference/str_split.html) splits up a string into multiple pieces.
+[str_split(string, pattern, n = Inf, simplify = FALSE)](https://stringr.tidyverse.org/reference/str_split.html) splits up a string into multiple pieces.
 
 ```{r}
 str_split(c("a,b", "c,d,e"), ",")
 ```
 
-## [`glue`](https://glue.tidyverse.org/) - string interpolation
+***
 
-`glue` offers the same functionality, which you already know from e.g. Bash (`"$variable"`) or Python (`f"{variable}"`).
+## [glue](https://glue.tidyverse.org/) - string interpolation
+
+[glue](https://glue.tidyverse.org/) offers the same functionality, which you already know from e.g. Bash (`"$variable"`) or Python (`f"{variable}"`).
 
 ```{r}
 library(glue)
@@ -1396,9 +1387,62 @@ glue(
 )
 ```
 
-# [`ggplot2`](https://ggplot2.tidyverse.org/) - plotting made easy
+***
 
-`ggplot2` is a system for declaratively creating graphics, based on
+## [purrr](https://purrr.tidyverse.org/index.html) - functional programming tools
+
+[purrr](https://purrr.tidyverse.org/index.html) is basically a handy replacement for `lapply()` and `sapply()`,
+but if you go in more depth, it offers much more functionality. We will just look at the most basic functions.
+
+- [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/purrr.pdf)
+
+[map()](https://purrr.tidyverse.org/reference/map.html) is similar to `lapply()`, but allows to use a special formula notation for functions.
+In this formula, iterated variable is referenced by `.` (dot). In the example below, `~ . + 1` is equivalent to `function(x) {x + 1}`.
+
+```{r}
+my_list <- list(first = 1:3, second = 1:10, third = 20)
+my_list
+purrr::map(my_list, ~ . + 1)
+```
+
+`map()` or [pluck()](https://purrr.tidyverse.org/reference/pluck.html) can be used to retrieve a specific subelement of each element.
+Here, we return the first element of each nested vector:
+
+```{r}
+purrr::map(my_list, 1)
+```
+
+Similarly, if nested lists or vectors are named, we can use their names instead of integer position.
+
+```{r}
+my_named_list <- list(
+  list(first = 1:2, second = "Hello", third = 20),
+  list(first = 5, second = 1)
+)
+my_named_list
+purrr::map(my_named_list, "second")
+```
+
+`map()` always returns a list, while its `map_<type>()` versions returns a vector of specified type (e.g. character - `map_chr()`).
+
+```{r}
+purrr::map_dbl(my_list, mean)
+```
+
+Using a predicate function, [keep()](https://purrr.tidyverse.org/reference/keep.html) and [discard()](https://purrr.tidyverse.org/reference/keep.html)
+will filter elements:
+
+```{r}
+purrr::keep(my_list, ~ all(. < 5))
+purrr::discard(my_list, ~ all(. < 5))
+purrr::keep(my_named_list, ~ length(.) > 2)
+```
+
+***
+
+# [ggplot2](https://ggplot2.tidyverse.org/) - plotting made easy
+
+[ggplot2](https://ggplot2.tidyverse.org/) is a package for declaratively creating graphics (part of `tidyverse`), based on
 [The Grammar of Graphics](https://byrneslab.net/classes/biol607/readings/wickham_layered-grammar.pdf).
 You provide the data, tell ggplot2 how to map variables to aesthetics, what graphical primitives to use, and it takes care of the details.
 
@@ -1419,70 +1463,95 @@ This will provide you sensible defaults. To further modify the plot, you can add
   [line types](http://sape.inf.usi.ch/quick-reference/ggplot2/linetype), etc.
 - [Aesthetic specifications](https://ggplot2.tidyverse.org/articles/ggplot2-specs.html) - types of shapes, lines, etc.
 - [`ggplot2` essentials](http://www.sthda.com/english/wiki/ggplot2-essentials) - there is probably answer to any "How to...?" question.
+- [R Graphics Cookbook](https://r-graphics.org/) - similar to above, but better structured.
 - [Top 50 `ggplot2` visualizations](http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html)
+- [BBC style graphics cookbook](https://bbc.github.io/rcookbook/)
+- ["You can replicate almost any plot with R"](https://simplystatistics.org/2019/08/28/you-can-replicate-almost-any-plot-with-ggplot2/)
 
-`ggplot2` is a very extensive library, and so you should mainly know its basic principles and search for details in
+> For professional tips regarding mainly, but not only, scientific visualizations, I would recommend [Fundamentals of Data Visualization](https://clauswilke.com/dataviz/).
+  This book can really help you to design figures in your papers.
+
+`ggplot2` is a very extensive package, and so you should mainly know its basic principles and search for details in
 the [reference](https://ggplot2.tidyverse.org/reference/index.html).
-We will just look at these basic principles.
+We will just look at these basic principles, using the `mtcars` dataframe.
 
 ```{r}
 library(ggplot2)
-mtcars_sm
+library(ggcats)
+head(mtcars)
 ggplot(mtcars) +
-  geom_point(aes(x = cyl, y = mpg))
+  geom_cat(aes(x = cyl, y = disp), cat = "grumpy")
 ```
 
-We have initialized the `ggplot2` object with `mtcars` data and added `geom_point()`,
-which represents a visualization of points in coordinate system.
-In this geom, we mapped `x` to `cyl` and `y` to `mpg` variable, respectively.
+A professional figure, right? `r emo::ji("grin")`
+
+We have initialized the `ggplot2` object with `mtcars` data and added `geom_cat()`,
+which represents a visualization of points (cats) in coordinate system.
+In this geom, we mapped `x` to `cyl` and `y` to `disp` variable, respectively.
 
 Each `geom_*()` has available aesthetics to which you can map variables.
-Let's add some colors to the previous plot:
+Let's scale cat size by `carb` variable:
 
 ```{r}
 ggplot(mtcars) +
-  geom_point(aes(x = cyl, y = mpg, color = gear))
+  geom_cat(aes(x = cyl, y = disp, size = carb), cat = "grumpy")
 ```
 
-Hmmm but why is `gear` considered as a continuous variable?
+Hmmm but it seems `cyl` is considered as a continuous variable... well, it is defined so:
 
-```{r}
+```{r, results = "hold"}
 head(mtcars$gear)
-class(mtcars$gear)
+typeof(mtcars$gear)
 ```
 
-Because it is defined so.
-
-`ggplot2` has very sensible defaults, so, for example, in case of colors it uses continuous or discrete scale,
-based on variable type.
-Let's see what happens when we change `gear` type to factor:
+`ggplot2` has very sensible defaults, so, for example, in case of colors it uses continuous or discrete scale, based on variable type.
+Let's see what happens when we change `cyl` type to factor:
 
 ```{r}
-mtcars2 <- dplyr::mutate(mtcars, gear = factor(gear))
-head(mtcars2$gear)
+mtcars2 <- dplyr::mutate(mtcars, cyl = factor(cyl))
+head(mtcars2$cyl)
 
 ggplot(mtcars2) +
-  geom_point(aes(x = cyl, y = mpg, color = gear))
+  geom_cat(aes(x = cyl, y = disp, size = carb), cat = "grumpy")
 ```
 
-Now you can see that `ggplot2` has created the discrete scale, where each level of `gear` variable has its own color.
+See how x-axe changed, as `cyl` is now factor variable.
 
 Because `ggplot2` is a part of `tidyverse`, it also uses the non-standard evaluation, and so this is equivalent
 to the example above, but without modifying the `mtcars` object:
 
 ```{r, eval = FALSE}
 ggplot(mtcars) +
-  geom_point(aes(x = cyl, y = mpg, color = factor(gear)))
+  geom_cat(aes(x = factor(cyl), y = disp, size = carb), cat = "grumpy")
 ```
 
-Aesthetics are inherited and overwritten by last definition.
+OK, time for a more serious example `r emo::ji("slightly_smiling_face")`
+Instead of `geom_cat()`, we will use more practical `geom_point()`, which is showing classic points instead of cats, and map `carb` to point colors:
+
+```{r}
+ggplot(mtcars2) +
+  geom_point(aes(x = cyl, y = disp, color = carb))
+```
+
+Colors seems to be at continuous scale, right? We would rather want a discrete scale. Let's fix it:
+
+```{r}
+ggplot(mtcars2) +
+  geom_point(aes(x = cyl, y = disp, color = factor(carb)))
+```
+
+Now you can see that `ggplot2` has created the discrete scale, where each level of `carb` variable has its own color.
+
+Aesthetics are inherited and overwritten by the last definition.
 In this way you haven't to repeat common aesthetics for each geom.
 This is equivalent to the example above:
 
 ```{r, eval = FALSE}
-ggplot(mtcars, aes(x = cyl, y = mpg, color = factor(gear))) +
+ggplot(mtcars2, aes(x = cyl, y = disp, color = factor(carb))) +
   geom_point()
 ```
+
+If you add more geoms to the plot above, they inherit aesthetics defined in `ggplot()`, unless you specify `inherit.aes = FALSE`.
 
 Let's introduce more `ggplot2` components:
 
@@ -1514,9 +1583,11 @@ p <- ggplot(mtcars, aes(x = qsec, y = mpg)) +
 print(p)
 ```
 
+You can see we saved our plot to the `p` variable. Anytime later, you can modify this variable (plot) by adding more geoms or theme settings.
+
 Another useful ability of `ggplot2` is facetting.
-[`facet_wrap()`](https://ggplot2.tidyverse.org/reference/facet_wrap.html) splits a plot to panels according to discrete variable, which
-is specified by formula.
+[facet_wrap()](https://ggplot2.tidyverse.org/reference/facet_wrap.html) splits a plot to panels according to discrete variable,
+which is specified by a formula.
 We split the plot by `am` variable (transmission: 0 = automatic, 1 = manual) and
 define a translation of labels for its levels.
 
@@ -1531,9 +1602,8 @@ We can specify multiple variables and plot is then created for every combination
 p + facet_wrap(~ am + cyl, labeller = labeller(am = c("0" = "Automatic", "1" = "Manual")))
 ```
 
-Similar function is [`facet_grid()`](https://ggplot2.tidyverse.org/reference/facet_grid.html) which creates
-a matrix of plots.
-Rows and columns are specified by LHS and RHS of formula.
+Similar function is [facet_grid()](https://ggplot2.tidyverse.org/reference/facet_grid.html) which creates
+a matrix of plots. Rows and columns are specified by LHS and RHS of a formula.
 
 ```{r}
 p + facet_grid(am ~ cyl, labeller = labeller(am = c("0" = "Automatic", "1" = "Manual")))
@@ -1545,20 +1615,18 @@ Again, multiple variables are supported, for both LHS and RHS.
 p + facet_grid(am + vs ~ cyl, labeller = labeller(am = c("0" = "Automatic", "1" = "Manual")))
 ```
 
-Saving is done via `ggsave()` function.
-You can use any format R can handle.
+Export of plots to image files is done via `ggsave()` function. You can use any format R can handle.
 
 ```{r}
 ggsave("ggplot2_example.png", p)
 ggsave("ggplot2_example.pdf", p)
 ```
 
-[ggplot2_example.png](ggplot2_example.png)
+[ggplot2_example.png](`r here("E02-intro_to_R/ggplot2_example.png")`)
 
-[ggplot2_example.pdf](ggplot2_example.pdf)
+[ggplot2_example.pdf](`r here("E02-intro_to_R/ggplot2_example.pdf")`)
 
-Alternatively, you can use base R functions.
-This is useful for saving multiple plots to a single multipage PDF.
+Alternatively, you can use base R functions. This is useful for saving multiple plots to a single multipage PDF.
 
 ```{r, eval = FALSE}
 pdf("ggplot2_example.pdf")
@@ -1571,8 +1639,7 @@ dev.off()
 You probably wondered, how can you use dynamic variable names in `aes()`.
 For example, consider a function `plot_pca(data, color_by)`
 which calculates PCA and shows scatterplot colorized by a specified variable.
-Although it is possible via NSE (see `vignette("programming")`),
-the easiest way is to use `aes_string()` function.
+Although it is possible via NSE (see `vignette("programming")`), the easiest way is to use `aes_string()` function.
 
 ```{r}
 color_by <- "cyl"
@@ -1582,12 +1649,73 @@ ggplot(mtcars) +
 ```
 
 The disadvantage is that you cannot use the capabilities of NSE.
-In the example above, you cannot specify `factor(color_by)` to treat
-`cyl` as factor variable.
+In the example above, you cannot specify `factor(color_by)` to treat `cyl` as a factor variable.
 
-## Libraries extending the `ggplot2`
+## Packages extending the `ggplot2`
 
-### [`ggpubr`](https://rpkgs.datanovia.com/ggpubr/) - publication-ready plots
+### [patchwork](https://patchwork.data-imaginist.com/) - the composer of plots
+
+[patchwork](https://patchwork.data-imaginist.com/) makes ridiculously simple to combine separate ggplots into the same graphic (called "patchwork").
+Shortly, it defines arithmetic for ggplots and several functions to place plots into grid.
+
+Mainly examples provided by `patchwork` itself are used. First, we create some plots:
+
+```{r}
+library(patchwork)
+p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
+p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
+p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
+p4 <- ggplot(mtcars) + geom_bar(aes(carb))
+```
+
+Now we can combine them to a single figure:
+
+```{r}
+p1 + p2
+p1 / p2
+```
+
+`+` and `/` combines plots into row and column, respectively.
+However, by default, `patchwork` will try to keep the grid square, and fill it out in row order:
+
+```{r}
+p1 + p2 + p3 + p4
+```
+
+We can control this by [plot_layout()](https://patchwork.data-imaginist.com/reference/plot_layout.html)
+
+```{r}
+p1 + p2 + p3 + p4 + plot_layout(nrow = 3, byrow = FALSE)
+```
+
+Each combined plot can be combined with any other ggplot or combined plot (i.e. you can create nested patchworks):
+
+```{r}
+p1 + (p2 / p3)
+p1 / (p2 + p3)
+```
+
+Patchwork can be annotated and individual plots tagged:
+
+```{r}
+(p1 | (p2 / p3)) + 
+  plot_annotation(title = "The surprising story about mtcars", tag_levels = "A")
+```
+
+If you just need to make a grid of plots, use [wrap_plots()](https://patchwork.data-imaginist.com/reference/wrap_plots.html):
+
+```{r}
+# Or you can pass a list of plots:
+# plots <- list(p1, p2, p3, p4) 
+# wrap_plots(plots)
+wrap_plots(p1, p2, p3, p4)
+```
+
+```{r}
+wrap_plots(p1, p2, p3, p4, nrow = 1)
+```
+
+### [ggpubr](https://rpkgs.datanovia.com/ggpubr/) - publication-ready plots
 
 ```{r}
 ggpubr::ggboxplot(
@@ -1597,26 +1725,13 @@ ggpubr::ggboxplot(
 )
 ```
 
-### [`GGally`](https://ggobi.github.io/ggally/index.html) - useful geoms
+### [GGally](https://ggobi.github.io/ggally/index.html) - useful geoms
 
 ```{r}
 GGally::ggpairs(mtcars, columns = c("cyl", "mpg", "qsec"))
 ```
 
-### [`cowplot`](https://wilkelab.org/cowplot/articles/aligning_plots.html) - aligning multiple plots
-
-`cowplot` can do more than aligning plots. For example, it can [draw images](https://wilkelab.org/cowplot/reference/draw_image.html).
-
-```{r}
-p1 <- ggplot(mtcars) + 
-  geom_point(aes(x = disp, y = mpg))
-p2 <- ggplot(mtcars) + 
-  geom_point(aes(x = disp, y = hp))
-
-cowplot::plot_grid(p1, p2, align = "h")
-```
-
-### [`ggforce`](https://ggforce.data-imaginist.com/index.html) - cool functions
+### [ggforce](https://ggforce.data-imaginist.com/index.html) - cool visualizations
 
 ```{r}
 ggplot(mtcars) +
@@ -1625,7 +1740,7 @@ ggplot(mtcars) +
   theme_bw()
 ```
 
-### [`ggcorrplot`](https://rpkgs.datanovia.com/ggcorrplot/index.html) - visualize a correlation matrix
+### [ggcorrplot](https://rpkgs.datanovia.com/ggcorrplot/index.html) - visualize a correlation matrix
 
 ```{r}
 corr <- round(cor(mtcars), 1)
@@ -1636,7 +1751,7 @@ p_corr <- ggcorrplot::ggcorrplot(corr, method = "circle", p.mat = p_mat)
 print(p_corr)
 ```
 
-### [`ggrepel`](https://ggrepel.slowkow.com/) - repel overlapping text labels
+### [ggrepel](https://ggrepel.slowkow.com/) - repel overlapping text labels
 
 ```{r}
 ggplot(mtcars2, aes(x = qsec, y = mpg)) +
@@ -1646,9 +1761,9 @@ ggplot(mtcars2, aes(x = qsec, y = mpg)) +
 
 ## Additional themes
 
-### [`ggsci`](https://nanx.me/ggsci/index.html) - a collection of color palettes inspired by (mainly) scientific journals
+### [ggsci](https://nanx.me/ggsci/index.html) - a collection of color palettes inspired by (mainly) scientific journals
 
-Nature Publishing Group color palette:
+Nature Publishing Group color palette as an example:
 
 ```{r}
 p1 <- ggplot(mtcars) +
@@ -1661,10 +1776,10 @@ p2 <- ggplot(mtcars) +
   theme_bw() +
   ggsci::scale_fill_npg()
 
-cowplot::plot_grid(p1, p2, align = "h")
+p1 + p2
 ```
 
-### [`hrbrthemes`](https://hrbrmstr.github.io/hrbrthemes/index.html) - themes and color palettes
+### [hrbrthemes](https://hrbrmstr.github.io/hrbrthemes/index.html) - themes and color palettes
 
 ```{r}
 ggplot(mtcars) +
@@ -1672,7 +1787,7 @@ ggplot(mtcars) +
   hrbrthemes::theme_modern_rc()
 ```
 
-### [`see`](https://easystats.github.io/see/index.html) - themes and color palettes
+### [see](https://easystats.github.io/see/index.html) - themes and color palettes
 
 ```{r}
 ggplot(mtcars) +
@@ -1680,26 +1795,35 @@ ggplot(mtcars) +
   see::theme_abyss()
 ```
 
-### [`cowplot`](https://wilkelab.org/cowplot/articles/themes.html#choosing-themes-in-the-context-of-the-plot)
+### [cowplot](https://wilkelab.org/cowplot/articles/themes.html#choosing-themes-in-the-context-of-the-plot)
 
-Not really a collection of e.g. colors, but useful visual helpers with explanation.
+Not really a collection of e.g. colors, but there are useful visual helpers with explanation.
 
-# Other useful libraries
+# Other useful packages
 
-## [`janitor`](http://sfirke.github.io/janitor/) - table summaries (RIP `table()`)
+## [janitor](http://sfirke.github.io/janitor/) - table summaries, duplicates etc.
 
 Personally, I am mainly using these functions:
 
-[`tabyl()`](http://sfirke.github.io/janitor/reference/tabyl.html) ([vignette](http://sfirke.github.io/janitor/articles/tabyls.html)) creates a frequency table.
-It's a replacement for base R `table()`, which has a weird return value with horrible API.
+[tabyl()](http://sfirke.github.io/janitor/reference/tabyl.html) ([vignette](http://sfirke.github.io/janitor/articles/tabyls.html)) creates a frequency table.
+It is a tidy replacement for base R `table()`:
 
 ```{r}
+table(mtcars$cyl)
 janitor::tabyl(mtcars, cyl)
+```
+
+```{r}
+table(mtcars$cyl, mtcars$gear)
 janitor::tabyl(mtcars, cyl, gear)
+```
+
+```{r}
+table(mtcars$cyl, mtcars$gear, mtcars$am)
 janitor::tabyl(mtcars, cyl, gear, am)
 ```
 
-[`adorn_*()`](http://sfirke.github.io/janitor/reference/index.html) append row and/or column with summary statistics.
+[adorn_*()](http://sfirke.github.io/janitor/reference/index.html) append row and/or column with summary statistics:
 
 ```{r}
 janitor::tabyl(mtcars, cyl, gear) %>%
@@ -1710,19 +1834,19 @@ janitor::tabyl(mtcars, cyl, gear) %>%
   as.data.frame()
 ```
 
-[`get_dupes()`](http://sfirke.github.io/janitor/reference/get_dupes.html) returns duplicated rows.
+[get_dupes()](http://sfirke.github.io/janitor/reference/get_dupes.html) returns duplicated rows:
 
 ```{r}
 janitor::get_dupes(mtcars, mpg, hp)
 ```
 
-## [`plotly`](https://plot.ly/r/) - interactive HTML plots
+## [plotly](https://plot.ly/r/) - interactive HTML plots
 
-`plotly` is a JavaScript library with wrappers for R and Python.
+[plotly](https://plot.ly/r/) is a JavaScript library with wrappers for R and Python.
 It is somewhat similar to `ggplot2` in terms of The Grammar of Graphics.
-Output is a HTML file or in case of RMarkdown, it can be directly embedded as chunk output.
+Output is a HTML file or in case of RMarkdown, it can be directly embedded as a chunk output.
 
-We want go into details, so if you are interested, see [examples](https://plot.ly/r/#fundamentals).
+We don't go into details, so if you are interested, see [examples](https://plot.ly/r/#fundamentals).
 We will try to replicate the `mtcars` scatterplot done in `ggplot2`:
 
 ```{r}
@@ -1744,16 +1868,16 @@ p_plotly <- plotly::plot_ly(
 p_plotly
 ```
 
-`plotly` can also convert `ggplot2` objects, but it's not always accurate.
+`plotly` can also convert `ggplot2` objects, but it is not always accurate:
 
 ```{r}
 plotly::ggplotly(p_ggplot2)
 ```
 
-But this seems to be quite good, even better than `p_plotly`.
+But this seems to be quite good, even better than `p_plotly` `r emo::ji("smiling_face")`
 
 `plotly` produces objects inheriting from `htmlwidget` class.
-We can use `htmlwidgets` package to save `plotly` object to HTML file.
+We can use `htmlwidgets` package to save `plotly` object into HTML file:
 
 ```{r}
 class(p_plotly)
@@ -1762,10 +1886,10 @@ htmlwidgets::saveWidget(p_plotly, "p_plotly.html")
 
 [p_plotly.html](p_plotly.html)
 
-## [`heatmaply`](http://talgalili.github.io/heatmaply/) - interactive HTML heatmaps
+## [heatmaply](http://talgalili.github.io/heatmaply/) - interactive HTML heatmaps
 
-`heatmaply` uses `plotly` as a backend.
-Its API is mostly compatible with the classic [`heatmap.2()`](https://www.rdocumentation.org/packages/gplots/versions/3.0.1.2/topics/heatmap.2) function.
+[heatmaply](http://talgalili.github.io/heatmaply/) uses `plotly` underneath.
+Its API is mostly compatible with the classic [heatmap.2()](https://www.rdocumentation.org/packages/gplots/versions/3.0.1.2/topics/heatmap.2) function.
 
 ```{r}
 heatmaply::heatmaply(mtcars)
@@ -1785,35 +1909,31 @@ heatmaply::heatmaply_cor(
 )
 ```
 
-## [`pheatmap`](https://rdrr.io/cran/pheatmap/) - pretty heatmaps in base R
+## [ComplexHeatmap](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html)
 
-The ordinary `heatmap()` function in R has several drawbacks when it comes to producing publication quality heatmaps.
-It is hard to produce pictures with consistent text, cell and overall sizes and shapes.
-The function `pheatmap()` tries to alleviate the problems by offering more fine grained control over heatmap dimensions and appearance.
+[ComplexHeatmap](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) is probably the most complex package for heatmap visualization,
+while still providing very user-friendly approach.
 
-You can find a bioinformatic use case [here](https://davetang.org/muse/2018/05/15/making-a-heatmap-in-r-with-the-pheatmap-package/).
+- [Reference book](https://jokergoo.github.io/ComplexHeatmap-reference/book/)
+- Paper: [Complex heatmaps reveal patterns and correlations in multidimensional genomic data](https://academic.oup.com/bioinformatics/article/32/18/2847/1743594)
 
-```{r}
-annotation_col <- mtcars[, c("cyl", "gear")]
-head(annotation_col)
+`ComplexHeatmap` was initially created for complex multi-omics datasets, combining e.g. gene expression with methylation levels.
+Its design follows the object-oriented scheme, so heatmap body, annotations, legends etc. are self-contained building blocks.
+It can do a lot and it can be a bit overhelming, but for simple heatmaps (e.g. z-score of logcounts), unlike `heatmap.2` and similar packages,
+`ComplexHeatmap` is more user-friendly and provides you a great assistance.
 
-hclust_cols <- hclust(dist(t(mtcars)), method = "complete") %>%
-  dendextend::cutree(tree = as.dendrogram(.), k = 2)
-annotation_row <- data.frame(
-  Cluster = if_else(hclust_cols == 1, "Cluster 1", "Cluster 2"),
-  row.names = colnames(mtcars)
-)
-head(annotation_row)
+Some time ago, I created an introduction for my labmates, which is available in [this GitHub repository](https://github.com/bioinfocz/ComplexHeatmap-intro),
+but you can find all the necessary files in `E02-intro_to_R/ComplexHeatmap-intro`:
+there is a source Rmd file (`ComplexHeatmap.Rmd`) and its rendered HTML document (`ComplexHeatmap.html`).
 
-pheatmap::pheatmap(t(mtcars), annotation_col = annotation_col, annotation_row = annotation_row)
-```
+Although there are many popular heatmap packages, I will deliberately not mention them here, as they have many drawbacks.
+In my opinion, `ComplexHeatmap` is currently the best heatmap package, especially for genomics and transcriptomics.
 
-# Parallelization
+## [BiocParallel](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)
 
-[`BiocParallel`](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)
+[BiocParallel](https://bioconductor.org/packages/release/bioc/html/BiocParallel.html)
 package provides easy-to-use functions for parallel execution.
-We won't go into details and just introduce probably the most used function `bplapply()`,
-a parallelized version of `lapply()`.
+We won't go into details and just introduce probably the most used function `bplapply()`, a parallelized version of `lapply()`.
 
 As you know, `lapply(X, FUN, ...)` applies `FUN` with optional arguments `...` to each element
 of `X`:
@@ -1824,15 +1944,15 @@ fn <- function(i) i^2
 lapply(x, fn)
 ```
 
-`bplapply(X, FUN, ..., BPREDO = list(), BPPARAM = bpparam())` does the same, but each element is processed in parallel.
+`bplapply(X, FUN, ..., BPREDO = list(), BPPARAM = bpparam())` does the same, but elements are split to chunks, which are processed in parallel.
 Result is guaranteed to have the same order of elements as in `X`.
 
 ```{r}
 BiocParallel::bplapply(x, fn)
 ```
 
-Defaultly, all available cores are used.
-To control for resources, use the `BPPARAM` argument.
+By default, all available cores are used.
+To control for resources, use the `BPPARAM` argument:
 
 ```{r}
 (bpparam <- BiocParallel::MulticoreParam(workers = 2))
@@ -1841,6 +1961,9 @@ To control for resources, use the `BPPARAM` argument.
 ```{r, eval = FALSE}
 BiocParallel::bplapply(x, fn, BPPARAM = bpparam)
 ```
+
+> Many functions in BioConductor packages will offer you an argument to pass a `BPPARAM` object.
+  If you are working on some high-performance server, this can speed up computations a lot.
 
 Parallel processing is hard to debug, even with try-catch equivalent function `bptry()`.
 Also, you can't use `browser()` inside `FUN`.
@@ -1860,6 +1983,8 @@ BiocParallel::bplapply(x, fn, BPPARAM = bpparam)
 `BiocParallel` supports jobs in distributed systems and much more,
 but for now we can live only with the simple multicore usage.
 
+***
+
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
@@ -1867,25 +1992,30 @@ save.image("intro_to_R.RData")
 
 warnings()
 traceback()
-sessionInfo()
+sessioninfo::session_info()
 ```
+
+***
+***
 
 # HTML rendering
 
 This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
+> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
+
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(conflicted)
-library(rmarkdown)
 library(knitr)
 library(glue)
 library(here)
+library(emo)
 
 if (!require(rmdformats)) {
   BiocManager::install("rmdformats")
 }
 
 # You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE)
-render(here("E02-intro_to_R/intro_to_R.Rmd"), output_file = here("E02-intro_to_R/intro_to_R.html"))
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+rmarkdown::render(here("E02-intro_to_R/intro_to_R.Rmd"), output_file = here("E02-intro_to_R/intro_to_R.html"))
 ```
