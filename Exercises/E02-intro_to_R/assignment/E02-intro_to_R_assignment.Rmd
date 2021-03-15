@@ -1,0 +1,436 @@
+---
+institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    df_print: "paged"
+params:
+  title: "E02 - Intro to R Assignment (Analysis of Gene Expression @ UCT Prague)"
+  author: "Your Name, Your e-mail"
+title: "`r params$title`"
+author: "`r params$author`"
+date: "`r Sys.Date()`"
+---
+
+***
+
+# Introduction
+
+This will be your first programming assignment. It covers the most important parts of `E02 - Intro to R`.
+**If you get really stuck, return what you have and describe your problems under problematic tasks.**
+
+Please, return this assignment in this form: 
+
+- In the header, put your name and e-mail to `author` parameter (under `params`).
+- Copy the finished assignment (this file) and its rendered HTML to directory named `E02-intro_to_R_assignment_<your_name>`
+  and put this directory to ZIP archive named `E02-intro_to_R_assignment_<your_name>.zip`.
+  - In rendered HTML there should be included all code chunks with full output (warnings, messages, etc.).
+- Upload the ZIP file to the appropriate assignment in MS Teams.
+
+Example of returned assignment ZIP:
+
+```
+E02-intro_to_R_assignment_Jiri_Novotny.zip
+├── E02-intro_to_R_assignment_Jiri_Novotny
+    ├── E02-intro_to_R_assignment.html
+    ├── E02-intro_to_R_assignment.Rmd
+```
+
+Some tips:
+
+- Use help pages, e.g. `?table` or `?dplyr::select`, or press F1 when cursor is at function location.
+  - Alternatively, view help pages at [rdrr.io](https://rdrr.io/).
+- Package vignettes are also very helpful.
+- Google is your friend.
+
+## R programming tasks
+
+> Write you code to chunk below each task.
+
+> Required datasets should be already loaded in your R session (try e.g. `head(iris)`).
+  If not, load them with `data("<name of dataset>")`, e.g. `data("iris")`.
+
+***
+
+# Markdown exercise
+
+> Just a quick exercise on Markdown. Use Markdown syntax to style the following sentences:
+
+Make me bold.
+
+Make me italic.
+
+Make me strikethrough.
+
+Place me to blockquote.
+
+Replace me with link to your favourite web page.
+
+Replace me with your favourite image.
+
+Make the following unordered list: Item 1, Item 2 > Subitem 2-1 + Subitem 2-2, Item 3
+
+Make ordered list from the list above.
+
+***
+
+# apply-family functions exercise
+
+> In the following tasks, stick to the apply-family (including `purrr` package) functions, please.
+  You can also use functions operating on matrix rows or columns.
+
+***
+
+Calculate column means of `USArrests` dataset:
+
+```{r}
+```
+
+***
+
+Do the same as above, but for `iris` dataset:
+
+```{r}
+```
+
+***
+
+In `women` dataset, count how many values greater than 70 are in each column:
+
+```{r}
+```
+
+***
+
+In `mtcars` dataset, count how many unique values are in each column:
+
+```{r}
+```
+
+***
+
+Using `lapply()` or `purrr::map()`, return the first and last element of each element in `my_list`:
+
+```{r}
+my_list <- list(1:5, LETTERS[1:10], 1)
+```
+
+The output should be:
+
+```
+[[1]]
+[1] 1 5
+
+[[2]]
+[1] "A" "J"
+
+[[3]]
+[1] 1 1
+```
+
+***
+
+# tidyverse exercise
+
+> For these tasks, stick to the `tidyverse` packages (pipe operator, `dplyr`, `tidyr`, `stringr`, etc.), please.
+  If possible, use the pipe operator to make connections between function calls (e.g. `select() %>% mutate() %>% ...`).
+  Anyway don't feel forced to prefer `tidyverse` over base R - it's up to you what you use in your own future code, but for now, this exercise is for `tidyverse`.
+
+Load `tidyverse` packages first:
+
+```{r}
+library(tidyverse)
+```
+
+***
+
+Omit `wt` and `cyl` columns from `mtcars` dataset:
+
+```{r}
+```
+
+***
+
+Same columns as above, but now select and rename them (in one step) to `weight` and `cylinders`:
+
+```{r}
+```
+
+***
+
+Now instead of selecting only those two columns above, just rename them and return the full dataset:
+
+```{r}
+```
+
+***
+
+Using one of the [select helpers](https://tidyselect.r-lib.org/reference/language.html), select columns ending with "ty" from `swiss` dataset:
+
+```{r}
+```
+
+***
+
+Select columns `mpg`, `cyl` and `hp` from `mtcars` dataset, and arrange them by ascending `mpg` and descending `cyl`:
+
+```{r}
+```
+
+***
+
+In `iris` dataset, filter rows with `Sepal.Length` greater than 7 and `Sepal.Width` less than 3:
+
+```{r}
+```
+
+***
+
+In `iris` dataset, filter rows with `Petal.Length` greater than `Sepal.Width` and `Species` equal to "virginica":
+
+```{r}
+```
+
+***
+
+In `iris` dataset, filter rows with `Petal.Length` greater than minimum value of `Sepal.Length`:
+
+```{r}
+```
+
+***
+
+In `iris` dataset, create a new column `Petal.Width.2` in which will be addition of `Petal.Width` and its mean:
+
+```{r}
+```
+
+***
+
+In `iris` dataset, create a new column `Sepal.Length.Category`, which categorizes `Sepal.Length`:
+
+- "small" if `Sepal.Length` is lower than 5
+- "medium if `Sepal.Length` is between 5 and 6.5 (inclusive)
+- "large" if `Sepal.Length` is greater than 6.5
+
+```{r}
+```
+
+Example output (not full results):
+
+```
+# A tibble: 3 x 6
+  Sepal.Length Sepal.Width Petal.Length Petal.Width Species    Sepal.Length.Category
+         <dbl>       <dbl>        <dbl>       <dbl> <fct>      <chr>                
+1          7           3.2          4.7         1.4 versicolor large                
+2          5.1         3.5          1.4         0.2 setosa     medium               
+3          4.9         3            1.4         0.2 setosa     small      
+```
+
+***
+
+In `iris` dataset, replace in `Species` column values `setosa`, `versicolor` and `virginica` with `set`, `versi` and `virgi`, respectively,
+and make `virgi` the reference (first) level for `Species`:
+
+```{r}
+```
+
+***
+
+Group `mtcars` dataset by `am` and within each group, calculate mean value of `hp` and number of observations:
+
+```{r}
+```
+
+***
+
+Do the same grouping as above and then filter rows with `gear` being 4 or 5, and arrange rows by `am` and `gear`:
+
+```{r}
+```
+
+***
+
+Join two datasets `band_members` and `band_instruments` such that each `name` in `band_members` will get its instrument (`plays`):
+
+```{r}
+```
+
+Example output:
+
+```
+# A tibble: 2 x 3
+  name  band    plays 
+  <chr> <chr>   <chr> 
+1 John  Beatles guitar
+2 Paul  Beatles bass  
+```
+
+***
+
+Do the same as above, but now include also `name`s for which there isn't any matching row in `band_instruments`:
+
+```{r}
+```
+
+Example output:
+
+```
+# A tibble: 3 x 3
+  name  band    plays 
+  <chr> <chr>   <chr> 
+1 Mick  Stones  NA    
+2 John  Beatles guitar
+3 Paul  Beatles bass  
+```
+
+***
+
+Using `tidyr::pivor_longer()`, convert the `billboard_sm` dataset below to long (tidy) format and
+save the result to `billboard_sm_long` variable:
+
+```{r}
+billboard_sm <- head(billboard, 2)
+```
+
+***
+
+Now convert `billboard_sm_long` back to wide format:
+
+```{r}
+```
+
+***
+
+Collapse by `, ` to a single character unique values in `Species` column of `iris` dataset:
+
+```{r}
+```
+***
+
+Using the same unique values as above, extract substrings between positions 2 and 5 (inclusive):
+
+```{r}
+```
+
+***
+
+In `CO2` dataset below, filter rows with `Plant` starting with `Qn`:
+
+```{r}
+CO2 <- as.data.frame(CO2)
+```
+
+***
+
+In the same dataset as above, extract the numbers from `Plant` column:
+
+```{r}
+```
+
+***
+
+In `storms` dataset, filter rows with `name` containing "and" and discard duplicated rows by `name`:
+
+```{r}
+```
+
+***
+
+In the same dataset as above, replace "tropical" in `status` by "tropic" (sorry for a nonsense example, but I couldn't find a better one...):
+
+```{r}
+```
+
+***
+
+Using `glue()`, make a correct sentence from the variables below, assign it to variable `sentence` and print it:
+
+```{r, message = FALSE}
+library(glue)
+word1 <- "like"
+word2 <- "to"
+word3 <- "I"
+word4 <- "cook"
+```
+
+***
+
+Split the `sentence` variable to word vector (i.e. `c("I", "like", ...)`:
+
+```{r}
+```
+
+***
+
+Use `ggplot` to make scatterplot of `Sepal.Length` and `Petal.Length` with point color by `Species` in `iris` dataset.
+Save this plot to `p1` variable and print it:
+
+```{r}
+```
+
+***
+
+Modify and save again the plot in `p1` variable as:
+
+- Add title "Sepal Length vs. Petal Length".
+- Rename `x` and `y` axe titles to "Sepal Length" and "Petal Length", respectively.
+
+And print the plot again.
+
+```{r}
+```
+
+***
+
+Create boxplots of `Petal.Length` splitted and colored by `Species` in `iris` dataset with black points shown in each group, save it to `p2` variable and print it:
+
+```{r}
+```
+
+`p2` example:
+
+![](`r here::here("E02-intro_to_R/assignment/p2.png")`)
+
+***
+
+Combine `p1` and `p2` row-wise to a single figure (using the `patchwork` package):
+
+```{r}
+library(patchwork)
+```
+
+***
+
+Do the same as above, but now combine the plots column-wise:
+
+```{r}
+```
+
+***
+
+Use `ComplexHeatmap` to make a heatmap of `iris` dataset such that:
+
+- In rows will be its four length variables (`Sepal.Length` etc.).
+- Columns will be color-annotated by `Species`.
+- Column title will be "iris".
+- Color legend for heatmap values will be named "Length".
+
+Tip: to draw color legends in one column, use `draw(p_heatmap, merge_legend = TRUE)`.
+
+```{r}
+library(ComplexHeatmap)
+```
+
+Heatmap example:
+
+![](`r here::here("E02-intro_to_R/assignment/p_heatmap.png")`)
+
+***
+
+Do the same as above, but now transform iris lengths to z-score (scaling):
+
+```{r}
+```

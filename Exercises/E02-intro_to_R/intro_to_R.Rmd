@@ -1,5 +1,5 @@
 ---
-title: "E02 - Intro to R (Analysis of Gene Expression @ VSCHT)"
+title: "E02 - Intro to R (Analysis of Gene Expression @ UCT Prague)"
 author:
   - Jiri Novotny jiri.novotny@img.cas.cz
   - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
@@ -29,6 +29,8 @@ Copy, please, these files and directories to your personal directory:
 cp -r ~/shared/AGE2021/Exercises/E02-intro_to_R ~/AGE2021/Exercises
 ```
 
+Assignment for this exercise is located in `E02-intro_to_R/assignment`.
+
 ***
 
 # RMarkdown
@@ -41,7 +43,7 @@ You can also open its rendered version `intro_to_Rmd.html` in your web browser.
 # The must read sections
 
 Take this material as an overview of good R techniques and packages.
-It is quite long, but some sections are really necessary to go through, as we will utilize them in following exercises and assignments:
+It is quite long, but some sections are really necessary to go through, as we will utilize them in the following exercises and assignments:
 
 - [Reproducible R](#reproducible-r)
   - [Project-oriented workflow](#project-oriented-workflow)
@@ -51,6 +53,7 @@ It is quite long, but some sections are really necessary to go through, as we wi
     - You don't have to use the `conflicted` package described there, just be aware that a function name could be the same
       in different packages, and so using package prefixes (e.g. `dplyr::select()`) is the best way to avoid such conflicts.
 - [Installing R packages](#installing-r-packages)
+- [Writing your own functions](#writing-your-own-functions)
 - [Try to utilize vectorized operations](#try-to-utilize-vectorized-operations)
 - Introduction to tidyverse
   - Tidy (long) data
@@ -416,10 +419,112 @@ options(error = dump.frames)
 
 ***
 
+# Writing your own functions
+
+Functions are the essential part of every programming language and you should already know how to write your own, so this will be just a quick overview.
+
+A rather simplistic view defines functions as repeatable, (parametric) block of code which returns something.
+Let's define the most basic function, which doesn't have any arguments and doesn't return anything:
+
+```{r, message = TRUE}
+fn <- function() {
+  message("Hello world!")
+}
+fn()
+```
+
+Let's add a return value:
+
+```{r}
+fn2 <- function() {
+  return("Hello world!")
+}
+out <- fn2()
+out
+```
+
+Function will return the last value, so this is equivalent:
+
+```{r, eval = FALSE}
+fn2 <- function() {
+  "Hello world!"
+}
+```
+
+However, the difference is that `return()` will immediately exit the function.
+
+Now we add some arguments:
+
+```{r}
+fn3 <- function(x, y = 2) {
+  return(x * y)
+}
+fn3(2)
+fn3(2, y = 5)
+```
+
+Functions can have required arguments (in our case `x`) and optional arguments with default values (`y = 2`).
+
+If you want to return multiple values, you can use `list()` or similar data type:
+
+```{r}
+fn4 <- function(x, y = 2) {
+  out <- list(x * y, x + y)
+  return(out)
+}
+fn4(3)
+```
+
+
+An important concept is function scope, which defines which variables can function access.
+Function can see variables in environment from which it was called.
+In this example, `fn4()` can see `y` defined in global environment:
+
+```{r}
+fn5 <- function(x) {
+  return(x * y)
+}
+y <- 3
+fn5(2)
+```
+
+However, functions cannot modify variables outside of their scope (besides global variables, but rather don't use them).
+Let's try to modify `y` within `fn5()`:
+
+```{r}
+fn6 <- function(x) {
+  y <- 5
+  return(x * y)
+}
+y <- 3
+fn6(2)
+y
+```
+
+You can see that by `y <- 5` we only created a local variable `y` - the `y` from outer scope wasn't modified.
+
+As you will see in the next section, functions can be also anonymous, i.e. they are not assigned to any variable and just used once, just like that:
+
+```{r, eval = FALSE}
+function(x) {
+  x ** 2
+}
+```
+
+***
+
 # Try to utilize vectorized operations
 
-R's fundamental feature is vectorization. All basic data types (`numeric`, `character`, etc.) are vectors and most of base functions are vectorized.
-For example, this is unnecessary in R:
+R's fundamental feature is vectorization. All basic data types (`numeric`, `character`, etc.) are vectors and most of base functions are vectorized,
+including basic arithmetic operators:
+
+```{r}
+(my_vector <- 1:5)
+my_vector + 5
+my_vector * 2
+```
+
+So for example, for-loops like this are unnecessary in R:
 
 ```{r}
 my_vector <- 1:2e6
@@ -444,15 +549,15 @@ system.time({
 Anyway in this sort of dumb example, you should use the vectorized addition operation instead:
 
 ```{r}
-head(my_vector + 1)
+system.time(my_vector + 1)
 ```
 
-So try to avoid for-loops if possible, because:
+Generally, rather try to avoid for-loops, because:
 
 **For-loops have side effects**
 
-- Leaving iterating variable in environment. From the example above, the variable `i` still has value `r i`.
-- They could change other variables from from within a loop.
+- They leave iterating variable in environment. From the example above, the variable `i` still has value of the last element of `my_vector`: `r i`
+- They can change other variables from within the loop, which could lead to hard to find bugs.
 
 **For-loops could be slow**
 
@@ -471,7 +576,7 @@ system.time({
   }
 })
 ```
-  
+
 Now it is even faster than `lapply()` `r emo::ji("astonished_face")`.
 But as you can see, you have to take care of pre-allocation, which is something apply-family functions are doing for you (see below).
 
@@ -483,7 +588,7 @@ So, what to use in R instead of for-loops?
 
 ## Vectorized functions
 
-Some of the examples are `mean()`, `sum()`, `cumsum()` or vectorized if `ifelse()`:
+Some examples of vectorized functions other than arithmetic ones:
 
 ```{r}
 my_vector <- 1:5
@@ -491,6 +596,14 @@ mean(my_vector)
 sum(my_vector)
 cumsum(my_vector)
 ifelse(my_vector < 2, "< 2", ">= 2")
+```
+
+Some functions operating on matrix row or column vectors:
+
+```{r}
+head(USArrests)
+colSums(USArrests)
+rowMeans(USArrests)
 ```
 
 ## Apply-family functions
@@ -1175,7 +1288,7 @@ df_long
 ```
 
 We have added rownames of `df_wide` to the new column `Gene`.
-In `pivot_longer()` we specified by `-Gene` we want to lengthen this column.
+In `pivot_longer()` we specified by `-Gene` we want to lengthen all other columns.
 
 Of course more than one column can be lengthened.
 Let's add more columns to `df_wide`:
@@ -1203,6 +1316,8 @@ We can see gene columns have the same prefix, and so we can utilize that:
 df_wide2 %>%
   tidyr::pivot_longer(-starts_with("Gene_"), names_to = "Sample", values_to = "Count")
 ```
+
+We have omitted all columns starting with "Gene_", and thus lengthening all other columns.
 
 [pivot_wider()](https://tidyr.tidyverse.org/reference/pivot_wider.html) "widens" data, increasing the number of columns and decreasing the number of rows.
 
@@ -1365,6 +1480,7 @@ str_split(c("a,b", "c,d,e"), ",")
 ## [glue](https://glue.tidyverse.org/) - string interpolation
 
 [glue](https://glue.tidyverse.org/) offers the same functionality, which you already know from e.g. Bash (`"$variable"`) or Python (`f"{variable}"`).
+It is much more comfortable than e.g. `paste()`.
 
 ```{r}
 library(glue)
@@ -1374,7 +1490,15 @@ anniversary <- as.Date("1991-10-12")
 glue("My name is {name}, my age next year is {age + 1}, my anniversary is {format(anniversary, '%A, %B %d, %Y')}.")
 ```
 
-Equivalently, we can break long string to multiple parameters on separate lines and use named arguments to assign temporary variables:
+Compare this code to implementation using `paste0()`:
+
+```{r}
+paste0("My name is ", name, ", my age next year is ", age + 1, ", my anniversary is ", format(anniversary, '%A, %B %d, %Y'), ".")
+```
+
+Personally, I think its quite confusing and prone to syntax errors.
+
+Equivalently, in `glue()` we can break long string to multiple parameters on separate lines and use named arguments to assign temporary variables:
 
 ```{r, eval = FALSE}
 glue(
@@ -1386,6 +1510,16 @@ glue(
   anniversary = as.Date("2001-10-12")
 )
 ```
+
+Keep in mind that `glue()` is vectorized just like `paste()`:
+
+```{r}
+my_names <- c("John", "Adam", "Peter")
+paste0("His name is ", my_names, ".")
+glue("His name is {my_names}.")
+```
+
+> Don't be confused by a different appearance of `glue` characters when you print them. They are internally the same as character vectors.
 
 ***
 
@@ -1440,7 +1574,7 @@ purrr::keep(my_named_list, ~ length(.) > 2)
 
 ***
 
-# [ggplot2](https://ggplot2.tidyverse.org/) - plotting made easy
+## [ggplot2](https://ggplot2.tidyverse.org/) - plotting made easy
 
 [ggplot2](https://ggplot2.tidyverse.org/) is a package for declaratively creating graphics (part of `tidyverse`), based on
 [The Grammar of Graphics](https://byrneslab.net/classes/biol607/readings/wickham_layered-grammar.pdf).
@@ -1467,6 +1601,7 @@ This will provide you sensible defaults. To further modify the plot, you can add
 - [Top 50 `ggplot2` visualizations](http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html)
 - [BBC style graphics cookbook](https://bbc.github.io/rcookbook/)
 - ["You can replicate almost any plot with R"](https://simplystatistics.org/2019/08/28/you-can-replicate-almost-any-plot-with-ggplot2/)
+- [List of R color palettes](https://github.com/EmilHvitfeldt/r-color-palettes)
 
 > For professional tips regarding mainly, but not only, scientific visualizations, I would recommend [Fundamentals of Data Visualization](https://clauswilke.com/dataviz/).
   This book can really help you to design figures in your papers.
@@ -1634,7 +1769,7 @@ print(p)
 dev.off()
 ```
 
-## Using dynamic variable names in aesthetics
+### Using dynamic variable names in aesthetics
 
 You probably wondered, how can you use dynamic variable names in `aes()`.
 For example, consider a function `plot_pca(data, color_by)`
@@ -1651,9 +1786,9 @@ ggplot(mtcars) +
 The disadvantage is that you cannot use the capabilities of NSE.
 In the example above, you cannot specify `factor(color_by)` to treat `cyl` as a factor variable.
 
-## Packages extending the `ggplot2`
+### Packages extending the `ggplot2`
 
-### [patchwork](https://patchwork.data-imaginist.com/) - the composer of plots
+#### [patchwork](https://patchwork.data-imaginist.com/) - the composer of plots
 
 [patchwork](https://patchwork.data-imaginist.com/) makes ridiculously simple to combine separate ggplots into the same graphic (called "patchwork").
 Shortly, it defines arithmetic for ggplots and several functions to place plots into grid.
@@ -1715,7 +1850,7 @@ wrap_plots(p1, p2, p3, p4)
 wrap_plots(p1, p2, p3, p4, nrow = 1)
 ```
 
-### [ggpubr](https://rpkgs.datanovia.com/ggpubr/) - publication-ready plots
+#### [ggpubr](https://rpkgs.datanovia.com/ggpubr/) - publication-ready plots
 
 ```{r}
 ggpubr::ggboxplot(
@@ -1725,13 +1860,13 @@ ggpubr::ggboxplot(
 )
 ```
 
-### [GGally](https://ggobi.github.io/ggally/index.html) - useful geoms
+#### [GGally](https://ggobi.github.io/ggally/index.html) - useful geoms
 
 ```{r}
 GGally::ggpairs(mtcars, columns = c("cyl", "mpg", "qsec"))
 ```
 
-### [ggforce](https://ggforce.data-imaginist.com/index.html) - cool visualizations
+#### [ggforce](https://ggforce.data-imaginist.com/index.html) - cool visualizations
 
 ```{r}
 ggplot(mtcars) +
@@ -1740,7 +1875,7 @@ ggplot(mtcars) +
   theme_bw()
 ```
 
-### [ggcorrplot](https://rpkgs.datanovia.com/ggcorrplot/index.html) - visualize a correlation matrix
+#### [ggcorrplot](https://rpkgs.datanovia.com/ggcorrplot/index.html) - visualize a correlation matrix
 
 ```{r}
 corr <- round(cor(mtcars), 1)
@@ -1751,7 +1886,7 @@ p_corr <- ggcorrplot::ggcorrplot(corr, method = "circle", p.mat = p_mat)
 print(p_corr)
 ```
 
-### [ggrepel](https://ggrepel.slowkow.com/) - repel overlapping text labels
+#### [ggrepel](https://ggrepel.slowkow.com/) - repel overlapping text labels
 
 ```{r}
 ggplot(mtcars2, aes(x = qsec, y = mpg)) +
@@ -1759,9 +1894,9 @@ ggplot(mtcars2, aes(x = qsec, y = mpg)) +
   ggrepel::geom_text_repel(aes(label = rownames(mtcars)), color = "black")
 ```
 
-## Additional themes
+### Additional themes
 
-### [ggsci](https://nanx.me/ggsci/index.html) - a collection of color palettes inspired by (mainly) scientific journals
+#### [ggsci](https://nanx.me/ggsci/index.html) - a collection of color palettes inspired by (mainly) scientific journals
 
 Nature Publishing Group color palette as an example:
 
@@ -1779,7 +1914,7 @@ p2 <- ggplot(mtcars) +
 p1 + p2
 ```
 
-### [hrbrthemes](https://hrbrmstr.github.io/hrbrthemes/index.html) - themes and color palettes
+#### [hrbrthemes](https://hrbrmstr.github.io/hrbrthemes/index.html) - themes and color palettes
 
 ```{r}
 ggplot(mtcars) +
@@ -1787,7 +1922,7 @@ ggplot(mtcars) +
   hrbrthemes::theme_modern_rc()
 ```
 
-### [see](https://easystats.github.io/see/index.html) - themes and color palettes
+#### [see](https://easystats.github.io/see/index.html) - themes and color palettes
 
 ```{r}
 ggplot(mtcars) +
@@ -1795,7 +1930,7 @@ ggplot(mtcars) +
   see::theme_abyss()
 ```
 
-### [cowplot](https://wilkelab.org/cowplot/articles/themes.html#choosing-themes-in-the-context-of-the-plot)
+#### [cowplot](https://wilkelab.org/cowplot/articles/themes.html#choosing-themes-in-the-context-of-the-plot)
 
 Not really a collection of e.g. colors, but there are useful visual helpers with explanation.
 

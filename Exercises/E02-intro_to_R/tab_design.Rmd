@@ -1,5 +1,5 @@
 ---
-title: "Example of tab design (Analysis of Gene Expression @ VSCHT)"
+title: "Example of tab design (Analysis of Gene Expression @ UCT Prague)"
 author:
   - Jiri Novotny jiri.novotny@img.cas.cz
   - Studuj bioinformatiku! http://studuj.bioinformatiku.cz

@@ -1,14 +1,15 @@
 ---
-title: "E02 - Intro to Rmd (Analysis of Gene Expression @ VSCHT)"
+title: "E02 - Intro to Rmd (Analysis of Gene Expression @ UCT Prague)"
 author:
   - Jiri Novotny jiri.novotny@img.cas.cz
   - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
   html_document:
-toc: true
-toc_depth: 4
-toc_float: true
+    toc: true
+    toc_depth: 4
+    toc_float: true
+    df_print: "paged"
 date: "`r Sys.Date()`"
 ---
 
@@ -64,6 +65,7 @@ As the output type we are using `html_document` with several parameters:
 - `toc: true`: make a Table of Contents.
 - `toc_depth: 4`: how many section levels to show in the TOC.
 - `toc_float: true`: make the TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
+- `df_print: paged`: default output style for tables.
 
 For possible output types see [this](https://bookdown.org/yihui/rmarkdown/documents.html) chapter from R Markdown: The Definitive Guide.
 
@@ -111,6 +113,8 @@ Some examples:
 1. First item.
 2. Second item.
     - Sublist of second item.
+
+![Markdown example in RStudio.](https://d33wubrfki0l68.cloudfront.net/59f29676ef5e4d74685e14f801bbc10c2dbd3cef/c0688/lesson-images/markdown-1-markup.png)
 
 **Using HTML tags**
 
@@ -169,7 +173,7 @@ In Rstudio, you use RMarkdown documents as so-called [notebooks](https://bookdow
 That is, each code chunk can be evaluated in current R session. Let's see some examples (run them in your RStudio):
 
 ```{r}
-head(mtcars)
+head(mtcars, n = 20)
 ```
 
 ```{r}
@@ -194,6 +198,10 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 
 ### Pretty tables
 
+You have several choices how tables will be printed. This is set via the `df_print` parameter under `html_document`.
+See [here](https://bookdown.org/yihui/rmarkdown/html-document.html#data-frame-printing) for possible choices.
+Anyway, several alternatives exist:
+
 We can use [DT](https://rstudio.github.io/DT/) package, an R interface to JavaScript library [datatables](https://datatables.net/).
 
 ```{r}
@@ -206,7 +214,7 @@ DT::datatable(
 ```
 
 Or [kable](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
-[kableExtra](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html) for simplier tables.
+[kableExtra](https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html) for simplier, but still pretty tables:
 
 ```{r}
 kableExtra::kable_styling(
@@ -216,8 +224,8 @@ kableExtra::kable_styling(
 ```
 
 Another interesting package for publication-quality tables is [gt](https://gt.rstudio.com/index.html)
-(and at the bottom of ots homepage you can find a nice list of other table-related packages).
-The [case study](https://gt.rstudio.com/articles/case-study-gtcars.html) will show you all `gt` features.
+(and at the bottom of its homepage you can find a nice list of other table-related packages).
+This [case study](https://gt.rstudio.com/articles/case-study-gtcars.html) will show you all `gt` features.
 
 ***
 
@@ -263,7 +271,7 @@ You can see that this Rmd document has a different theme than the others used fo
 Using different themes is quite easy and you can refer to [this nice overview](https://www.datadreaming.org/post/r-markdown-theme-gallery/).
 Several themes are included in `rmarkdown` package. Because we didn't specify `theme` parameter under `html_document` in header
 (see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a theme called `default`.
-You can try to change the theme to e.g. `united` and render this document again `r emo::ji("slightly_smiling_face")``
+You can try to change the theme to e.g. `united` and render this document again `r emo::ji("slightly_smiling_face")`
 
 ***
 
