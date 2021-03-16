@@ -10,7 +10,7 @@ output:
     toc_depth: 4
     toc_float: true
     df_print: "paged"
-date: "2021-03-15"
+date: "2021-03-16"
 ---
 
 ***
@@ -41,9 +41,14 @@ All of this is handled automatically by `rmarkdown::render()` function (see the 
 - [knitr options](https://yihui.name/knitr/options/)
 - [RMarkdown output formats](https://rmarkdown.rstudio.com/lesson-9.html)
 
+> After you finish the [Rendering RMarkdown section](#rendering-rmarkdown), the best way to familiarize yourself with RMarkdown
+  will be to create a new Rmd file and try to use the Markdown syntax, to create code chunks, to modify the header, and to render the Rmd file to HTML.
+
 ***
 
 ## How to use RMarkdown
+
+Files with `.Rmd` extension are recognized by RStudio, which automatically adapts its environment to them (notebook mode).
 
 **Pandoc header**
 
@@ -51,8 +56,8 @@ On the beginning of the source file you can see the header section separated by 
 Those are options for `pandoc`, mostly specifying how output should look like.
 They are written in [YAML format](https://lzone.de/cheat-sheet/YAML).
 
-You can see we are using three common parameters: `title`, `author` or `institute`.
-The first two will be shown in the header of resulting document.
+You can see we are using three common parameters: `title`, `author` and `institute`.
+The first two will be shown in the header of the resulting HTML document.
 
 As the output type we are using `html_document` with several parameters:
 
@@ -61,7 +66,7 @@ As the output type we are using `html_document` with several parameters:
 - `toc_float: true`: make the TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
 - `df_print: paged`: default output style for tables.
 
-For possible output types see [this](https://bookdown.org/yihui/rmarkdown/documents.html) chapter from R Markdown: The Definitive Guide.
+For possible output types see [this](https://rmarkdown.rstudio.com/lesson-9.html) overview with links to R Markdown: The Definitive Guide.
 
 It is also possible to use inline R code in parameters. As an example, we used this to output the current date:
 
@@ -83,6 +88,12 @@ Some examples:
 `*This is a text in italics.*`
 
 *This is a text in italics.*
+
+`This is code markup.`
+
+```
+This is multiline code markup.
+```
 
 `# This is a section header of level 1`
 
@@ -107,6 +118,20 @@ Some examples:
 1. First item.
 2. Second item.
     - Sublist of second item.
+
+<!-- Comment outside of code chunk. -->
+<!--
+Multiline comment
+outside of code chunk.
+-->
+
+```
+<!-- Comment outside of code chunk. -->
+<!--
+Multiline comment
+outside of code chunk.
+-->
+```
 
 ![Markdown example in RStudio.](https://d33wubrfki0l68.cloudfront.net/59f29676ef5e4d74685e14f801bbc10c2dbd3cef/c0688/lesson-images/markdown-1-markup.png)
 
@@ -187,7 +212,7 @@ plot(mpg ~ cyl, data = mtcars)
 
 **Rendering a document**
 
-On the end of this document you will find a [chunk](#rendering-rmarkdown), which generates a HTML document from this source.
+See [this](#rendering-rmarkdown) section below.
 
 ## Useful Rmd-related keyboard shortcuts in RStudio
 
@@ -199,9 +224,75 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 - `Ctrl + Shift + Enter`: run current chunk.
 - `Ctrl + Alt + N`: run next chunk.
 
-## Some RMarkdown tips
+***
 
-### Pretty tables
+# Rendering RMarkdown
+
+To render a Rmd file, use the `rmarkdown::render()` function.
+Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
+
+> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
+
+
+```r
+library(knitr)
+library(here)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+rmarkdown::render(
+  here("E02-intro_to_R/intro_to_Rmd.Rmd"),
+  output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
+  clean = FALSE
+)
+```
+
+Because `clean = FALSE` in `rmarkdown::render()`, intermediate Markdown (`.md`) files are not removed and you have an opportunity to inspect them.
+These files are sources for `pandoc`, which does the actual rendering to HTML format (as specified in the header of this Rmd file, but
+`pandoc` can render to many other formats than HTML, e.g. PDF or LaTex).
+
+We can also override output format specified in Rmd header by passing `output_format` to `rmarkdown::render()`.
+Let's try it and render this document in a popular "Tufte handout style":
+
+
+```r
+rmarkdown::render(
+    here("E02-intro_to_R/intro_to_Rmd.Rmd"),
+    output_file = here("E02-intro_to_R/intro_to_Rmd_tufte.html"),
+    output_format = "tufte::tufte_html"
+)
+```
+
+> Now when you know the RMarkdown basics and how to render it to HTML, you can try yourself to create a Rmd file and play with it:
+  use the Markdown syntax, create code chunks, modify the header, and render it to HTML.
+
+## Working directory in a Rmd file
+
+Unfortunately, there are discrepancies in the current working directory when you evaluate chunks in RStudio vs. render a Rmd file,
+because `knitr` will automatically set the working directory to that of Rmd file location.
+
+When you evaluate this chunk in RStudio, you get the working directory of your current project.
+
+
+```r
+current_wd <- getwd()
+current_wd
+```
+
+```
+## [1] "/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises/E02-intro_to_R"
+```
+
+But as you can see in the output `intro_to_Rmd.html`, the working directory is `Exercises/E02-intro_to_R` there.
+
+So how to use consistent project-relative paths in a Rmd file?
+Use the [here](https://github.com/jennybc/here_here) package, which is described in `intro_to_R.Rmd` in Reproducible R section.
+
+***
+
+# Some RMarkdown tips
+
+## Pretty tables
 
 You have several choices how tables will be printed. This is set via the `df_print` parameter under `html_document`.
 See [here](https://bookdown.org/yihui/rmarkdown/html-document.html#data-frame-printing) for possible choices.
@@ -220,8 +311,8 @@ DT::datatable(
 ```
 
 ```{=html}
-<div id="htmlwidget-688bd6cec4723aa09ff9" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-688bd6cec4723aa09ff9">{"x":{"filter":"top","filterHTML":"<tr>\n  <td><\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"10.4\" data-max=\"33.9\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"4\" data-max=\"8\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"71.1\" data-max=\"472\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"52\" data-max=\"335\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"2.76\" data-max=\"4.93\" data-scale=\"2\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n<\/tr>","data":[["Mazda RX4","Mazda RX4 Wag","Datsun 710","Hornet 4 Drive","Hornet Sportabout","Valiant","Duster 360","Merc 240D","Merc 230","Merc 280","Merc 280C","Merc 450SE","Merc 450SL","Merc 450SLC","Cadillac Fleetwood","Lincoln Continental","Chrysler Imperial","Fiat 128","Honda Civic","Toyota Corolla","Toyota Corona","Dodge Challenger","AMC Javelin","Camaro Z28","Pontiac Firebird","Fiat X1-9","Porsche 914-2","Lotus Europa","Ford Pantera L","Ferrari Dino","Maserati Bora","Volvo 142E"],[21,21,22.8,21.4,18.7,18.1,14.3,24.4,22.8,19.2,17.8,16.4,17.3,15.2,10.4,10.4,14.7,32.4,30.4,33.9,21.5,15.5,15.2,13.3,19.2,27.3,26,30.4,15.8,19.7,15,21.4],[6,6,4,6,8,6,8,4,4,6,6,8,8,8,8,8,8,4,4,4,4,8,8,8,8,4,4,4,8,6,8,4],[160,160,108,258,360,225,360,146.7,140.8,167.6,167.6,275.8,275.8,275.8,472,460,440,78.7,75.7,71.1,120.1,318,304,350,400,79,120.3,95.1,351,145,301,121],[110,110,93,110,175,105,245,62,95,123,123,180,180,180,205,215,230,66,52,65,97,150,150,245,175,66,91,113,264,175,335,109],[3.9,3.9,3.85,3.08,3.15,2.76,3.21,3.69,3.92,3.92,3.92,3.07,3.07,3.07,2.93,3,3.23,4.08,4.93,4.22,3.7,2.76,3.15,3.73,3.08,4.08,4.43,3.77,4.22,3.62,3.54,4.11]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>mpg<\/th>\n      <th>cyl<\/th>\n      <th>disp<\/th>\n      <th>hp<\/th>\n      <th>drat<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false,"orderCellsTop":true}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-031d0a6ff19d16455abb" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-031d0a6ff19d16455abb">{"x":{"filter":"top","filterHTML":"<tr>\n  <td><\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"10.4\" data-max=\"33.9\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"4\" data-max=\"8\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"71.1\" data-max=\"472\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"52\" data-max=\"335\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none; position: absolute; width: 200px;\">\n      <div data-min=\"2.76\" data-max=\"4.93\" data-scale=\"2\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n<\/tr>","data":[["Mazda RX4","Mazda RX4 Wag","Datsun 710","Hornet 4 Drive","Hornet Sportabout","Valiant","Duster 360","Merc 240D","Merc 230","Merc 280","Merc 280C","Merc 450SE","Merc 450SL","Merc 450SLC","Cadillac Fleetwood","Lincoln Continental","Chrysler Imperial","Fiat 128","Honda Civic","Toyota Corolla","Toyota Corona","Dodge Challenger","AMC Javelin","Camaro Z28","Pontiac Firebird","Fiat X1-9","Porsche 914-2","Lotus Europa","Ford Pantera L","Ferrari Dino","Maserati Bora","Volvo 142E"],[21,21,22.8,21.4,18.7,18.1,14.3,24.4,22.8,19.2,17.8,16.4,17.3,15.2,10.4,10.4,14.7,32.4,30.4,33.9,21.5,15.5,15.2,13.3,19.2,27.3,26,30.4,15.8,19.7,15,21.4],[6,6,4,6,8,6,8,4,4,6,6,8,8,8,8,8,8,4,4,4,4,8,8,8,8,4,4,4,8,6,8,4],[160,160,108,258,360,225,360,146.7,140.8,167.6,167.6,275.8,275.8,275.8,472,460,440,78.7,75.7,71.1,120.1,318,304,350,400,79,120.3,95.1,351,145,301,121],[110,110,93,110,175,105,245,62,95,123,123,180,180,180,205,215,230,66,52,65,97,150,150,245,175,66,91,113,264,175,335,109],[3.9,3.9,3.85,3.08,3.15,2.76,3.21,3.69,3.92,3.92,3.92,3.07,3.07,3.07,2.93,3,3.23,4.08,4.93,4.22,3.7,2.76,3.15,3.73,3.08,4.08,4.43,3.77,4.22,3.62,3.54,4.11]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th> <\/th>\n      <th>mpg<\/th>\n      <th>cyl<\/th>\n      <th>disp<\/th>\n      <th>hp<\/th>\n      <th>drat<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5]},{"orderable":false,"targets":0}],"order":[],"autoWidth":false,"orderClasses":false,"orderCellsTop":true}},"evals":[],"jsHooks":[]}</script>
 ```
 
 Or [kable](https://bookdown.org/yihui/rmarkdown-cookbook/kable.html) and
@@ -346,7 +437,7 @@ This [case study](https://gt.rstudio.com/articles/case-study-gtcars.html) will s
 
 ***
 
-### Using tab design
+## Using tab design
 
 As you can see, this document has autogenerated TOC menu on the left.
 However, you can also use a tab-style menu.
@@ -356,7 +447,7 @@ Personally, I have found this design very useful for reporting.
 
 ***
 
-### Generating Markdown and HTML from R
+## Generating Markdown and HTML from R
 
 The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
 For example, this chunk produces a Markdown header and some text below:
@@ -375,66 +466,17 @@ Hello world!
 
 I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
 
-### [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) - easy interactive dashboards for R
+## [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) - easy interactive dashboards for R
 
 [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) is awesome package for dashboard-style reporting.
 You can find a quick example [here](https://beta.rstudioconnect.com/jjallaire/htmlwidgets-ggplotly-geoms/htmlwidgets-ggplotly-geoms.html#geom_density).
 
-### RMarkdown themes
+## RMarkdown themes
 
 You can see that this Rmd document has a different theme than the others used for exercises
 (those are using `readthedown` theme from [rmdformats](https://github.com/juba/rmdformats) package).
 
 Using different themes is quite easy and you can refer to [this nice overview](https://www.datadreaming.org/post/r-markdown-theme-gallery/).
 Several themes are included in `rmarkdown` package. Because we didn't specify `theme` parameter under `html_document` in header
-(see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a theme called `default`.
+(see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a default theme called simply `default`.
 You can try to change the theme to e.g. `united` and render this document again 🙂
-
-***
-
-# Rendering RMarkdown
-
-To render a Rmd file, use the `rmarkdown::render()` function.
-Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
-
-> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
-
-
-```r
-library(knitr)
-library(here)
-
-# You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-rmarkdown::render(
-  here("E02-intro_to_R/intro_to_Rmd.Rmd"),
-  output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
-  clean = FALSE
-)
-```
-
-Because `clean = FALSE` in `rmarkdown::render()`, intermediate Markdown (`.md`) files are not removed and you have an opportunity to inspect them.
-These files are sources for `pandoc`, which does the actual rendering to HTML format (as specified in the header of this Rmd file, but
-`pandoc` can render to many other formats than HTML, e.g. PDF or LaTex).
-
-## Working directory in a Rmd file
-
-Unfortunately, there are discrepancies in the current working directory when you evaluate chunks in RStudio vs. render a Rmd file,
-because `knitr` will automatically set the working directory to that of Rmd file location.
-
-When you evaluate this chunk in RStudio, you get the working directory of your current project.
-
-
-```r
-current_wd <- getwd()
-current_wd
-```
-
-```
-## [1] "/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises/E02-intro_to_R"
-```
-
-But as you can see in the output `intro_to_Rmd.html`, the working directory is `Exercises/E02-intro_to_R` there.
-
-So how to use consistent project-relative paths in a Rmd file?
-Use the [here](https://github.com/jennybc/here_here) package, which is described in `intro_to_R.Rmd` in Reproducible R section.

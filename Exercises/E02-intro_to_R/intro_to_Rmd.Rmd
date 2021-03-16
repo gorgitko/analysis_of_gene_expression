@@ -47,9 +47,14 @@ All of this is handled automatically by `rmarkdown::render()` function (see the 
 - [knitr options](https://yihui.name/knitr/options/)
 - [RMarkdown output formats](https://rmarkdown.rstudio.com/lesson-9.html)
 
+> After you finish the [Rendering RMarkdown section](#rendering-rmarkdown), the best way to familiarize yourself with RMarkdown
+  will be to create a new Rmd file and try to use the Markdown syntax, to create code chunks, to modify the header, and to render the Rmd file to HTML.
+
 ***
 
 ## How to use RMarkdown
+
+Files with `.Rmd` extension are recognized by RStudio, which automatically adapts its environment to them (notebook mode).
 
 **Pandoc header**
 
@@ -57,8 +62,8 @@ On the beginning of the source file you can see the header section separated by 
 Those are options for `pandoc`, mostly specifying how output should look like.
 They are written in [YAML format](https://lzone.de/cheat-sheet/YAML).
 
-You can see we are using three common parameters: `title`, `author` or `institute`.
-The first two will be shown in the header of resulting document.
+You can see we are using three common parameters: `title`, `author` and `institute`.
+The first two will be shown in the header of the resulting HTML document.
 
 As the output type we are using `html_document` with several parameters:
 
@@ -67,7 +72,7 @@ As the output type we are using `html_document` with several parameters:
 - `toc_float: true`: make the TOC floating on the left side of page. If `false`, TOC will be placed statically to the beginning of document.
 - `df_print: paged`: default output style for tables.
 
-For possible output types see [this](https://bookdown.org/yihui/rmarkdown/documents.html) chapter from R Markdown: The Definitive Guide.
+For possible output types see [this](https://rmarkdown.rstudio.com/lesson-9.html) overview with links to R Markdown: The Definitive Guide.
 
 It is also possible to use inline R code in parameters. As an example, we used this to output the current date:
 
@@ -89,6 +94,12 @@ Some examples:
 `*This is a text in italics.*`
 
 *This is a text in italics.*
+
+`This is code markup.`
+
+```
+This is multiline code markup.
+```
 
 `# This is a section header of level 1`
 
@@ -113,6 +124,20 @@ Some examples:
 1. First item.
 2. Second item.
     - Sublist of second item.
+
+<!-- Comment outside of code chunk. -->
+<!--
+Multiline comment
+outside of code chunk.
+-->
+
+```
+<!-- Comment outside of code chunk. -->
+<!--
+Multiline comment
+outside of code chunk.
+-->
+```
 
 ![Markdown example in RStudio.](https://d33wubrfki0l68.cloudfront.net/59f29676ef5e4d74685e14f801bbc10c2dbd3cef/c0688/lesson-images/markdown-1-markup.png)
 
@@ -182,7 +207,7 @@ plot(mpg ~ cyl, data = mtcars)
 
 **Rendering a document**
 
-On the end of this document you will find a [chunk](#rendering-rmarkdown), which generates a HTML document from this source.
+See [this](#rendering-rmarkdown) section below.
 
 ## Useful Rmd-related keyboard shortcuts in RStudio
 
@@ -194,9 +219,68 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 - `Ctrl + Shift + Enter`: run current chunk.
 - `Ctrl + Alt + N`: run next chunk.
 
-## Some RMarkdown tips
+***
 
-### Pretty tables
+# Rendering RMarkdown
+
+To render a Rmd file, use the `rmarkdown::render()` function.
+Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
+
+> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+library(knitr)
+library(here)
+
+# You can set global chunk options. Options set in individual chunks will override this.
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+rmarkdown::render(
+  here("E02-intro_to_R/intro_to_Rmd.Rmd"),
+  output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
+  clean = FALSE
+)
+```
+
+Because `clean = FALSE` in `rmarkdown::render()`, intermediate Markdown (`.md`) files are not removed and you have an opportunity to inspect them.
+These files are sources for `pandoc`, which does the actual rendering to HTML format (as specified in the header of this Rmd file, but
+`pandoc` can render to many other formats than HTML, e.g. PDF or LaTex).
+
+We can also override output format specified in Rmd header by passing `output_format` to `rmarkdown::render()`.
+Let's try it and render this document in a popular "Tufte handout style":
+
+```{r, eval = FALSE, message = FALSE, warning = FALSE}
+rmarkdown::render(
+    here("E02-intro_to_R/intro_to_Rmd.Rmd"),
+    output_file = here("E02-intro_to_R/intro_to_Rmd_tufte.html"),
+    output_format = "tufte::tufte_html"
+)
+```
+
+> Now when you know the RMarkdown basics and how to render it to HTML, you can try yourself to create a Rmd file and play with it:
+  use the Markdown syntax, create code chunks, modify the header, and render it to HTML.
+
+## Working directory in a Rmd file
+
+Unfortunately, there are discrepancies in the current working directory when you evaluate chunks in RStudio vs. render a Rmd file,
+because `knitr` will automatically set the working directory to that of Rmd file location.
+
+When you evaluate this chunk in RStudio, you get the working directory of your current project.
+
+```{r}
+current_wd <- getwd()
+current_wd
+```
+
+But as you can see in the output `intro_to_Rmd.html`, the working directory is `Exercises/E02-intro_to_R` there.
+
+So how to use consistent project-relative paths in a Rmd file?
+Use the [here](https://github.com/jennybc/here_here) package, which is described in `intro_to_R.Rmd` in Reproducible R section.
+
+***
+
+# Some RMarkdown tips
+
+## Pretty tables
 
 You have several choices how tables will be printed. This is set via the `df_print` parameter under `html_document`.
 See [here](https://bookdown.org/yihui/rmarkdown/html-document.html#data-frame-printing) for possible choices.
@@ -229,7 +313,7 @@ This [case study](https://gt.rstudio.com/articles/case-study-gtcars.html) will s
 
 ***
 
-### Using tab design
+## Using tab design
 
 As you can see, this document has autogenerated TOC menu on the left.
 However, you can also use a tab-style menu.
@@ -239,7 +323,7 @@ Personally, I have found this design very useful for reporting.
 
 ***
 
-### Generating Markdown and HTML from R
+## Generating Markdown and HTML from R
 
 The cool feature of code chunks is also the ability of **raw** output, by setting `results = "asis"`.
 For example, this chunk produces a Markdown header and some text below:
@@ -258,60 +342,17 @@ cat("\nHello world!\n\n")
 
 I have found this to be very useful for dynamic reports, e.g. header names are composed from sample groups.
 
-### [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) - easy interactive dashboards for R
+## [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) - easy interactive dashboards for R
 
 [flexdashboard](https://rmarkdown.rstudio.com/flexdashboard/index.html) is awesome package for dashboard-style reporting.
 You can find a quick example [here](https://beta.rstudioconnect.com/jjallaire/htmlwidgets-ggplotly-geoms/htmlwidgets-ggplotly-geoms.html#geom_density).
 
-### RMarkdown themes
+## RMarkdown themes
 
 You can see that this Rmd document has a different theme than the others used for exercises
 (those are using `readthedown` theme from [rmdformats](https://github.com/juba/rmdformats) package).
 
 Using different themes is quite easy and you can refer to [this nice overview](https://www.datadreaming.org/post/r-markdown-theme-gallery/).
 Several themes are included in `rmarkdown` package. Because we didn't specify `theme` parameter under `html_document` in header
-(see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a theme called `default`.
+(see [here](https://bookdown.org/yihui/rmarkdown/html-document.html#appearance-and-style)), just now we are using a default theme called simply `default`.
 You can try to change the theme to e.g. `united` and render this document again `r emo::ji("slightly_smiling_face")`
-
-***
-
-# Rendering RMarkdown
-
-To render a Rmd file, use the `rmarkdown::render()` function.
-Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
-
-> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
-
-```{r, eval = FALSE, message = FALSE, warning = FALSE}
-library(knitr)
-library(here)
-
-# You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-rmarkdown::render(
-  here("E02-intro_to_R/intro_to_Rmd.Rmd"),
-  output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
-  clean = FALSE
-)
-```
-
-Because `clean = FALSE` in `rmarkdown::render()`, intermediate Markdown (`.md`) files are not removed and you have an opportunity to inspect them.
-These files are sources for `pandoc`, which does the actual rendering to HTML format (as specified in the header of this Rmd file, but
-`pandoc` can render to many other formats than HTML, e.g. PDF or LaTex).
-
-## Working directory in a Rmd file
-
-Unfortunately, there are discrepancies in the current working directory when you evaluate chunks in RStudio vs. render a Rmd file,
-because `knitr` will automatically set the working directory to that of Rmd file location.
-
-When you evaluate this chunk in RStudio, you get the working directory of your current project.
-
-```{r}
-current_wd <- getwd()
-current_wd
-```
-
-But as you can see in the output `intro_to_Rmd.html`, the working directory is `Exercises/E02-intro_to_R` there.
-
-So how to use consistent project-relative paths in a Rmd file?
-Use the [here](https://github.com/jennybc/here_here) package, which is described in `intro_to_R.Rmd` in Reproducible R section.
