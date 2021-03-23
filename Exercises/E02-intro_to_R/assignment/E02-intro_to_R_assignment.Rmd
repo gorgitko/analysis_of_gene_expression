@@ -5,6 +5,7 @@ output:
     toc: true
     toc_depth: 4
     toc_float: true
+    number_sections: true
     df_print: "paged"
 params:
   title: "E02 - Intro to R Assignment (Analysis of Gene Expression @ UCT Prague)"
@@ -83,12 +84,16 @@ Make ordered list from the list above.
 
 ***
 
+##
+
 Calculate column means of `USArrests` dataset:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Do the same as above, but for `iris` dataset:
 
@@ -97,6 +102,8 @@ Do the same as above, but for `iris` dataset:
 
 ***
 
+##
+
 In `women` dataset, count how many values greater than 70 are in each column:
 
 ```{r}
@@ -104,12 +111,16 @@ In `women` dataset, count how many values greater than 70 are in each column:
 
 ***
 
+##
+
 In `mtcars` dataset, count how many unique values are in each column:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Using `lapply()` or `purrr::map()`, return the first and last element of each element in `my_list`:
 
@@ -146,12 +157,16 @@ library(tidyverse)
 
 ***
 
+##
+
 Omit `wt` and `cyl` columns from `mtcars` dataset:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Same columns as above, but now select and rename them (in one step) to `weight` and `cylinders`:
 
@@ -160,12 +175,16 @@ Same columns as above, but now select and rename them (in one step) to `weight` 
 
 ***
 
+##
+
 Now instead of selecting only those two columns above, just rename them and return the full dataset:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Using one of the [select helpers](https://tidyselect.r-lib.org/reference/language.html), select columns ending with "ty" from `swiss` dataset:
 
@@ -174,12 +193,16 @@ Using one of the [select helpers](https://tidyselect.r-lib.org/reference/languag
 
 ***
 
+##
+
 Select columns `mpg`, `cyl` and `hp` from `mtcars` dataset, and arrange them by ascending `mpg` and descending `cyl`:
 
 ```{r}
 ```
 
 ***
+
+##
 
 In `iris` dataset, filter rows with `Sepal.Length` greater than 7 and `Sepal.Width` less than 3:
 
@@ -188,12 +211,16 @@ In `iris` dataset, filter rows with `Sepal.Length` greater than 7 and `Sepal.Wid
 
 ***
 
+##
+
 In `iris` dataset, filter rows with `Petal.Length` greater than `Sepal.Width` and `Species` equal to "virginica":
 
 ```{r}
 ```
 
 ***
+
+##
 
 In `iris` dataset, filter rows with `Petal.Length` greater than minimum value of `Sepal.Length`:
 
@@ -202,12 +229,16 @@ In `iris` dataset, filter rows with `Petal.Length` greater than minimum value of
 
 ***
 
+##
+
 In `iris` dataset, create a new column `Petal.Width.2` in which will be addition of `Petal.Width` and its mean:
 
 ```{r}
 ```
 
 ***
+
+##
 
 In `iris` dataset, create a new column `Sepal.Length.Category`, which categorizes `Sepal.Length`:
 
@@ -231,6 +262,8 @@ Example output (not full results):
 
 ***
 
+##
+
 In `iris` dataset, replace in `Species` column values `setosa`, `versicolor` and `virginica` with `set`, `versi` and `virgi`, respectively,
 and make `virgi` the reference (first) level for `Species`:
 
@@ -239,6 +272,8 @@ and make `virgi` the reference (first) level for `Species`:
 
 ***
 
+##
+
 Group `mtcars` dataset by `am` and within each group, calculate mean value of `hp` and number of observations:
 
 ```{r}
@@ -246,12 +281,16 @@ Group `mtcars` dataset by `am` and within each group, calculate mean value of `h
 
 ***
 
+##
+
 Do the same grouping as above and then filter rows with `gear` being 4 or 5, and arrange rows by `am` and `gear`:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Join two datasets `band_members` and `band_instruments` such that each `name` in `band_members` will get its instrument (`plays`):
 
@@ -269,6 +308,8 @@ Example output:
 ```
 
 ***
+
+##
 
 Do the same as above, but now include also `name`s for which there isn't any matching row in `band_instruments`:
 
@@ -288,6 +329,8 @@ Example output:
 
 ***
 
+##
+
 Using `tidyr::pivor_longer()`, convert the `billboard_sm` dataset below to long (tidy) format and
 save the result to `billboard_sm_long` variable:
 
@@ -297,6 +340,8 @@ billboard_sm <- head(billboard, 2)
 
 ***
 
+##
+
 Now convert `billboard_sm_long` back to wide format:
 
 ```{r}
@@ -304,11 +349,15 @@ Now convert `billboard_sm_long` back to wide format:
 
 ***
 
+##
+
 Collapse by `, ` to a single character unique values in `Species` column of `iris` dataset:
 
 ```{r}
 ```
 ***
+
+##
 
 Using the same unique values as above, extract substrings between positions 2 and 5 (inclusive):
 
@@ -316,6 +365,8 @@ Using the same unique values as above, extract substrings between positions 2 an
 ```
 
 ***
+
+##
 
 In `CO2` dataset below, filter rows with `Plant` starting with `Qn`:
 
@@ -325,12 +376,16 @@ CO2 <- as.data.frame(CO2)
 
 ***
 
+##
+
 In the same dataset as above, extract the numbers from `Plant` column:
 
 ```{r}
 ```
 
 ***
+
+##
 
 In `storms` dataset, filter rows with `name` containing "and" and discard duplicated rows by `name`:
 
@@ -339,12 +394,16 @@ In `storms` dataset, filter rows with `name` containing "and" and discard duplic
 
 ***
 
+##
+
 In the same dataset as above, replace "tropical" in `status` by "tropic" (sorry for a nonsense example, but I couldn't find a better one...):
 
 ```{r}
 ```
 
 ***
+
+##
 
 Using `glue()`, make a correct sentence from the variables below, assign it to variable `sentence` and print it:
 
@@ -358,12 +417,16 @@ word4 <- "cook"
 
 ***
 
+##
+
 Split the `sentence` variable to word vector (i.e. `c("I", "like", ...)`:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Use `ggplot` to make scatterplot of `Sepal.Length` and `Petal.Length` with point color by `Species` in `iris` dataset.
 Save this plot to `p1` variable and print it:
@@ -372,6 +435,8 @@ Save this plot to `p1` variable and print it:
 ```
 
 ***
+
+##
 
 Modify and save again the plot in `p1` variable as:
 
@@ -385,7 +450,10 @@ And print the plot again.
 
 ***
 
-Create boxplots of `Petal.Length` splitted and colored by `Species` in `iris` dataset with black points shown in each group, save it to `p2` variable and print it:
+##
+
+Create boxplots of `Petal.Length` splitted and colored by `Species` in `iris` dataset with black points shown in each group, save it to `p2` variable and print it.
+Points should be jittered or, generally, arranged in the way they won't overlap each other.
 
 ```{r}
 ```
@@ -396,6 +464,8 @@ Create boxplots of `Petal.Length` splitted and colored by `Species` in `iris` da
 
 ***
 
+##
+
 Combine `p1` and `p2` row-wise to a single figure (using the `patchwork` package):
 
 ```{r}
@@ -404,12 +474,16 @@ library(patchwork)
 
 ***
 
+##
+
 Do the same as above, but now combine the plots column-wise:
 
 ```{r}
 ```
 
 ***
+
+##
 
 Use `ComplexHeatmap` to make a heatmap of `iris` dataset such that:
 
@@ -429,6 +503,8 @@ Heatmap example:
 ![](`r here::here("E02-intro_to_R/assignment/p_heatmap.png")`)
 
 ***
+
+##
 
 Do the same as above, but now transform iris lengths to z-score (scaling):
 
