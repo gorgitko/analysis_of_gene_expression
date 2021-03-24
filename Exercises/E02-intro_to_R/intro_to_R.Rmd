@@ -783,7 +783,15 @@ my_fn <- function(x, y, z) {
 my_fn(a, mean(b), c)
 ```
 
-Magic! `r emo::ji("man_mage")`
+Magic! `r emo::ji("man_mage")` Having this knowledge, we can, for example, return a column from dataframe:
+
+```{r}
+my_fn <- function(df, column) {
+  df[, colnames(df) == substitute(column)]
+}
+
+my_fn(mtcars, cyl)
+```
 
 This is very roughly how most `tidyverse` functions work. They are using NSE to look first at variables inside a passed object (columns = variables).
 Most of these functions are designed to have their first parameter as data object.
@@ -1171,10 +1179,10 @@ dplyr::mutate(
   levels()
 ```
 
-You can notice that mutate() parameters are evaluated from first to last.
+You can notice that `mutate()` parameters are evaluated from first to last.
 So to `am_char` is already passed `am` as factor, as `am` is mutated before `am_char`.
 
-Of course, all these functions can be also used for vectors:
+Of course you can use all of these functions for vectors outside of `mutate()`:
 
 ```{r}
 v <- c(1, 1, 2, 3, 10)
