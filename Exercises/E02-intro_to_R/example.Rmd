@@ -1,0 +1,67 @@
+---
+title: "My first Rmd document"
+author: "Jiri Novotny"
+date: "16/03/2021"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: "paged"
+---
+
+# Header level 1
+
+Some text.
+
+## Header level 2
+
+**Some bold text.**
+
+*Some text in italics.*
+
+- Item 1
+- Item 2
+  - Subitem 2-1
+  - Subitem 2-1
+- Item 3
+
+1. One
+2. Two
+
+# Code chunks
+
+<!--
+Comment
+Comment
+-->
+
+```
+<!--
+Comment
+Comment
+-->
+```
+
+```{r, eval = TRUE}
+mtcars
+boxplot(mpg ~ cyl, data = mtcars)
+```
+
+```{r, echo = FALSE, warning = FALSE}
+# Comment.
+
+warning("I am warning you.")
+message("I am just a message.")
+plot(mpg ~ cyl, data = mtcars)
+```
+
+`mtcars` dataset has `r nrow(mtcars)` rows.
+
+```{r}
+DT::datatable(
+  mtcars[, 1:5],
+  filter = "top",
+  class = "display",
+  rownames = TRUE
+)
+```

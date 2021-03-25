@@ -2133,7 +2133,7 @@ but for now we can live only with the simple multicore usage.
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
-save.image(here("E03-intro_to_R/intro_to_R.RData"))
+save.image(here("E02-intro_to_R/intro_to_R.RData"))
 
 warnings()
 traceback()
