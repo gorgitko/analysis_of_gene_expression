@@ -1,28 +1,24 @@
 ---
-title: "E03 - qPCR (Analysis of Gene Expression 2020 @ VSCHT)"
-author: "Jiri Novotny"
+title: "E03 - qPCR (Analysis of Gene Expression @ UCT Prague)"
+author:
+  - Jiri Novotny jiri.novotny@img.cas.cz
+  - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
-  html_document:
-    # code_folding: "show"
-    df_print: "paged"
-    toc: true
-    toc_float: true
-    toc_collapsed: false
+  rmdformats::readthedown:
+    highlight: "kate"
+    lightbox: true
+    thumbnails: true
+    gallery: true
     toc_depth: 4
-    number_sections: false
-    theme: "united"
     self_contained: true
-    css: "../stylesheet.css"
+    number_sections: false
+    toc_collapsed: false
+    df_print: "paged"
+date: "`r Sys.Date()`"
 ---
 
----
-date: '`r glue("Document generated: {Sys.Date()}")`'
----
-
-```{r, include = FALSE, echo = FALSE}
-if (!require(emo))
-  devtools::install_github("hadley/emo")
+```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ```{js, echo = FALSE}
@@ -36,10 +32,31 @@ $(document).ready(function() {
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r /data/shared/AGE2020/Exercises/E03-qPCR ~/AGE2020/Exercises
+cp -r ~/shared/AGE2021/Exercises/{E03-qPCR,age_library.R} ~/AGE2021/Exercises
 ```
 
-And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E03-qPCR")`
+**Assignment**
+
+The assignment for this exercise is to implement (mainly visualization) functions, which you will use later on different types of gene expression data.
+You will implement these functions in `age_library.R` where are empty function definitions.
+You don't have to stick to all predefined parameters and returned variables, just keep in mind that your implementations should make outputs similar to outputs in this document.
+Also, in several cases there are alternative functions (such as `plot_pca()` and `plot_pca_ggpairs()`), but you don't have to implement them all, if not said.
+
+Sections containing functions to be implemented are marked with `r emo::ji("hammer_and_wrench")`
+
+**After you implement these functions, modify their calling in this document and render it again.**
+
+Please, return the assignment in this form: 
+
+- In the header, put your name and e-mail to `author` parameter (under `params`).
+- Copy all finished files to directory named `E03-qPCR_assignment_<your_name>`: modified Rmd, rendered HTML, `age_library.R` with your implementations.
+  Put this directory to ZIP archive named `E03-qPCR_assignment_<your_name>.zip`.
+  - In rendered HTML there should be included all code chunks with full output (warnings, messages, etc.).
+- Upload the ZIP file to the appropriate assignment in MS Teams.
+
+> Note that your functions will be universal, serving not only for qPCR data.
+  This is mainly true for exploratory analysis functions (hiearchical clustering, PCA, etc.),
+  where input (expression matrix) is same also for microarrays and RNA-seq data.
 
 ***
 
@@ -48,34 +65,33 @@ And switch the R working directory to the current exercise: `setwd("~/AGE2020/Ex
 [Quantitative real-time PCR](https://en.wikipedia.org/wiki/Real-time_polymerase_chain_reaction) monitors the amplification
 of a targeted DNA molecule during the PCR (i.e., in real time), not at its end, as in conventional PCR.
 
-![In real time reverse transcription quantitave PCR (RT-qPCR), we measure the amplification of target reverse transcribed DNA molecules.
+![qPCR measurement](`r here("E03-qPCR/images/qpcr_curves.png")`)
+
+In real time reverse transcription quantitave PCR (RT-qPCR), we measure the amplification of target reverse transcribed DNA molecules.
 This amplification depends on initial RNA concentration and approximates the gene expression.
 We select a fluorescence signal threshold $S_T$ and measure crossing points $C_P$ (also called threshold cycle $C_T$) for samples.
 To correct for initial RNA concentration and quality, reference genes are used (dashed curves).
 These genes are considered to be equally expressed in every condition (purple and orange curves), and so serve as the baseline.
-First, we normalize target genes in each sample to reference gene (or they geometric mean) by calculating $\Delta C_t = C_P^t - C_P^r$.
-Obtained $\Delta C_t$ values are then used to calculate the <ins>relative change</ins> of gene expression between samples.
+First, we normalize target genes in each sample to reference gene (or they geometric mean) by calculating $\Delta C_P = C_P^t - C_P^r$.
+Obtained $\Delta C_P$ values are then used to calculate the <ins>relative change</ins> of gene expression between samples.
 In this case, we are interested how much more or less is gene expressed in $\text{treatment}$ sample ($\text{trt}$), relative to $\text{control}$ ($\text{cnt}$) sample.
 This relative change is called $\text{fold-change}$: $FC = 2^{-\Delta\Delta C_P} = 2^{-(\Delta C_{P, trt} - \Delta C_{P, cnt})}$.
 We usually report $FC$ in $log_2$ scale: $LFC = \Delta C_{P, cnt} - \Delta C_{P, trt} = log_2(FC)$
 Important is to realize that the higher $C_P$ is, the **lower** initial mRNA concentration was.
-This is why we put minus /$-$/ in front of $\Delta\Delta C_t$.
+This is why we put minus /$-$/ in front of $\Delta\Delta C_P$.
 We usually don't consider the efficiency of PCR and expect the mRNA concentration to double in each cycle.
-Otherwise $FC = (1+E)^{-\Delta\Delta C_P}$, where $E$ is the PCR efficiency.](images/qpcr_curves.png)
-
-This will be an introductory exercise in which you will refresh your R skills
-and implement (mainly visualization) functions, which you will use later on different types of gene expression data.
+Otherwise $FC = (1+E)^{-\Delta\Delta C_P}$, where $E$ is the PCR efficiency.
 
 # Our experiment
 
-We will work with data from pancreatic tumour experiment where
+We will work with data from pancreatic tumor experiment where
 an influence of [spirulina](https://en.wikipedia.org/wiki/Spirulina_(dietary_supplement)) algae was investigated.
 In this experiment there are two sample groups:
 
-- **control**: samples from tumour.
-- **spirulina**: samples from tumour treated by extract from spirulina.
+- **control**: samples from tumor.
+- **spirulina**: samples from tumor treated by extract from spirulina.
 
-Each sample group has three biological replicates (grown on different Petri dish). In addition, each biological replicate is cultivated for 50% and 90% confluence, and for each confluence there are two technical replicates. Uhhh...
+Each sample group has three biological replicates (grown on different Petri dish). In addition, each biological replicate is cultivated for 50% and 90% confluence, and for each confluence there are two technical replicates. Uhhh, a nested design, right...
 
 ![](https://i.giphy.com/media/LnKa2WLkd6eAM/giphy.webp)
 
@@ -115,44 +131,36 @@ But we can expand it to:
           |-- ...
 ```
 
-If you want, we can draw it on the board `r emo::ji("slightly_smiling_face")`
-
 Also, there are two groups of measured genes:
 
-1. **Target genes** - interesting genes found by microarray exploratory analysis.
+1. **Target genes** - interesting genes found prior by microarray exploratory analysis.
 2. **Housekeeping genes** - used as reference genes.
 
 # Libraries
 
 ```{r}
+library(here)
+library(tidyverse)
 library(dplyr)
-library(stringr)
-library(tidyr)
 library(glue)
 library(magrittr)
 ```
 
-This will be your personal library in which you implement the tasks.
-Now it contains only function skeletons.
-These skeletons are not obligatory, but your functions should have output
-similar to what you will see in this tutorial.
-
-Note that your functions will be universal, serving not only for qPCR data.
-This is mainly true for exploratory analysis functions (hiearchical clustering, PCA, etc.),
-where input (expression matrix) is same also for microarrays and RNA-seq data.
+Now we source your personal library:
 
 ```{r}
-source("../age_library.R")
+source(here("age_library.R"))
 ```
 
 # Config
 
-I would recommend you to always define constants at the beginning of a script. It is more transparent, and if you, for example, change some path, you haven't to
-replace it in whole source code.
+I would recommend you to always define constants at the beginning of a script.
+It is more transparent, and if you, for example, change some path, you haven't to replace it in whole source code.
 Constants are, by convention, named in UPPERCASE.
 
 ```{r}
-CP_DATA <- "qPCR.Rds"
+BASE_DIR <- here("E03-qPCR")
+CP_DATA <- here(BASE_DIR, "data/qPCR.Rds")
 ```
 
 # Data preprocessing
@@ -162,9 +170,10 @@ CP_DATA <- "qPCR.Rds"
 We have already preprocessed a $C_P$ matrix for you.
 But if you really want to start from the floor, you can create the $C_P$ matrix from original files
 ([here](data/2015-06-08_Strnad.txt) and [here](data/2015-06-08_Strnad.xls)).
+Not very pretty, right? `r emo::ji("face_with_hand_over_mouth")`
 
 In $C_P$ matrix, columns are samples, rows are genes, and values are $C_P$ values.
-This format is generally used for gene expression data and you will see it also in case of microarrays and RNA-Seq.
+This format is generally used for gene expression data and you will see it also in case of microarrays and RNA-seq.
 
 ```{r}
 cp <- readRDS(CP_DATA) %>%
@@ -175,20 +184,20 @@ samples <- colnames(cp)
 cp[1:5, 1:5]
 ```
 
-CP values `>= 40` are considered out of qPCR limit:
+CP values `>= 40` are considered out of qPCR limit and so we set them to `NA`:
 
 ```{r}
 cp[cp > 39.9] <- NA
 ```
 
-Some genes have so many NA values:
+Some genes have so many `NA` values (respectively, they don't have many values other than `NA`):
 
 ```{r}
 lq_genes <- rowSums(!is.na(cp))
 lq_genes
 ```
 
-Let's remove them:
+Let's remove genes with number of non-NA values less or equal to 2:
 
 ```{r}
 lq_genes <- names(lq_genes[lq_genes <= 2])
@@ -197,13 +206,12 @@ cp <- cp[genes, ]
 ```
 
 Now we split genes to target and reference ones.
-Latter have `H` on the end of their names:
+The latter have `H<number>` on the end of their names, which we can match with regular expression (regex) `H\d+$`.
 
 ```{r}
-target_genes <- genes[str_detect(genes, ".+ H", negate = TRUE)]
-ref_genes <- setdiff(genes, target_genes)
-
-gene_groups <- if_else(str_detect(genes, " H\\d+$"), "reference", "target")
+ref_genes <- str_subset(genes, "H\\d+$")
+target_genes <- setdiff(genes, ref_genes)
+gene_groups <- if_else(genes %in% ref_genes, "reference", "target")
 (genes_df <- data.frame(
   gene = as.character(genes),
   gene_group = factor(gene_groups, levels = c("reference", "target")),
@@ -213,7 +221,7 @@ gene_groups <- if_else(str_detect(genes, " H\\d+$"), "reference", "target")
 )
 ```
 
-For plotting purposes, we replace `NA`s by `40`:
+For plotting purposes, we create a new dataframe with `NA`s replaced by `40`:
 
 ```{r}
 cp_plot <- replace(cp, is.na(cp), 40)
@@ -221,7 +229,7 @@ cp_plot <- replace(cp, is.na(cp), 40)
 
 ## Phenotypical data (sample sheet)
 
-You usually obtain a sample sheet, but in this case we are going to parse the column names of $C_P$ matrix.
+Along with measured data you usually obtain a sample sheet, but in this case we are going to parse the column names of $C_P$ matrix.
 Everything needed is contained there:
 
 - K and SP: sample groups
@@ -229,15 +237,25 @@ Everything needed is contained there:
 - Number behind slash ("/"): confluence
 - (2RT): second technical replicate
 
+`str_match()` is returning a character matrix of capturing groups (columns) for each string (rows).
+The first column is always the full match.
+
 ```{r}
-(sample_names <- colnames(cp))
+(samples <- colnames(cp))
 
 pheno_data <- data.frame(
-  sample_id = sample_names,
-  sample_group_code = str_match(sample_names, "^SP|K")[, 1] %>% recode_factor("K" = "c", "SP" = "sp"),
-  petri_number = str_match(sample_names, "^[A-Z]{1,2}(\\d)")[, 2] %>% as.factor(),
-  confluence = str_match(sample_names, "\\/(\\d{2})")[, 2] %>% as.factor(),
-  replicate = str_match(sample_names, "\\((\\d)RT\\)")[, 2] %>% replace_na("1") %>% as.factor()
+  sample_id = samples,
+  # Match with a single capturing group (full match): "SP" or "K" on the beginning.
+  sample_group_code = str_match(samples, "^SP|K")[, 1] %>% recode_factor("K" = "c", "SP" = "sp"),
+  # Match a sample group on the beginning and then the number behind (second group).
+  petri_number = str_match(samples, "^[A-Z]{1,2}(\\d)")[, 2] %>% as.factor(),
+  # Match a two-digit number behind "/".
+  confluence = str_match(samples, "\\/(\\d{2})")[, 2] %>% as.factor(),
+  # Match a technical replicate number before "RT". See how literal match of parentheses ("(" and ")") must be written:
+  # first you have to escape backslash in R as "\\" to escape parenthese for regex as "\\(", which will match the character "(" literally,
+  # e.g. not specifying the capturing group.
+  # Note that first technical replicates doesn't have this part, so their match will be NA, which we replace by "1".
+  replicate = str_match(samples, "\\((\\d)RT\\)")[, 2] %>% replace_na("1") %>% as.factor()
 ) %>%
   dplyr::mutate(
     sample_name_rep = glue("{sample_group_code}{petri_number}_{confluence}_r{replicate}") %>% as.character(),
@@ -254,9 +272,17 @@ samples <- colnames(cp)
 head(pheno_data)
 ```
 
+If you are not sure what regexes above mean, go to [regex101.com](https://regex101.com/) and try them.
+You can place multiple sample names on separate lines.
+In regexes you just have to replace double backslashes (`\\`) by a single one. That's because backslash is used in R (and other programming languages)
+for [escaping](https://en.wikipedia.org/wiki/Escape_character). Shortly, character after backslash has a special meaning (e.g. `\n` is used for newline)
+and because regexes themselves use backslashes (e.g. `\d` means "any digit"), you have to tell R to treat backslash as normal character, and not as the start of escaping.
+
+![Example from [regex101.com](https://regex101.com/)](`r here("E03-qPCR/images/regex101.png")`)
+
 ## Long data
 
-We also create long data from `cp`, `pheno_data` and `genes_df`.
+We also create long data from `cp`, `pheno_data` and `genes_df`:
 
 ```{r}
 cp_long <- as.data.frame(cp) %>%
@@ -276,17 +302,18 @@ head(cp_long)
 
 We are using exploratory analysis to have an unbiased first look at data.
 It is also a crucial step to assess the biological quality control,
-e.g. whether samples from different groups create separate clusters -
-if not, samples might be swapped.
+e.g. whether samples from distinct groups create separate clusters -
+if not, samples might be swapped etc.
 
-## Hiearchical clustering (**TASK 1**)
+## Hiearchical clustering `r emo::ji("hammer_and_wrench")`
 
-**TASK 1: Implement your own function which takes an expression matrix and returns a dendrogram with coloring by a chosen variable.**
+> Function to be implemented within the assignment.
+  It takes an expression matrix and returns a dendrogram with coloring by a chosen variable.
 
 ```{r}
-color_variables <- c("sample_group", "confluence", "petri_number")
+coloring_variables <- c("sample_group", "confluence", "petri_number")
 
-for (variable in color_variables) {
+for (variable in coloring_variables) {
   plot_hc(
     cp_plot, color_by = pheno_data[, variable],
     method_distance = "euclidean", method_clustering = "complete",
@@ -295,63 +322,78 @@ for (variable in color_variables) {
 }
 ```
 
-## PCA (**TASK 2**)
+We can see the main effect - with several exceptions, samples are clustered by sample groups, which is good.
+There isn't any effect of other variables, which would be confounding.
 
-**TASK 2: Implement a function for PCA visualization with point coloring by a chosen variable.**
+## PCA `r emo::ji("hammer_and_wrench")`
 
-- Base R:
+> Function to be implemented within the assignment.
+  It will perform PCA visualization with point coloring by a chosen variable.
+  You can also output plots of first N principal components and variance explained bar plot.
 
-```{r, warning = FALSE}
-plot_pca(cp_plot, color_by = pheno_data$sample_group, color_by_lab = "sample_group")
-```
-
-- You can use `ggplot2`, but be prepared to use data in long format:
+We can see that the first principal component (PC1) is nicely separating our samples by sample group:
 
 ```{r}
-plot_pca_ggplot2(cp_plot, pheno_data, color_by = "sample_group", shape_by = "confluence")$plot
+plot_pca(cp_plot, pheno_data, color_by = "sample_group", shape_by = "confluence")$plot
+plot_pca(cp_plot, pheno_data, plot_type = "multi", color_by = "sample_group", shape_by = "confluence")$plot
 ```
 
 ```{r, height = 8}
-plot_pca_ggplot2(cp_plot, pheno_data, color_by = "sample_group", shape_by = "confluence", label_by = "sample_name_rep")$plot
+plot_pca(cp_plot, pheno_data, color_by = "sample_group", shape_by = "confluence", label_by = "sample_name_rep")$plot
 ```
 
 ```{r}
-plot_pca_ggplot2(cp_plot, pheno_data, color_by = "sample_group", shape_by = "petri_number")$plot
+plot_pca(cp_plot, pheno_data, color_by = "sample_group", shape_by = "petri_number")$plot
 ```
 
-- You can also use `GGally::ggpairs()` to plot a grid of PCA plots (PC1 vs. PC2, PC1 vs. PC3, PC2 vs. PC3, etc):
+- You can also use `GGally::ggpairs()` to plot a grid of PCA plots (PC1 vs. PC2, PC1 vs. PC3, PC2 vs. PC3, etc.):
 
 ```{r}
 plot_pca_ggpairs(cp_plot, pheno_data, n_components = 5, color_by = "sample_group", shape_by = "confluence")$plot
 ```
 
-## Heatmap (**TASK 3**)
+## Heatmap `r emo::ji("hammer_and_wrench")`
 
-**TASK 3: Implement your own function for heatmap.**
-
-You can use a nice package [`heatmaply`](https://cran.r-project.org/web/packages/heatmaply/vignettes/heatmaply.html) which produces interactive HTML heatmaps.
-Or [`pheatmap`](https://cran.r-project.org/web/packages/pheatmap/index.html) for a better alternative to `heatmap.2()`.
-
-```{r}
-plot_heatmap(as.matrix(cp_plot), color_by = pheno_data$sample_group, color_legend_lab = "Sample group", main = "Treatment (Cp values)")
-plot_pheatmap(cp_plot, pheno_data, genes_df, column_color_by = color_variables, row_color_by = "gene_group", main = "qPCR")
-```
+> Function to be implemented within the assignment.
+  `ComplexHeatmap` package is preferred. For interactive heatmaps you can use
+  [heatmaply](https://cran.r-project.org/web/packages/heatmaply/vignettes/heatmaply.html) (introduced in E02-intro to R).
 
 ```{r}
-plot_heatmaply(cp_plot, pheno_data, genes_df, column_color_by = color_variables, row_color_by = "gene_group", main = "qPCR", key.title = "CP")
+p_heatmap <- plot_heatmap(
+  cp,
+  sample_annotation = dplyr::select(pheno_data, `Sample Group` = sample_group, `Petri Dish` = petri_number, Confluence = confluence, Replicate = replicate),
+  feature_annotation = dplyr::select(genes_df, `Gene Group` = gene_group),
+  legend_title = "Cp",
+  show_column_names = FALSE
+)
+draw(p_heatmap, merge_legend = TRUE)
 ```
 
 **Can you see any outlying samples (replicates)? If yes, should they be removed?**
 
-# Normalization to reference genes
+# Selecting the reference genes
 
 We will use housekeeping genes as reference genes.
 Housekeeping genes are genes which have similar expression profile regardless the cell type or state.
 That is why they can be used for sample normalization (as an internal control).
 
-## Selecting the reference genes
+## Clustering
 
-### Correlation
+Housekeeping genes should cluster together. Let's try it using hierachical clustering:
+
+```{r}
+plot_hc(t(cp), color_by = gene_groups, color_by_lab = "Gene groups")
+```
+
+Also in PCA, we should see them separated from target genes:
+
+```{r}
+plot_pca(t(cp_plot), sample_data = genes_df, color_by = "gene_group")$plot
+```
+
+Not very sharp clustering, but PC1 separates the gene groups well.
+
+## Correlation
 
 Expression of housekeeping genes is/should be correlated.
 
@@ -364,13 +406,7 @@ t(cp) %>%
   theme_bw()
 ```
 
-You can also use base R:
-
-```{r}
-pairs(t(cp))
-```
-
-Let's look more closely at correlation coefficients:
+Let's look more closely at the correlation coefficients:
 
 ```{r}
 (gene_cor <- cor(t(cp), use = "pairwise.complete.obs"))
@@ -378,35 +414,36 @@ ggcorrplot::ggcorrplot(gene_cor, method = "circle") +
   ggtitle(main_title)
 ```
 
-You can also use `lattice`:
+You can also use the `heatmaply` package:
 
-```{r, eval = FALSE}
-lattice::levelplot(gene_cor, main = main_title)
+```{r}
+plot_heatmaply(gene_cor, feature_annotation = dplyr::select(genes_df, `Gene Group` = gene_group), main = main_title, legend_title = "Correlation")
 ```
 
-Or `heatmaply`:
+At the first sight, housekeeping (reference) genes are well correlated, with correlation coefficients over 0.9
 
-```{r, eval = FALSE}
-plot_heatmaply(gene_cor, feature_data = genes_df, row_color_by = "gene_group", main = main_title)
-```
-
-Housekeeping genes should cluster together.
+Housekeeping genes should cluster together also by their correlation coefficients.
 We can try both Euclidean and [Pearson](https://en.wikipedia.org/wiki/Pearson_correlation_coefficient#Pearson's_distance)
 distance (1 - correlation coefficient) for hiearchical clustering.
 
 ```{r}
-plot_hc(gene_cor, color_by = gene_groups, color_by_lab = "Gene groups", method_distance = "euclidean", main = "Hierarchical clustering (Euclidean distance)")
-plot_hc(gene_cor, color_by = gene_groups, color_by_lab = "Gene groups", method_distance = "pearson", main = "Hierarchical clustering (Pearson distance)")
+plot_hc(gene_cor, color_by = gene_groups, color_by_lab = "Gene groups", method_distance = "euclidean", title = "Hierarchical clustering (Euclidean distance)")
+plot_hc(gene_cor, color_by = gene_groups, color_by_lab = "Gene groups", method_distance = "pearson", title = "Hierarchical clustering (Pearson distance)")
 ```
 
 PCA of correlation coefficients is also helpful:
 
 ```{r}
-plot_pca_ggplot2(gene_cor, genes_df, color_by = "gene_group")$plot
+plot_pca(gene_cor, sample_data = genes_df, color_by = "gene_group")$plot
 ```
 
-### geNorm M-values (**TASK 4**)
+From both hiearchical clustering and PCA you can see that reference genes make a compact cluster, which is good.
 
+## geNorm M-values `r emo::ji("hammer_and_wrench")`
+
+> Function (`compute_m()`) to be implemented within the assignment.
+
+Until now we were doing rather exploratory analysis of reference genes, but it's time to make a more rigorous decision.
 M values are telling you how stable is a gene expressed across the samples.
 From the original [paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC126239/):
 
@@ -417,28 +454,28 @@ From the original [paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC126239/):
 
 For a further explanation see the section "Gene-stability measure and ranking of selected housekeeping genes" in the paper above.
 
-**TASK 4: Implement a function which computes the M value.** Hints:
+Hints for geNorm implementation:
 
-- Remember that R is vectorized by default. In this way you can directly write most of equations as you see them on paper.
-- Very useful is `apply()` function. It applies a function to each of rows or columns of a matrix.
-  Whether to apply function to rows or columns can be specified by `MARGIN` parameter: `1` for rows and `2` for columns.
-  That is, when `MARGIN = 1`, you obtain N values from matrix with N rows. Similarly for `MARGIN = 2`, but for M columns.
+- Remember that R is vectorized. In this way you can directly write most of equations as you see them on paper.
+- You will most likely need the `apply()` function.
 
 Let's compute the M values:
 
 ```{r}
-for (g in ref_genes)
-  compute_m(g, cp_plot[ref_genes, ]) %>% glue("{g}: ", format(., digits = 3)) %>% cat(sep = "\n")
+purrr::map_dbl(ref_genes, ~ compute_m(., cp_plot[ref_genes, ])) %>%
+  set_names(ref_genes)
 ```
 
 All reference genes seem to be OK. But compare them with target genes - they would not be good reference genes:
 
 ```{r}
-for (g in target_genes)
-  compute_m(g, cp_plot[target_genes, ]) %>% glue("{g}: ", format(., digits = 3)) %>% cat(sep = "\n")
+purrr::map_dbl(target_genes, ~ compute_m(., cp_plot[target_genes, ])) %>%
+  set_names(target_genes)
 ```
 
-## Subtracting the reference genes: $\Delta C_P$
+***
+
+# Normalization to reference genes: $\Delta C_P$
 
 For each sample we calculate a geometric mean of reference genes.
 Don't be confused, it's just [this](https://en.wikipedia.org/wiki/Geometric_mean#Relationship_with_logarithms)
@@ -453,8 +490,7 @@ head(norm)
 ```
 
 Let's look how these geometric means of reference genes behave.
-As you can see, they lie in the centre of reference genes,
-and that's what we want.
+As you can see, they lie in the centre of reference genes, and that's what we want (and expect).
 
 ```{r}
 gene_cor_norm <- rbind(cp, norm = norm) %>%
@@ -468,10 +504,10 @@ genes_df_norm <- genes_df %>%
 ggcorrplot::ggcorrplot(gene_cor_norm, method = "circle") +
   ggtitle(main_title)
 
-plot_hc(gene_cor_norm, color_by = genes_df_norm$gene_group, color_by_lab = "Gene groups", method_distance = "euclidean", main = "Hierarchical clustering (Euclidean distance)")
-plot_hc(gene_cor_norm, color_by = genes_df_norm$gene_group, color_by_lab = "Gene groups", method_distance = "pearson", main = "Hierarchical clustering (Pearson distance)")
+plot_hc(gene_cor_norm, color_by = genes_df_norm$gene_group, color_by_lab = "Gene groups", method_distance = "euclidean", title = "Hierarchical clustering (Euclidean distance)")
+plot_hc(gene_cor_norm, color_by = genes_df_norm$gene_group, color_by_lab = "Gene groups", method_distance = "pearson", title = "Hierarchical clustering (Pearson distance)")
 
-plot_pca_ggplot2(gene_cor_norm, genes_df_norm, color_by = "gene_group")$plot
+plot_pca(gene_cor_norm, genes_df_norm, color_by = "gene_group")$plot
 ```
 
 Now we calculate $\Delta C_P$ values by subtracting the reference gene means from target genes.
@@ -482,7 +518,7 @@ ref_gene_cp_matrix <- matrix(norm, ncol = ncol(cp), nrow = nrow(cp), byrow = TRU
 ref_gene_cp_matrix[1:5, 1:5]
 ```
 
-Now we are ready for subtraction, that is, to calculate $\Delta C_t = C_P^t - C_P^r$:
+Now we are ready for subtraction, that is, to calculate $\Delta C_P = C_P^t - C_{P,mean}^r$:
 
 ```{r}
 delta_cp <- cp - ref_gene_cp_matrix
@@ -490,33 +526,19 @@ delta_cp[1:5, 1:5]
 ```
 
 Now we average the technical replicates.
-First, we create an empty matrix, with the same number of rows as `delta_cp` matrix, but
-with the same number of columns (and column names) as the number of biological replicates (next time I will call them just "samples").
+We will use a handy function from `limma` package, which we will use later for microarray data analysis.
+`avearrays()` is basically doing this: splits columns to groups, calculates within group average of each gene and concatenates the results to matrix or dataframe.
+We split our samples by `sample_name` column in `pheno_data`. You can see that for each unique `sample_name`, there is either `replicate` 1 or 2.
 
 ```{r}
-samples <- unique(pheno_data$sample_name)
-
-delta_cp_avg <- matrix(NA, nrow = nrow(delta_cp), ncol = length(samples), dimnames = list(rownames(delta_cp), samples))
+head(pheno_data)
+delta_cp_avg <- limma::avearrays(delta_cp, pheno_data$sample_name)
 delta_cp_avg[1:5, 1:5]
 ```
 
-We create a list in which names are samples and values are names of their corresponding technical replicates:
+Just for control:
 
 ```{r}
-tech_rep <- split(colnames(delta_cp), pheno_data$sample_name)
-head(tech_rep)
-```
-
-And finally we start to fill in averages of technical replicates to our empty matrix `delta_cp_avg`.
-For each of the samples, we select columns from `delta_cp` matrix, corresponding to technical replicates of that sample,
-and calculate the mean of each row (= each gene).
-We add these means to sample's column in `delta_cp_avg`.
-
-```{r}
-for (s in samples)
-  delta_cp_avg[, s] <- rowMeans(delta_cp[, tech_rep[[s]], drop = FALSE], na.rm = TRUE)
-
-# For control.
 (rowMeans(delta_cp[, c("c1_50_r1", "c1_50_r2")], na.rm = TRUE) == delta_cp_avg[, "c1_50"]) %>%
   all() %>%
   stopifnot()
@@ -529,8 +551,11 @@ We also add $\Delta C_P$ to our long data.
 ```{r}
 delta_cp_avg <- delta_cp_avg[target_genes, ]
 delta_cp_avg_plot <- replace(delta_cp_avg, is.na(delta_cp_avg), ceiling(max(delta_cp_avg, na.rm = TRUE) + 1))
+```
 
-# Remove replicates.
+Remove replicates from `pheno_data` and `cp_long`:
+
+```{r}
 pheno_data_avg <- dplyr::filter(pheno_data, replicate == 1) %>%
   dplyr::select(-sample_name_rep, -sample_id, -replicate) %>%
   dplyr::select(sample_name, everything()) %>%
@@ -539,30 +564,38 @@ pheno_data_avg <- dplyr::filter(pheno_data, replicate == 1) %>%
 cp_long <- dplyr::filter(cp_long, replicate == 1) %>%
   dplyr::select(-sample_name_rep, -sample_id, -replicate) %>%
   dplyr::select(sample_name, everything())
+```
 
-# Add delta_cp_avg
+And add computed $\Delta C_P$ to long data:
+
+```{r}
 cp_long <- as.data.frame(delta_cp_avg) %>%
   tibble::rownames_to_column("gene") %>%
   tidyr::pivot_longer(-gene, names_to = "sample_name", values_to = "delta_cp") %>%
   dplyr::right_join(cp_long, by = c("sample_name", "gene"))
 
-# Add delta_cp_avg_plot
 cp_long <- as.data.frame(delta_cp_avg_plot) %>%
   tibble::rownames_to_column("gene") %>%
   tidyr::pivot_longer(-gene, names_to = "sample_name", values_to = "delta_cp_plot") %>%
   dplyr::right_join(cp_long, by = c("sample_name", "gene"))
 
 cp_long_target <- dplyr::filter(cp_long, gene_group == "target")
+
+head(cp_long_target)
 ```
+
+As you can see, the code above is quite repetitive - better would be to write a function for that `r emo::ji("slightly_smiling_face")`
+
+***
 
 # Exploratory analysis on summarised and normalised data
 
-You can check for outliers, as these could mess up a differential expression analysis.
+Now when our data are normalized, we can check for sample outliers, as these could mess up differential expression analysis.
 
 ```{r}
-plot_pca_ggplot2(delta_cp_avg_plot, pheno_data_avg, color_by = "sample_group", shape_by = "confluence")$plot
+plot_pca(delta_cp_avg_plot, pheno_data_avg, color_by = "sample_group", shape_by = "confluence", label_by = "sample_name")$plot
 
-for (variable in color_variables) {
+for (variable in coloring_variables) {
   plot_hc(
     delta_cp_avg_plot,
     color_by = pheno_data_avg[, variable],
@@ -572,12 +605,17 @@ for (variable in color_variables) {
   )
 }
 
-plot_pheatmap(delta_cp_avg_plot, sample_data = pheno_data_avg, column_color_by = color_variables, main = "qPCR")
+plot_heatmap(delta_cp_avg_plot, sample_annotation = pheno_data_avg[, coloring_variables], title = "qPCR", legend_title = "deltaCp") %>%
+  draw(merge_legend = TRUE)
 ```
+
+We can see that samples `c1_90`, `sp3_50` and `sp1_90` are a little bit suspicious.
+Stricter people would consider their removal, but that is the last solution if final results are not satisfactory.
+In biology, one has to always keep in mind its natural variation.
 
 ***
 
-# Calculating ($log_2$) fold-changes
+# Calculating ($log_2$) fold-changes: $-\Delta\Delta C_P$
 
 Now we calculate the **relative** change in gene expression between sample groups.
 For the sake of simplicity, we don't take into account other variables, e.g. confluence.
@@ -617,22 +655,23 @@ $\text{mean}(\Delta \Delta C_{P, control})$ is now $0$, because we subtracted $\
 also from the control samples. Of course this also applies for $LFC$, which is just $-\Delta \Delta C_P$.
 As you will see, this is useful for plotting (boxplots).
 
-# Boxplots (**TASK 5**)
+# Boxplots `r emo::ji("hammer_and_wrench")`
 
 Boxplots are very informative when you want to see a difference between groups.
 
-**TASK 5: Implement a function to produce a boxplot of values.**
-It should work for any type of long data, as you will be able to specify
-the grouping column to split boxplots on x-axe, and column with values to plot on y-axe.
+> Function to be implemented within the assignment.
+  It should work for any type of long data, as you will be able to specify
+  the grouping column to split boxplots on x-axe, and column with values to plot on y-axe.
+  Tip: you can use [ggpubr::ggboxplot()](https://rpkgs.datanovia.com/ggpubr/reference/ggboxplot.html)
 
 First we will plot the $\Delta C_P$ values:
 
 ```{r}
-plot_boxplot_ggplot2(
+plot_boxplots(
     cp_long_target,
     x = "sample_group",
     y = "delta_cp",
-    feature_col = "gene",
+    facet_by = "gene",
     color_by = "sample_group",
     main = "delta Cp values",
     y_lab = "delta Cp"
@@ -656,16 +695,18 @@ You read: Change is...         8x less    4x less    2x less    no change    2x 
 
 </div>
 
-This figure summarises how $LFCs$ were calculated and why it is better for boxplots `r emo::ji("slightly_smiling_face")`
+This figure summarises how $LFCs$ were calculated and why it is better for boxplots `r emo::ji("nerd_face")`
 
-![](images/boxplot_lfc.png)
+![](`r here("E03-qPCR/images/boxplot_lfc.png")`)
+
+Now you can clearly see that spirulina group have upregulated genes:
 
 ```{r}
-plot_boxplot_ggplot2(
+plot_boxplots(
     cp_long_target,
     x = "sample_group",
     y = "lfc",
-    feature_col = "gene",
+    facet_by = "gene",
     color_by = "sample_group",
     main = "log2 fold-changes",
     y_lab = "log2 fold-change"
@@ -675,40 +716,67 @@ plot_boxplot_ggplot2(
 We can also split plots by confluence:
 
 ```{r}
-for (g in target_genes) {
-  p1 <- plot_boxplot_ggplot2(
+plot_boxplots(
     cp_long_target,
     x = "sample_group",
     y = "lfc",
-    feature_col = "gene",
-    feature = g,
+    facet_by = "gene",
+    color_by = "confluence",
     main = "log2 fold-changes",
-    color_by = "sample_group",
     y_lab = "log2 fold-change"
-  )
-  
-  p2 <- plot_boxplot_ggplot2(
-    cp_long_target,
-    x = "sample_group",
-    y = "lfc",
-    feature_col = "gene",
-    feature = g,
-    main = "log2 fold-changes",
-    color_by = "sample_group",
-    facet_by = "confluence",
-    y_lab = "log2 fold-change"
-  )
-  
-  p1_p2 <- cowplot::plot_grid(p1, p2, ncol = 2)
-  
-  print(p1_p2)
-}
+)
 ```
 
-# t-test (**TASK 6**)
+Alternatively to boxplots, we can make barplots, which are quite popular in papers `r emo::ji("slightly_smiling_face")`
+
+```{r}
+ggpubr::ggbarplot(
+  cp_long_target2,
+  x = "sample_group",
+  y = "fc",
+  add = c("mean", "jitter"),
+  fill = "sample_group",
+  facet.by = "gene"
+) +
+  scale_y_continuous("Relative concentration", labels = scales::percent) +
+  labs(x = NULL, fill = "Sample Group")
+```
+
+Or we can plot a heatmap of LFC values or their z-scores:
+
+```{r}
+lfc_wide <- pivot_wider(cp_long_target, id_cols = c(sample_name, gene), names_from = sample_name, values_from = lfc) %>%
+  column_to_rownames(var = "gene")
+lfc_wide[, 1:5]
+
+plot_heatmap(
+  lfc_wide,
+  sample_annotation = dplyr::select(pheno_data_avg, `Sample Group` = sample_group),
+  title = "LFC between spirulina and control",
+  legend_title = "LFC",
+  cluster_rows = FALSE,
+  cluster_columns = FALSE
+) %>% draw(merge_legend = TRUE)
+
+plot_heatmap(
+  lfc_wide,
+  z_score = TRUE,
+  sample_annotation = dplyr::select(pheno_data_avg, `Sample Group` = sample_group),
+  title = "LFC between spirulina and control",
+  legend_title = "LFC z-score",
+  cluster_rows = FALSE,
+  cluster_columns = FALSE
+) %>% draw(merge_legend = TRUE)
+```
+
+# t-test `r emo::ji("hammer_and_wrench")`
+
+> Functions to be implemented within the assignment. You should implement both `test_gene()` and `test_gene_table()`.
+  If you do it smart, you can just call the former from the latter.
+  Hint: look at the `formula` parameter of `t.test` function.
 
 t-test is testing whether two means, coming from samples having Student's distribution, significantly differ.
-t-test assumes that the input $C_P$ values are normally distributed and the variance between conditions is comparable.
+T-test assumes that the input $C_P$ values are normally distributed and the variance between conditions is comparable.
 Wilcoxon test can be used when sample size is small and those two last assumptions are hard to achieve.
 
 As we will use two-sided alternative (i.e. gene is up- or downregulated = deregulated),
@@ -730,13 +798,9 @@ group_means
 apply(group_means, MARGIN = 2, FUN = function(x) abs(x[1] - x[2]))
 ```
 
-**TASK 6: Implement a function which do the t-test of gene from two groups.** Hints:
-
-- Look at the `formula` parameter of `t.test` function.
-
-```{r}
+```{r, message = TRUE}
 for (g in target_genes) {
-  test_results <- test_gene(
+  test_gene(
     gene = g,
     gene_data = cp_long_target,
     gene_col = "gene",
@@ -745,11 +809,10 @@ for (g in target_genes) {
     test = t.test,
     verbose = TRUE
   )
-  cat("\n")
 }
 ```
 
-Or you can return a table for all genes:
+But better is to return a table for all genes:
 
 ```{r}
 (test_table <- test_gene_table(
@@ -763,23 +826,32 @@ Or you can return a table for all genes:
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
-save.image("qPCR.RData")
+save.image(here(BASE_DIR, "qPCR.RData"))
 
 warnings()
 traceback()
-sessionInfo()
+sessioninfo::session_info()
 ```
+
+***
+***
 
 # HTML rendering
 
 This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
-library(rmarkdown)
+library(conflicted)
 library(knitr)
 library(glue)
+library(here)
+library(emo)
+
+if (!require(rmdformats)) {
+  BiocManager::install("rmdformats")
+}
 
 # You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE)
-render("qPCR.Rmd", output_file = "qPCR.html")
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+rmarkdown::render(here("E03-qPCR/qPCR.Rmd"), output_file = here("E03-qPCR/qPCR.html"), envir = new.env())
 ```
