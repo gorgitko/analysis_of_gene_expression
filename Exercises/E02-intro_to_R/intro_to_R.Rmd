@@ -477,7 +477,6 @@ fn4 <- function(x, y = 2) {
 fn4(3)
 ```
 
-
 An important concept is function scope, which defines which variables can function access.
 Function can see variables in environment from which it was called.
 In this example, `fn4()` can see `y` defined in global environment:
@@ -838,6 +837,7 @@ head(rownames(mtcars))
 you can use the pipe operator:
 
 ```{r}
+library(magrittr)
 rownames(mtcars) %>% head()
 ```
 
@@ -912,6 +912,19 @@ It is not possible to use some operators without aliases, e.g. `==` or `*`:
 
 But rather don't do that `r emo::ji("smile")`
 
+If you want to check intermediate steps in a pipe chain, you can use `debug_pipe()` function. Try to run content of this chunk in R console
+(`browser()` doesn't work well when invoked from chunk execution in RStudio):
+
+```{r, eval = FALSE}
+mtcars %>%
+  head() %>%
+  debug_pipe() %>%
+  dplyr::select(cyl, mpg)
+```
+
+`debug_pipe()` will send you to the debug console invoked by `browser()`, where you can inspect the variable passed from the LHS.
+When you want to continue the pipe chain execution, just send `c` to console or in RStudio click on the "Continue" button on the top of console.
+
 ***
 
 ## [tibble](https://tibble.tidyverse.org/) - an enhanced data.frame
@@ -949,7 +962,7 @@ my_tibble <- tibble::tribble(
 my_tibble
 ```
 
-`tibble` is also useful for handling of nested `data.frame`-like objects or lists:
+`tibble` is also useful for handling of nested objects within lists:
 
 ```{r}
 my_tibble$column_C <- list(LETTERS, LETTERS, LETTERS)
@@ -957,6 +970,25 @@ my_tibble$column_D <- list(mtcars, mtcars, mtcars)
 my_tibble
 my_tibble$column_C[[1]]
 head(my_tibble$column_D[[1]])
+```
+
+You can see that `column_C`'s and `column_D`'s data type is `<list>`, which can hold any other objects.
+Pretty handy for e.g. nested dataframes - for example it is possible to group rows by a variable and nest them to separate dataframes:
+
+```{r}
+mtcars_nested <- mtcars %>%
+  dplyr::group_by(cyl) %>%
+  tidyr::nest()
+
+mtcars_nested
+```
+
+So this is nested dataframe for `cyl == 4`:
+
+```{r}
+dplyr::filter(mtcars_nested, cyl == 4) %>%
+  dplyr::pull(data) %>%
+  .[[1]]
 ```
 
 ***
