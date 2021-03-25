@@ -29,7 +29,9 @@ Copy, please, these files and directories to your personal directory:
 cp -r ~/shared/AGE2021/Exercises/E02-intro_to_R ~/AGE2021/Exercises
 ```
 
-Assignment for this exercise is located in `E02-intro_to_R/assignment`.
+**Assignment**
+
+The assignment for this exercise is located in `E02-intro_to_R/assignment`.
 
 ***
 
@@ -2131,7 +2133,7 @@ but for now we can live only with the simple multicore usage.
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
-save.image("intro_to_R.RData")
+save.image(here("E03-intro_to_R/intro_to_R.RData"))
 
 warnings()
 traceback()
@@ -2144,8 +2146,6 @@ sessioninfo::session_info()
 # HTML rendering
 
 This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
-
-> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(conflicted)
@@ -2160,5 +2160,5 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-rmarkdown::render(here("E02-intro_to_R/intro_to_R.Rmd"), output_file = here("E02-intro_to_R/intro_to_R.html"))
+rmarkdown::render(here("E02-intro_to_R/intro_to_R.Rmd"), output_file = here("E02-intro_to_R/intro_to_R.html"), envir = new.env())
 ```

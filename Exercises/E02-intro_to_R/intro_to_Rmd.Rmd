@@ -225,8 +225,7 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 
 To render a Rmd file, use the `rmarkdown::render()` function.
 Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
-
-> For unknown reasons, you have to copy-paste the content of this chunk to R terminal, otherwise some tables won't be rendered.
+**It is a good practice to specify `envir = new.env()` - this will render the Rmd file in a new R environment, so your current variables won't interfere.**
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(knitr)
@@ -237,6 +236,7 @@ opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
 rmarkdown::render(
   here("E02-intro_to_R/intro_to_Rmd.Rmd"),
   output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
+  envir = new.env(),
   clean = FALSE
 )
 ```
@@ -252,7 +252,8 @@ Let's try it and render this document in a popular "Tufte handout style":
 rmarkdown::render(
     here("E02-intro_to_R/intro_to_Rmd.Rmd"),
     output_file = here("E02-intro_to_R/intro_to_Rmd_tufte.html"),
-    output_format = "tufte::tufte_html"
+    output_format = "tufte::tufte_html",
+    envir = new.env()
 )
 ```
 

@@ -413,5 +413,5 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
-rmarkdown::render(here("E01-intro/intro.Rmd"), output_file = here("E01-intro/intro.html"))
+rmarkdown::render(here("E01-intro/intro.Rmd"), output_file = here("E01-intro/intro.html"), envir = new.env())
 ```

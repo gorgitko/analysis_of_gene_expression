@@ -193,10 +193,10 @@ p_heatmap_3@right_annotation <- rowAnnotation(boxplots = anno_boxplot(m_scaled, 
 ```
 
 ```{r, echo = FALSE, eval = FALSE, message = FALSE, warning = FALSE}
-library(rmarkdown)
+library(here)
 library(knitr)
 library(glue)
 
 opts_chunk$set(warning = FALSE, message = FALSE)
-render("ComplexHeatmap.Rmd", output_file = "ComplexHeatmap.html")
+rmarkdown::render(here("E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.Rmd"), output_file = here("E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.html"), envir = new.env())
 ```
