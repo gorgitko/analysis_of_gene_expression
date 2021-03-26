@@ -117,10 +117,10 @@ plot_hc2 <- function(
       color_by <- factor(color_by)
     }
 
-    color_by <- tibble(sample_name = colnames(m), group = color_by)
-    group_colors <- tibble(group = levels(color_by$group) %>% factor()) %>%
+    color_by <- tibble::tibble(sample_name = colnames(m), group = color_by)
+    group_colors <- tibble::tibble(group = levels(color_by$group) %>% factor()) %>%
       dplyr::mutate(color = scales::hue_pal()(dplyr::n()))
-    color_by <- left_join(color_by, group_colors, by = "group") %>%
+    color_by <- dplyr::left_join(color_by, group_colors, by = "group") %>%
       dplyr::arrange(match(sample_name, labels(hc)))
 
     hc <- color_labels(hc, col = color_by$color)
