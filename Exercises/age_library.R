@@ -5,7 +5,7 @@
 #'   method_distance: Distance metric used for clustering. See ?dist.
 #'                    Can be also correlation metrix ("pearson", "kendall", "spearman"). See ?cor.
 #'   method_clustering: Clustering method. See ?hclust.
-#'   color_by: Vector of discrete values to colorize samples.
+#'   color_by: Vector of discrete values to color samples by.
 #'             Length must be the same as number of columns in 'm'.
 #'   color_by_lab: Name of the color legend.
 #'   title: Main plot title.
@@ -49,7 +49,7 @@ plot_hc <- function(
     pal <- levels(color_by) %>% length() %>% brewer.pal("Set1")
     col <- pal[color_by]
     names(col) <- names(color_by)
-
+    browser()
     set_leaf_color <- function(n) {
       if (is.leaf(n)) {
         a <- attributes(n)
@@ -66,6 +66,70 @@ plot_hc <- function(
     legend(
       "topright", title = color_by_lab, legend = levels(color_by),
       pch = 19, col = pal, bty = "n"
+    )
+  } else {
+    plot(hc, main = title, xlab = xlab)
+  }
+
+  return(invisible(hc))
+#EC
+}
+
+#' Calculate hiearchical clustering and plot dendrogram using the dendextend package.
+#'
+#' Args:
+#'   m: Expression matrix (rows are features, columns are samples).
+#'   method_distance: Distance metric used for clustering. See ?dist.
+#'                    Can be also correlation metrix ("pearson", "kendall", "spearman"). See ?cor.
+#'   method_clustering: Clustering method. See ?hclust.
+#'   color_by: Vector of discrete values to color samples by.
+#'             Length must be the same as number of columns in 'm'.
+#'   color_by_lab: Name of the color legend.
+#'   title: Main plot title.
+#'
+#' Returns:
+#'   dendrogram object
+plot_hc2 <- function(
+  m,
+  method_distance = "euclidean",
+  method_clustering = "complete",
+  color_by = NULL,
+  color_by_lab = "Group",
+  title = "Hierarchical Clustering"
+) {
+#SC
+  library(glue)
+  library(magrittr)
+  library(dendextend)
+
+  if (method_distance %in% c("pearson", "kendall", "spearman")) {
+    di <- as.dist(1 - cor(m, method = method_distance))
+    xlab <- ""
+  } else {
+    di <- dist(t(m), method = method_distance)
+    xlab <- ""
+  }
+
+  hc <- hclust(di, method = method_clustering)
+  hc <- as.dendrogram(hc, hang = 0.1)
+
+  if (!is.null(color_by)) {
+    if (!is.factor(color_by)) {
+      color_by <- factor(color_by)
+    }
+
+    color_by <- tibble(sample_name = colnames(m), group = color_by)
+    group_colors <- tibble(group = levels(color_by$group) %>% factor()) %>%
+      dplyr::mutate(color = scales::hue_pal()(dplyr::n()))
+    color_by <- left_join(color_by, group_colors, by = "group") %>%
+      dplyr::arrange(match(sample_name, labels(hc)))
+
+    hc <- color_labels(hc, col = color_by$color)
+
+    plot(hc, main = title, xlab = xlab)
+    legend(
+      "topright", title = color_by_lab, legend = group_colors$group,
+      pch = 19, col = group_colors$color, bty = "n"
     )
   } else {
     plot(hc, main = title, xlab = xlab)
