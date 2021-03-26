@@ -416,7 +416,7 @@ plot_heatmap <- function(
 
     if (!is.null(feature_annotation)) {
       feature_annotation <- dplyr::select(feature_annotation, where(is.character), where(is.factor))
-      max_n_levels_f <- purrr::map_int(sample_annotation, ~ length(unique(.)))
+      max_n_levels_f <- purrr::map_int(feature_annotation, ~ length(unique(.)))
     }
 
     max_n_levels <- max(max_n_levels_s, max_n_levels_f)
