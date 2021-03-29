@@ -43,8 +43,27 @@ You don't have to stick to all predefined parameters and returned variables, jus
 Also, in several cases there are alternative functions (such as `plot_pca()` and `plot_pca_ggpairs()`), but you don't have to implement them all, if not said.
 
 Sections containing functions to be implemented are marked with `r emo::ji("hammer_and_wrench")`
+Anyway, here is the minimum set of functions you need to implement (arguments are up to you, it's about the output):
+
+- `plot_hc(m, color_by)`:
+  Calculate hiearchical clustering of matrix `m` columns and plot a dendrogram, whose labels are colored according to `color_by` vector.
+- `plot_pca(m, sample_data, color_by)`:
+  Calculate PCA of matrix `m` and make a scatterplot of first two principal compoments with points colored by `color_by` column in `sample_data`.
+- `plot_heatmap(m, column_annotation, z_score = FALSE)`:
+  Make a heatmap of matrix `m` with column annotation specified in `column_annotation` dataframe.
+  Optionally, convert values in `m` to z-score (row-wise).
+- `plot_boxplots(plot_data, x, y)`:
+  Using long `plot_data`, plot boxplots of values in `y` column, splitted to groups defined in `x` column.
+- `compute_m(gene, cp)`:
+  Compute the M value of $C_P$ values (geNorm algorithm).
+- `test_gene(gene, gene_data, gene_col, value_col, group_col)`:
+  Using long `gene_data`, calculate between group statistical test (e.g. t-test) of `gene`
+  defined in `gene_col` column with values in `value_col` column, and groups in `group_col` column.
+- `test_gene_table(gene_data, gene_col, value_col, group_col)`:
+  The same as `test_gene()`, but calculate tests for all genes in `gene_col` column and return a dataframe of results.
 
 **After you implement these functions, modify their calling in this document and render it again.**
+Obviously, you need to remove sections with functions you haven't implemented.
 
 Please, return the assignment in this form: 
 
@@ -309,6 +328,8 @@ if not, samples might be swapped etc.
 
 > Function to be implemented within the assignment.
   It takes an expression matrix and returns a dendrogram with coloring by a chosen variable.
+  I recommend you to use the [dendextend](https://cran.r-project.org/web/packages/dendextend/index.html) package
+  to modify a dendrogram, it is much easier than doing so in base R.
 
 ```{r}
 coloring_variables <- c("sample_group", "confluence", "petri_number")
@@ -361,8 +382,8 @@ plot_pca_ggpairs(cp_plot, pheno_data, n_components = 5, color_by = "sample_group
 ```{r}
 p_heatmap <- plot_heatmap(
   cp,
-  sample_annotation = dplyr::select(pheno_data, `Sample Group` = sample_group, `Petri Dish` = petri_number, Confluence = confluence, Replicate = replicate),
-  feature_annotation = dplyr::select(genes_df, `Gene Group` = gene_group),
+  column_annotation = dplyr::select(pheno_data, `Sample Group` = sample_group, `Petri Dish` = petri_number, Confluence = confluence, Replicate = replicate),
+  row_annotation = dplyr::select(genes_df, `Gene Group` = gene_group),
   legend_title = "Cp",
   show_column_names = FALSE
 )
@@ -417,7 +438,7 @@ ggcorrplot::ggcorrplot(gene_cor, method = "circle") +
 You can also use the `heatmaply` package:
 
 ```{r}
-plot_heatmaply(gene_cor, feature_annotation = dplyr::select(genes_df, `Gene Group` = gene_group), main = main_title, legend_title = "Correlation")
+plot_heatmaply(gene_cor, row_annotation = dplyr::select(genes_df, `Gene Group` = gene_group), main = main_title, legend_title = "Correlation")
 ```
 
 At the first sight, housekeeping (reference) genes are well correlated, with correlation coefficients over 0.9
@@ -442,6 +463,7 @@ From both hiearchical clustering and PCA you can see that reference genes make a
 ## geNorm M-values `r emo::ji("hammer_and_wrench")`
 
 > Function (`compute_m()`) to be implemented within the assignment.
+  Your functions should output values similar to the below ones (or at least numerically very close to them).
 
 Until now we were doing rather exploratory analysis of reference genes, but it's time to make a more rigorous decision.
 M values are telling you how stable is a gene expressed across the samples.
@@ -605,7 +627,7 @@ for (variable in coloring_variables) {
   )
 }
 
-plot_heatmap(delta_cp_avg_plot, sample_annotation = pheno_data_avg[, coloring_variables], title = "qPCR", legend_title = "deltaCp") %>%
+plot_heatmap(delta_cp_avg_plot, column_annotation = pheno_data_avg[, coloring_variables], title = "qPCR", legend_title = "deltaCp") %>%
   draw(merge_legend = TRUE)
 ```
 
@@ -731,7 +753,7 @@ Alternatively to boxplots, we can make barplots, which are quite popular in pape
 
 ```{r}
 ggpubr::ggbarplot(
-  cp_long_target2,
+  cp_long_target,
   x = "sample_group",
   y = "fc",
   add = c("mean", "jitter"),
@@ -751,7 +773,7 @@ lfc_wide[, 1:5]
 
 plot_heatmap(
   lfc_wide,
-  sample_annotation = dplyr::select(pheno_data_avg, `Sample Group` = sample_group),
+  column_annotation = dplyr::select(pheno_data_avg, `Sample Group` = sample_group),
   title = "LFC between spirulina and control",
   legend_title = "LFC",
   cluster_rows = FALSE,
@@ -761,7 +783,7 @@ plot_heatmap(
 plot_heatmap(
   lfc_wide,
   z_score = TRUE,
-  sample_annotation = dplyr::select(pheno_data_avg, `Sample Group` = sample_group),
+  column_annotation = dplyr::select(pheno_data_avg, `Sample Group` = sample_group),
   title = "LFC between spirulina and control",
   legend_title = "LFC z-score",
   cluster_rows = FALSE,

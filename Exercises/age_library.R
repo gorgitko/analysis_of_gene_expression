@@ -369,8 +369,8 @@ plot_pca_ggpairs <- function(
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
 #'   z_score: If TRUE, calculate row z-score.
-#'   sample_annotation: Dataframe used for annotation of columns.
-#'   feature_annotation: Dataframe used for annotation of rows.
+#'   column_annotation: Dataframe used for annotation of columns.
+#'   row_annotation: Dataframe used for annotation of rows.
 #'   title: Heatmap title.
 #'   legend_title: Heatmap color legend title.
 #'   show_row_names: If TRUE, show rownames in the heatmap.
@@ -384,8 +384,8 @@ plot_pca_ggpairs <- function(
 plot_heatmap <- function(
   m,
   z_score = FALSE,
-  sample_annotation = NULL,
-  feature_annotation = NULL,
+  column_annotation = NULL,
+  row_annotation = NULL,
   title = "",
   legend_title = "Values",
   show_row_names = TRUE,
@@ -404,26 +404,26 @@ plot_heatmap <- function(
 
   if (is.null(color_mapping)) {
     ##-- To make annotation colors consistent, we generate a proper number of colors from the color_palette.
-    ##-- We determine what is the maximum number of levels (or unique values) in both sample_annotation and feature_annotation,
+    ##-- We determine what is the maximum number of levels (or unique values) in both column_annotation and row_annotation,
     ##-- and generate this number of colors from color_palette.
-    max_n_levels_s <- 0
-    max_n_levels_f <- 0
+    max_n_levels_c <- 0
+    max_n_levels_r <- 0
 
-    if (!is.null(sample_annotation)) {
-      sample_annotation <- dplyr::select(sample_annotation, where(is.character), where(is.factor))
-      max_n_levels_s <- purrr::map_int(sample_annotation, ~ length(unique(.)))
+    if (!is.null(column_annotation)) {
+      column_annotation <- dplyr::select(column_annotation, where(is.character), where(is.factor))
+      max_n_levels_c <- purrr::map_int(column_annotation, ~ length(unique(.)))
     }
 
-    if (!is.null(feature_annotation)) {
-      feature_annotation <- dplyr::select(feature_annotation, where(is.character), where(is.factor))
-      max_n_levels_f <- purrr::map_int(feature_annotation, ~ length(unique(.)))
+    if (!is.null(row_annotation)) {
+      row_annotation <- dplyr::select(row_annotation, where(is.character), where(is.factor))
+      max_n_levels_r <- purrr::map_int(row_annotation, ~ length(unique(.)))
     }
 
-    max_n_levels <- max(max_n_levels_s, max_n_levels_f)
+    max_n_levels <- max(max_n_levels_c, max_n_levels_r)
 
     if (max_n_levels > 0) {
       annot_colors <- color_palette(max_n_levels)
-      color_mapping <- lapply(c(as.list(sample_annotation), as.list(feature_annotation)), function(variable) {
+      color_mapping <- lapply(c(as.list(column_annotation), as.list(row_annotation)), function(variable) {
         lvls <- as.factor(variable) %>% levels()
         colors <- annot_colors[1:length(lvls)]
         names(colors) <- lvls
@@ -432,14 +432,14 @@ plot_heatmap <- function(
     }
   }
 
-  if (!is.null(sample_annotation)) {
-    top_annotation <- HeatmapAnnotation(df = sample_annotation, col = color_mapping)
+  if (!is.null(column_annotation)) {
+    top_annotation <- HeatmapAnnotation(df = column_annotation, col = color_mapping)
   } else {
     top_annotation <- NULL
   }
 
-  if (!is.null(feature_annotation)) {
-    right_annotation <- rowAnnotation(df = feature_annotation, col = color_mapping)
+  if (!is.null(row_annotation)) {
+    right_annotation <- rowAnnotation(df = row_annotation, col = color_mapping)
   } else {
     right_annotation <- NULL
   }
@@ -465,8 +465,8 @@ plot_heatmap <- function(
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
 #'   z_score: If TRUE, calculate row z-score.
-#'   sample_annotation: Dataframe used for annotation of columns.
-#'   feature_annotation: Dataframe used for annotation of rows.
+#'   column_annotation: Dataframe used for annotation of columns.
+#'   row_annotation: Dataframe used for annotation of rows.
 #'   title: Heatmap title.
 #'   legend_title: Heatmap color legend title.
 #'
@@ -475,8 +475,8 @@ plot_heatmap <- function(
 plot_heatmaply <- function(
   m,
   z_score = FALSE,
-  sample_annotation = NULL,
-  feature_annotation = NULL,
+  column_annotation = NULL,
+  row_annotation = NULL,
   main = NULL,
   legend_title = NULL,
   showticklabels = c(TRUE, TRUE)
@@ -490,7 +490,7 @@ plot_heatmaply <- function(
   ##-- Could be this implemented better?
   params <- list(
     m, key.title = legend_title, showticklabels = showticklabels, main = main,
-    col_side_colors = sample_annotation, row_side_colors = feature_annotation
+    col_side_colors = column_annotation, row_side_colors = row_annotation
   )
 
   params <- purrr::discard(params, is.null)
