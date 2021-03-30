@@ -270,11 +270,10 @@ pheno_data <- data.frame(
   petri_number = str_match(samples, "^[A-Z]{1,2}(\\d)")[, 2] %>% as.factor(),
   # Match a two-digit number behind "/".
   confluence = str_match(samples, "\\/(\\d{2})")[, 2] %>% as.factor(),
-  # Match a technical replicate number before "RT". See how literal match of parentheses ("(" and ")") must be written:
+  # Detect a second technical replicate. See how literal match of parentheses ("(" and ")") must be written:
   # first you have to escape backslash in R as "\\" to escape parenthese for regex as "\\(", which will match the character "(" literally,
-  # e.g. not specifying the capturing group.
-  # Note that first technical replicates doesn't have this part, so their match will be NA, which we replace by "1".
-  replicate = str_match(samples, "\\((\\d)RT\\)")[, 2] %>% replace_na("1") %>% as.factor()
+  # e.g. not specifying the regex capturing group.
+  replicate = if_else(str_detect(samples, "\\(2RT\\)"), "2", "1")
 ) %>%
   dplyr::mutate(
     sample_name_rep = glue("{sample_group_code}{petri_number}_{confluence}_r{replicate}") %>% as.character(),
