@@ -599,6 +599,22 @@ plot_boxplots <- function(
 }
 
 #' Compute the M value of CP values.
+#' Pseudocode:
+#' compute_m <- function(cp, j, k = 1...n; k != j) {
+#'   V = apply over cp k-columns {
+#'     expression_ratio = (cp j-column) - (cp k-column)
+#'     return standard deviation of expression_ratio
+#'   }
+#'
+#'   M = mean of V
+#'   return(M)
+#' }
+#'
+#' cp = matrix
+#' j = name of gene for which we compute the M-value
+#' k = names of other genes
+#' V = vector
+#' M = scalar
 #'
 #' Args:
 #'  gene: Name of gene to compute the M value for.

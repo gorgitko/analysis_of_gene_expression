@@ -5,7 +5,7 @@
 #'   method_distance: Distance metric used for clustering. See ?dist.
 #'                    Can be also correlation metrix ("pearson", "kendall", "spearman"). See ?cor.
 #'   method_clustering: Clustering method. See ?hclust.
-#'   color_by: Vector of discrete values to colorize samples.
+#'   color_by: Vector of discrete values to color samples by.
 #'             Length must be the same as number of columns in 'm'.
 #'   color_by_lab: Name of the color legend.
 #'   title: Main plot title.
@@ -13,6 +13,30 @@
 #' Returns:
 #'   dendrogram object
 plot_hc <- function(
+  m,
+  method_distance = "euclidean",
+  method_clustering = "complete",
+  color_by = NULL,
+  color_by_lab = "Group",
+  title = "Hierarchical Clustering"
+) {
+}
+
+#' Calculate hiearchical clustering and plot dendrogram using the dendextend package.
+#'
+#' Args:
+#'   m: Expression matrix (rows are features, columns are samples).
+#'   method_distance: Distance metric used for clustering. See ?dist.
+#'                    Can be also correlation metrix ("pearson", "kendall", "spearman"). See ?cor.
+#'   method_clustering: Clustering method. See ?hclust.
+#'   color_by: Vector of discrete values to color samples by.
+#'             Length must be the same as number of columns in 'm'.
+#'   color_by_lab: Name of the color legend.
+#'   title: Main plot title.
+#'
+#' Returns:
+#'   dendrogram object
+plot_hc2 <- function(
   m,
   method_distance = "euclidean",
   method_clustering = "complete",
@@ -113,8 +137,8 @@ plot_pca_ggpairs <- function(
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
 #'   z_score: If TRUE, calculate row z-score.
-#'   sample_annotation: Dataframe used for annotation of columns.
-#'   feature_annotation: Dataframe used for annotation of rows.
+#'   column_annotation: Dataframe used for annotation of columns.
+#'   row_annotation: Dataframe used for annotation of rows.
 #'   title: Heatmap title.
 #'   legend_title: Heatmap color legend title.
 #'   show_row_names: If TRUE, show rownames in the heatmap.
@@ -128,8 +152,8 @@ plot_pca_ggpairs <- function(
 plot_heatmap <- function(
   m,
   z_score = FALSE,
-  sample_annotation = NULL,
-  feature_annotation = NULL,
+  column_annotation = NULL,
+  row_annotation = NULL,
   title = "",
   legend_title = "Values",
   show_row_names = TRUE,
@@ -146,8 +170,8 @@ plot_heatmap <- function(
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
 #'   z_score: If TRUE, calculate row z-score.
-#'   sample_annotation: Dataframe used for annotation of columns.
-#'   feature_annotation: Dataframe used for annotation of rows.
+#'   column_annotation: Dataframe used for annotation of columns.
+#'   row_annotation: Dataframe used for annotation of rows.
 #'   title: Heatmap title.
 #'   legend_title: Heatmap color legend title.
 #'
@@ -156,8 +180,8 @@ plot_heatmap <- function(
 plot_heatmaply <- function(
   m,
   z_score = FALSE,
-  sample_annotation = NULL,
-  feature_annotation = NULL,
+  column_annotation = NULL,
+  row_annotation = NULL,
   main = NULL,
   legend_title = NULL,
   showticklabels = c(TRUE, TRUE)
@@ -208,6 +232,22 @@ plot_boxplots <- function(
 }
 
 #' Compute the M value of CP values.
+#' Pseudocode:
+#' compute_m <- function(cp, j, k = 1...n; k != j) {
+#'   V = apply over cp k-columns {
+#'     expression_ratio = (cp j-column) - (cp k-column)
+#'     return standard deviation of expression_ratio
+#'   }
+#'
+#'   M = mean of V
+#'   return(M)
+#' }
+#'
+#' cp = matrix
+#' j = name of gene for which we compute the M-value
+#' k = names of other genes
+#' V = vector
+#' M = scalar
 #'
 #' Args:
 #'  gene: Name of gene to compute the M value for.
