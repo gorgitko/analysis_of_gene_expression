@@ -4,7 +4,7 @@
 *.RData
 *.Rds
 Exercises/tmp
-Exercises/E04-microarrays/html_report
+Exercises/E04-microarrays/html_reports
 Exercises/E07-RNA_seq/_data
 Exercises/E07-RNA_seq/02_quantification/_old
 Exercises/E07-RNA_seq/02_quantification/*_out
