@@ -273,7 +273,7 @@ pheno_data <- data.frame(
   # Detect a second technical replicate. See how literal match of parentheses ("(" and ")") must be written:
   # first you have to escape backslash in R as "\\" to escape parenthese for regex as "\\(", which will match the character "(" literally,
   # e.g. not specifying the regex capturing group.
-  replicate = if_else(str_detect(samples, "\\(2RT\\)"), "2", "1")
+  replicate = if_else(str_detect(samples, "\\(2RT\\)"), 2L, 1L) %>% as.factor()
 ) %>%
   dplyr::mutate(
     sample_name_rep = glue("{sample_group_code}{petri_number}_{confluence}_r{replicate}") %>% as.character(),
@@ -843,6 +843,8 @@ But better is to return a table for all genes:
   group_col = "sample_group"
 ))
 ```
+
+***
 
 # Cleanup
 
