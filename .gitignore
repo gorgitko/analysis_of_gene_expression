@@ -3,6 +3,7 @@
 *.Rproj.user
 *.RData
 *.Rds
+Exercises/tmp
 Exercises/E04-microarrays/html_report
 Exercises/E07-RNA_seq/_data
 Exercises/E07-RNA_seq/02_quantification/_old
