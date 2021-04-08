@@ -143,10 +143,10 @@ plot_hc2 <- function(
 #'
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
-#'   n_top_features: Number of top features.
+#'   n_top_features: Number of top most variable features.
 #'
 #' Returns:
-#'   Subset of 'm' with 'n_top_features' with the highest variance across the samples.
+#'   Subset of 'm' with 'n_top_features' with the highest variance across the samples, sorted by decreasing row variance.
 select_var_features <- function(m, n_top_features) {
 #SC
   if (!is.infinite(n_top_features))
@@ -199,7 +199,7 @@ plot_pca <- function(
 
   plot_type <- rlang::arg_match(plot_type)
 
-  x <- select_var_features(m, n_top_features = n_top_features)
+  m <- select_var_features(m, n_top_features = n_top_features)
 
   pca <- prcomp(t(m), center = center, scale. = scale.)
   percent_var <- pca$sdev^2 / sum(pca$sdev^2)
@@ -306,7 +306,7 @@ plot_pca_ggpairs <- function(
     )
   }
 
-  x <- select_var_features(m, n_top_features = n_top_features)
+  m <- select_var_features(m, n_top_features = n_top_features)
 
   pca <- prcomp(t(m), center = center, scale. = scale.)
   pca_df <- data.frame(sample_data, pca$x)
@@ -368,6 +368,7 @@ plot_pca_ggpairs <- function(
 #'
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
+#'   n_top_features: Number of top features with the highest variance across the samples.
 #'   z_score: If TRUE, calculate row z-score.
 #'   column_annotation: Dataframe used for annotation of columns.
 #'   row_annotation: Dataframe used for annotation of rows.
@@ -383,6 +384,7 @@ plot_pca_ggpairs <- function(
 #'   ComplexHeatmap object
 plot_heatmap <- function(
   m,
+  n_top_features = Inf,
   z_score = FALSE,
   column_annotation = NULL,
   row_annotation = NULL,
@@ -397,6 +399,8 @@ plot_heatmap <- function(
 ) {
 #SC
   library(ComplexHeatmap)
+
+  m <- select_var_features(m, n_top_features)
 
   if (z_score) {
     m <- t(m) %>% scale() %>% t()
@@ -666,7 +670,7 @@ test_gene <- function(gene, gene_data, gene_col, value_col, group_col, test = t.
   test_name <- quote(t.test) %>% as.character()
   test_formula <- glue("{value_col} ~ {group_col}") %>% as.formula()
 
-  sample_groups <- levels(gene_data[, group_col, drop = TRUE])
+  sample_groups <- levels(gene_data[[group_col]])
 
   assertthat::assert_that(length(sample_groups) == 2, msg = "More than two groups to compare.")
 
@@ -708,15 +712,17 @@ test_gene_table <- function(gene_data, gene_col, value_col, group_col, test = t.
     test_gene(gene, gene_data, gene_col, value_col, group_col, test = test, verbose = FALSE)
   })
 
-  p_values <- lapply(test_results, "[[", "p.value") %>% unlist()
-  significance <- lapply(p_values, asterisk) %>% unlist()
-
-  return(tibble::tibble(
+  p_values <- purrr::map_dbl(test_results, "p.value")
+  significance <- purrr::map_chr(p_values, asterisk)
+  res <- tibble::tibble(
     gene = genes,
     p_value = p_values,
     significance = significance,
     test_result = test_results
-  ))
+  ) %>%
+    dplyr::arrange(p_value)
+
+  return(res)
 #EC
 }
 

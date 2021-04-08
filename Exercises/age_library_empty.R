@@ -51,10 +51,10 @@ plot_hc2 <- function(
 #'
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
-#'   n_top_features: Number of top features.
+#'   n_top_features: Number of top most variable features.
 #'
 #' Returns:
-#'   Subset of 'm' with 'n_top_features' with the highest variance across the samples.
+#'   Subset of 'm' with 'n_top_features' with the highest variance across the samples, sorted by decreasing row variance.
 select_var_features <- function(m, n_top_features) {
 }
 
@@ -136,6 +136,7 @@ plot_pca_ggpairs <- function(
 #'
 #' Args:
 #'   m: Expression matrix (rows are features, columns are samples).
+#'   n_top_features: Number of top features with the highest variance across the samples.
 #'   z_score: If TRUE, calculate row z-score.
 #'   column_annotation: Dataframe used for annotation of columns.
 #'   row_annotation: Dataframe used for annotation of rows.
@@ -151,6 +152,7 @@ plot_pca_ggpairs <- function(
 #'   ComplexHeatmap object
 plot_heatmap <- function(
   m,
+  n_top_features = Inf,
   z_score = FALSE,
   column_annotation = NULL,
   row_annotation = NULL,
