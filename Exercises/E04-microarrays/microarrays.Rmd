@@ -43,34 +43,58 @@ Copy, please, these files and directories to your personal directory:
 cp -r ~/shared/AGE2021/Exercises/E04-microarrays ~/AGE2021/Exercises
 ```
 
-**Assignment**
+# Assignment
 
-Your first assignment will be to implement the `select_var_features(m, n_top_features)` in `age_library.R`.
+## Task 1
+
+Implement the `select_var_features(m, n_top_features)` in `age_library.R`.
 This functions will subset matrix `m`s rows by `n_top_features` with the highest variance across the columns (samples) and
 arrange the rows of subsetted matrix by decreasing variance.
+Also modify `plot_pca()` and `plot_heatmap()` so they will accept the `n_top_features` parameter,
+pass it to `select_var_features()` and do what should they do on the subsetted matrix `m`.
 
-You will use this function in `plot_pca()` and `plot_heatmap()` (and similar functions if you want),
-which will take `n_top_features` parameter, pass it to `select_var_features()` and do what should they do on the subsetted matrix `m`.
+Then make a Rmd file named `n_top_features.Rmd` in which you will:
 
-In this exercise, there are several cases of `n_top_features` usage in PCA and heatmaps.
+- Load the Rds file with `norm_data` object located in `E04-microarrays/norm_data.Rds`, and source `age_library.R`
+  with implemented `select_var_features()` and other functions.
+- Make a PCA plot and heatmap using `n_top_features = 1000` and colored (annotated) by `sample_group`.
 
-The second assignment will be to implement a custom Rmd file and R script for reporting of differential expression analysis results.
+Then render this Rmd file to `n_top_features.html`.
+
+> In this exercise, there are several cases of `n_top_features` usage in PCA and heatmaps.
+
+## Task 2
+
+The second assignment will be to implement a "signpost" (`dea_signpost.Rmd`) and template (`dea_table_template.Rmd`) Rmd files,
+and R script (`report.R`) for reporting of differential expression analysis results.
+
+In the `report.R` script load the `fit` object located in `E04-microarrays/fit.Rds` and
+for each of the contrasts render the `dea_table_template.Rmd` file to `<contrast_name>.html`
+which will contain the contrast results table obtained from `topTable()`.
+Filter the results such that $FDR < 0.1$ and $|LFC| > 1$.
+Then render the `dea_signpost.Rmd` file to `dea_signpost.html` which will contain a table
+with links to the rendered HTML files with contrast results.
+
+A simplified procedure:
+
+- `report.R`
+  - Load the `fit` object.
+  - Loop over the contrast results as `res`:
+    - Render `dea_table_template.Rmd` with `res` table to `<contrast_name>.html`.
+  - Render `dea_signpost.Rmd` to `dea_signpost.html` which will contain a table
+    with contrast names and links to `<contrast_name>.html` files.
+
+The implementation is very similar to the loop used in [*ReportingTools* section](#reportingtools),
+but instead of using `ReportingTools` functions you will basically use `rmarkdown::render()`.
+Detailed instructions are given in [*Custom reporting of DEGs* section](#custom-reporting-of-degs).
+
+***
 
 Please, return the assignment in this form: 
 
-- Make a first Rmd file named `n_top_features.Rmd` in which you will:
-  - Load the Rds file with `norm_data` located in `E04-microarrays/norm_data.Rds`, and source `age_library.R`
-    with implemented `select_var_features()` and other functions.
-  - Make PCA plot and heatmap using `n_top_features = 1000` and colored (annotated) by `sample_group`.
-- Make an R script which will loop over contrasts in the `fit` object, and a template Rmd file which will be used
-  to render differential expression results from `topTable()`:
-  - The `fit` object is saved in `E04-microarrays/fit.Rds`.
-  - Implementation is very similar to the loop used in [*ReportingTools* section](#reportingtools),
-    but instead of using `ReportingTools` functions you will use `rmarkdown::render()`.
-  - Detailed instructions are given in [*Custom reporting of DEGs* section](#custom-reporting-of-degs).
-  - Name the output HTML files as `<contrast_name>.html`.
-- In the header of both Rmd files, put your name and e-mail to the `author` parameter.
-- Copy all finished files to a directory named `E04-microarrays_assignment_<your_name>`: both Rmd files, rendered HTMLs, all R files needed to reproduce your results.
+- In the header of all Rmd files, put your name and e-mail to the `author` parameter.
+- Copy the files to a directory named `E04-microarrays_assignment_<your_name>`:
+  all files needed to reproduce your results (R and Rmd files), and rendered HTMLs.
   Put this directory to a ZIP archive named `E04-microarrays_assignment_<your_name>.zip`.
   - In the rendered HTMLs there should be included all code chunks with full output (warnings, messages, etc.).
 - Upload the ZIP file to the appropriate assignment in MS Teams.
@@ -679,9 +703,9 @@ It is the most known package (in top 20 packages in Bioconductor) for DEA of mic
 We will fit a linear model for each probe and improve estimates of standard errors using the empirical Bayes approach.
 Because we have five sample groups (the first one being control), our model looks like this:
 
-$Y_i = \beta_0 + \beta_1 x_{i,1} + \dotso + \beta_5 x_{i,5} + \epsilon_i, i = 1 \dotso N$
+$Y_i = \beta_0 + \beta_1 x_{i,1} + \dotso + \beta_4 x_{i,4} + \epsilon_i, i = 1 \dotso N$
 
-This can be rewritten to a matrix form as:
+where $x$ are indicator variables and $i$ is a sample index. This can be rewritten to a matrix form as:
 
 $$
   \begin{pmatrix}
@@ -689,15 +713,15 @@ $$
     \vdots \\
     Y_N\end{pmatrix} =
   \begin{pmatrix}
-    1 & x_{1,1} & \dotso & x_{1,5} \\
+    1 & x_{1,1} & \dotso & x_{1,4} \\
     \vdots & \vdots & \ddots & \vdots \\
-    1 & x_{N,1} & \dotso & x_{N,5}
+    1 & x_{N,1} & \dotso & x_{N,4}
   \end{pmatrix}
   \begin{pmatrix}
     \beta_0 \\
     \beta_1 \\
     \vdots \\
-    \beta_5
+    \beta_4
   \end{pmatrix} +
   \begin{pmatrix}
     \epsilon_1 \\
@@ -739,7 +763,7 @@ colnames(fit)
 
 Using the `topTable()` function, we can look at differential expression statistics for each gene in a specific group
 (in this case, *acetaminophen* vs *control*). We call these comparisons **contrasts** and genes meeting some statistical criteria
-(FDR, LFC) as **differentially expressed genes** (DEGs).
+(FDR = significance, LFC = effect size) as **differentially expressed genes** (DEGs).
 
 ```{r}
 topTable(fit, coef = "groupacetaminophen")
@@ -853,13 +877,14 @@ Alternatively to `ReportingTools`, it is also possible to make a custom report t
 - Format the output of `topTable()`: join with `fData()`, add HTML links to [ensembl.org](http://www.ensembl.org) (for ENSEMBL IDs) or
   [GeneCards](https://www.genecards.org/) (for SYMBOLs), or any other suitable database.
 - Send it as a parameter to the Rmd file and use e.g. `DT::datatable()` to output pretty tables.
-- You can also use more parameters: report title (e.g. contrast name), thresholds for DEGs, sample data, ...
+- You can also use more parameters: report title (e.g. contrast name), thresholds for DEGs (LFC, FDR, ...), sample data, ...
 
 By using the custom Rmd file you have a full control over the content, which is otherwise a bit more laborious with `ReportingTools`,
 in which, besides using `topTable()` output, you can also call `publish()` with any HTML element or another R object (e.g. dataframe)
 and the output will be appended to the `HTMLReport` object and appears in the final HTML file.
 
-Lastly, all tables in R can be easily exported to tab-delimited formats (CSV, TSV) or Excel ([openxlsx](https://ycphs.github.io/openxlsx/index.html) package).
+Lastly, all tables in R can be easily exported to tab-delimited formats (CSV, TSV) or
+Excel ([openxlsx](https://ycphs.github.io/openxlsx/index.html) package).
 
 ***
 
