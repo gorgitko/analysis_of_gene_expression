@@ -1,24 +1,25 @@
 ---
-title: "E05 - Multiple testing issue (Analysis of Gene Expression 2020 @ VSCHT)"
-author: "Michal Kolar"
+title: "E05 - Multiple testing issue (Analysis of Gene Expression @ UCT Prague)"
+author:
+  - Michal Kolar jiri.novotny@img.cas.cz
+  - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
-  html_document:
-    # code_folding: "show"
-    df_print: "paged"
-    toc: true
-    toc_float: true
-    toc_collapsed: false
+  rmdformats::readthedown:
+    highlight: "kate"
+    lightbox: true
+    thumbnails: true
+    gallery: true
     toc_depth: 4
-    number_sections: false
-    theme: "united"
     self_contained: true
-    css: "../stylesheet.css"
+    number_sections: false
+    toc_collapsed: false
+    df_print: "paged"
+date: "`r Sys.Date()`"
 ---
 
----
-date: '`r glue("Document generated: {Sys.Date()}")`'
----
+```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```
 
 ```{r, include = FALSE, echo = FALSE}
 if (!require(emo))
@@ -30,10 +31,8 @@ if (!require(emo))
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r /data/shared/AGE2020/Exercises/E05-multiple_testing_issue ~/AGE2020/Exercises
+cp -r ~/shared/AGE2021/Exercises/E05-multiple_testing_issue ~/AGE2021/Exercises
 ```
-
-And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E04-multiple_testing_issue")`
 
 ***
 
@@ -41,8 +40,17 @@ And switch the R working directory to the current exercise: `setwd("~/AGE2020/Ex
 
 In this tutorial we will show how to control Type I and Type II errors in an experiment that includes multiple simultaneous tests:
 
-- This situation happens very often in functional genomics experiments
+- This situation happens very often in functional genomics experiments.
 - In a toy model, we will try to identify 100 skewed coins among 1000 coins.
+
+***
+
+# Assignment
+
+Create a Rmd file `mti.Rmd` and render `mti.html` with the [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix)
+for different p-adjustment methods and cutoff value of 0.05, 0.1 and 0.25.
+
+***
 
 # Config
 
@@ -51,6 +59,8 @@ Set random seed:
 ```{r}
 set.seed(111)
 ```
+
+***
 
 # Perform the experiment
 
@@ -76,6 +86,8 @@ A prototype fair coin:
 ```{r}
 muTrue <- 1/2 * 100
 ```
+
+***
 
 # Statistics
 
@@ -107,6 +119,8 @@ hist(pSkew, breaks = 20)
 hist(pNull, breaks = 20)
 hist(p, breaks = 20)
 ```
+
+***
 
 # Multiple testing issue
 
@@ -168,15 +182,19 @@ oq <- order(p)
 
 ##-- see selected coins
 plot(p[oq], col = c(rep("green", 100), rep("black", 900))[oq], pch = ".", cex = 3, ylab = "Raw p-value")
-plot(p[oq], xlim = c(0, 200), ylim = c(0, 0.125), col = c(rep("green", 100), rep("black", 900))[oq], pch = ".",
-     cex = 3, ylab = "Raw p-value")
+plot(
+  p[oq], xlim = c(0, 200), ylim = c(0, 0.125), col = c(rep("green", 100), rep("black", 900))[oq], pch = ".",
+  cex = 3, ylab = "Raw p-value"
+)
 ```
 
 The thresholds corresponding to p-value, FWER, and FDR are drawn in dark red, red, and orange, respectively.
 
 ```{r}
-plot(p[oq], xlim = c(0, 150), ylim = c(0, 0.05), col = c(rep("green", 100), rep("black", 900))[oq], pch = ".",
-     cex = 3, ylab = "Raw p-value")
+plot(
+  p[oq], xlim = c(0, 150), ylim = c(0, 0.05), col = c(rep("green", 100), rep("black", 900))[oq], pch = ".",
+  cex = 3, ylab = "Raw p-value"
+)
 
 abline(a = 0.05, b = 0, col = "darkred", lwd = 2)
 abline(a = 0.05 / 1000, b = 0, col = "red", lwd = 2)
@@ -184,7 +202,7 @@ abline(a = 0, b = 0.05 / 1000, col = "darkorange", lwd = 2)
 ```
 
 As both FDR and q estimate proportion of false discoveries among significant tests, we often set their threshold values to 0.1,
-having 10% false discoveries in the resulting list of coins that are deemed skewed.
+having 10 % false discoveries in the resulting list of coins that are deemed skewed.
 
 FDR < 0.1:
 
@@ -198,20 +216,38 @@ q < 0.1:
 table(q < 0.1)
 ```
 
-# Homework
+***
 
-Create the [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) for different p-adjustment methods and cutoff value of 0.05, 0.1 and 0.25.
+# Cleanup
+
+```{r, warning = TRUE, message = TRUE}
+save.image(here("E05-multiple_testing_issue/multiple_testing_issue.RData"))
+
+warnings()
+traceback()
+sessioninfo::session_info()
+```
+
+***
+***
 
 # HTML rendering
 
 This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
-library(rmarkdown)
+library(conflicted)
 library(knitr)
-library(glue)
+library(here)
+
+if (!require(rmdformats)) {
+  BiocManager::install("rmdformats")
+}
 
 # You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE)
-render("multiple_testing_issue.Rmd", output_file = "multiple_testing_issue.html")
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+rmarkdown::render(
+  here("E05-multiple_testing_issue/multiple_testing_issue.Rmd"),
+  output_file = here("E05-multiple_testing_issue/multiple_testing_issue.html"), envir = new.env()
+)
 ```
