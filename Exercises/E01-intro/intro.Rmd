@@ -19,7 +19,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 # Welcome to the Analysis of Gene Expression (AGE)!

@@ -18,7 +18,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ```{r, include = FALSE, echo = FALSE}
