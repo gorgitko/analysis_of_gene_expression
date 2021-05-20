@@ -4,8 +4,8 @@ import argparse
 
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-d', '--delimiter', type=str, default='\t', help='CSV delimiter')
-parser.add_argument('fasta_file', type=str, help='FASTA file')
+parser.add_argument('-d', '--delimiter', type=str, default='\t', help='Column delimiter.')
+parser.add_argument('fasta_file', type=str, help='FASTA file.')
 args = parser.parse_args()
 
 with open(args.fasta_file, mode='r') as f:

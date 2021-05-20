@@ -3,11 +3,14 @@
 *.Rproj.user
 *.RData
 *.Rds
-Exercises/tmp
 Exercises/E04-microarrays/html_reports
-Exercises/E07-RNA_seq/_data
+Exercises/E07-RNA_seq/data
 Exercises/E07-RNA_seq/02_quantification/_old
 Exercises/E07-RNA_seq/02_quantification/*_out
 Exercises/E07-RNA_seq/02_quantification/multiqc_quantification
 Exercises/E07-RNA_seq/02_quantification/sortmerna*
 .Rproj.user
+tmp/
+fastqc/
+multiqc/
+logs/
