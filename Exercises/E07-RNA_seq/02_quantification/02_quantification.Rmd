@@ -18,11 +18,11 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
-```
-
 ```{r, eval = TRUE, echo = FALSE}
 library(here)
+```
+
+```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
