@@ -8,7 +8,7 @@
         <meta name="author" content="Jiri Novotny jiri.novotny@img.cas.cz" />
         <meta name="author" content="Studuj bioinformatiku! http://studuj.bioinformatiku.cz" />
     
-        <meta name="date" content="2021-05-20" />
+        <meta name="date" content="2021-05-24" />
     
     <title>E07 - RNA-seq / 02 - quantification (Analysis of Gene Expression @ UCT Prague)</title>
 
@@ -235,7 +235,7 @@
     <div id="postamble" data-toggle="wy-nav-shift" class="status">
                   <p class="author"><span class="glyphicon glyphicon-user"></span> Jiri Novotny <a href="mailto:jiri.novotny@img.cas.cz" class="email">jiri.novotny@img.cas.cz</a></p>
                         <p class="author"><span class="glyphicon glyphicon-user"></span> Studuj bioinformatiku! <a href="http://studuj.bioinformatiku.cz" class="uri">http://studuj.bioinformatiku.cz</a></p>
-                        <p class="date"><span class="glyphicon glyphicon-calendar"></span> 2021-05-20</p>
+                        <p class="date"><span class="glyphicon glyphicon-calendar"></span> 2021-05-24</p>
           </div>
    </div>
      
@@ -313,16 +313,15 @@ $(document).ready(function() {
 <p>If you have created <code>tmux</code> session (named <code>rnaseq</code>) in the previous exercise, you can attach to it with</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">tmux</span> attach -t rnaseq</span></code></pre></div>
 <p>Copy, please, these files and directories to your personal directory:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> -r ~/shared/AGE2021/Exercises/E07-RNA_seq/02_quantification ~/AGE2021/Exercises/E07-RNA_seq</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> -r ~/shared/AGE2021/Exercises/E07-RNA_seq/bin ~/AGE2021/Exercises/E07-RNA_seq</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> -r ~/shared/AGE2021/Exercises/E07-RNA_seq/data/<span class="dt">{sample_sheet_airway.csv,genome,rna_sequences,transcriptome}</span> ~/AGE2021/Exercises/E07-RNA_seq/data</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> -r ~/shared/AGE2021/Exercises/E07-RNA_seq/<span class="dt">{bin,02_quantification}</span> ~/AGE2021/Exercises/E07-RNA_seq</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> -r ~/shared/AGE2021/Exercises/E07-RNA_seq/data/<span class="dt">{sample_sheet_airway.csv,experiment_trimmed_filtered,genome,gsnap_index_hg37_chr20,salmon_index_hg37_chr20,rna_sequences,transcriptome}</span> ~/AGE2021/Exercises/E07-RNA_seq/data</span></code></pre></div>
 <p>And change the working directory in RStudio terminal to the current exercise’s directory:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/AGE2021/Exercises/E07-RNA_seq/02_quantification</span></code></pre></div>
 <p>We also need to install additional software. We reuse the <code>conda</code> environment <code>tools</code> created in the previous exercise:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> deactivate</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate tools</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> install -c bioconda preseq subread salmon rseqc</span></code></pre></div>
-<p>You have also copied the <code>bin</code> directory with some tools. To make them available in shell, you need to add this directory to the <code>PATH</code> environment variable and make these files executable:</p>
+<p>You have also copied the <code>bin</code> directory with some tools. To make them available in the shell, you need to add this directory to the <code>PATH</code> environment variable and make these files executable:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">PATH=</span>~/AGE2021/Exercises/E07-RNA_seq/bin:<span class="va">$PATH</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> +x ~/AGE2021/Exercises/E07-RNA_seq/bin/*</span></code></pre></div>
 <p>Just keep in mind that this modification of <code>PATH</code> is temporary - it won’t be available in a new shell session. You can add the <code>export ...</code> line to <code>~/.bashrc</code>, which is a <code>bash</code> script executed when <code>bash</code> is initiated (e.g. on SSH login or in a subshell). Alternatively, you can copy content of the <code>bin</code> directory to your home’s <code>bin</code>, which should be available in <code>PATH</code> by default:</p>
@@ -333,12 +332,12 @@ $(document).ready(function() {
 <h1>Assignment</h1>
 <p>Your assignment will be quite similar to E06-IGV:</p>
 <ul>
-<li>Using the <code>dds</code> object, find at least three interesting genes, i.e. they should be highly expressed (mean number of counts across samples &gt; 500) and possibly their expression should differ between conditions (but you don’t have to calculate the differential expression).</li>
+<li>Using the <code>dds</code> object, find at least three interesting genes, i.e. they should be expressed at all (a mean number of counts across samples at least greater than 100) and possibly their expression should differ between conditions (but you don’t have to calculate the differential expression).</li>
 <li>Filter the BAM files so they contain reads assigned to those genes.</li>
 <li>Also filter the GTF file, so only features (rows) associated with those genes will remain.</li>
 <li>Import the files to IGV, so there will be:
 <ul>
-<li>A reference sequence.</li>
+<li>A reference sequence. To make it easier, use the one IGV is offering.</li>
 <li>A track with annotation.</li>
 <li>Coverage tracks for the samples.</li>
 </ul></li>
@@ -1459,7 +1458,7 @@ ENST00000390591  31      32.000           0.000000      0.000</code></pre>
 ##  collate  en_US.UTF-8                 
 ##  ctype    en_US.UTF-8                 
 ##  tz       Etc/UTC                     
-##  date     2021-05-20                  
+##  date     2021-05-24                  
 ## 
 ## ─ Packages ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ##  package              * version    date       lib source                        

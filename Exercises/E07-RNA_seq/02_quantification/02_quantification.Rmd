@@ -36,9 +36,8 @@ tmux attach -t rnaseq
 Copy, please, these files and directories to your personal directory:
 
 ```{bash}
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/02_quantification ~/AGE2021/Exercises/E07-RNA_seq
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/bin ~/AGE2021/Exercises/E07-RNA_seq
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/data/{sample_sheet_airway.csv,genome,rna_sequences,transcriptome} ~/AGE2021/Exercises/E07-RNA_seq/data
+cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/{bin,02_quantification} ~/AGE2021/Exercises/E07-RNA_seq
+cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/data/{sample_sheet_airway.csv,experiment_trimmed_filtered,genome,gsnap_index_hg37_chr20,salmon_index_hg37_chr20,rna_sequences,transcriptome} ~/AGE2021/Exercises/E07-RNA_seq/data
 ```
 
 And change the working directory in RStudio terminal to the current exercise's directory:
@@ -57,7 +56,7 @@ conda install -c bioconda preseq subread salmon rseqc
 ```
 
 You have also copied the `bin` directory with some tools.
-To make them available in shell, you need to add this directory to the `PATH` environment variable and make these files executable:
+To make them available in the shell, you need to add this directory to the `PATH` environment variable and make these files executable:
 
 ```{bash}
 export PATH=~/AGE2021/Exercises/E07-RNA_seq/bin:$PATH
@@ -81,12 +80,12 @@ But then don't forget to also backup this directory when AGE course will be over
 Your assignment will be quite similar to E06-IGV:
 
 - Using the `dds` object, find at least three interesting genes,
-  i.e. they should be highly expressed (mean number of counts across samples > 500)
+  i.e. they should be expressed at all (a mean number of counts across samples at least greater than 100)
   and possibly their expression should differ between conditions (but you don't have to calculate the differential expression).
 - Filter the BAM files so they contain reads assigned to those genes.
 - Also filter the GTF file, so only features (rows) associated with those genes will remain.
 - Import the files to IGV, so there will be:
-  - A reference sequence.
+  - A reference sequence. To make it easier, use the one IGV is offering.
   - A track with annotation.
   - Coverage tracks for the samples.
 - Make some screenshots of IGV `r emo::ji("slightly_smiling_face")`
