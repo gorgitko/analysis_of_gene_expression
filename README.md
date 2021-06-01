@@ -139,7 +139,7 @@ from which preprocessed R data are later used (starting from `03 - exploratory a
 
 Additional data files must be downloaded prior from [here](https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar.gz).
 If you are working on a remote server, you can use `wget` for downloading: `wget https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar`.
-Then decompress the downloaded archive to `Exercises/E07-RNA_seq`, e.g. `tar xzf AGE2021_data.tar -C /path/to/Exercises/E07-RNA_seq`.
+Then decompress the downloaded archive to `Exercises/` directory, e.g. `tar xzf AGE2021_data.tar -C /path/to/Exercises`.
 
 ### [01](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
 
