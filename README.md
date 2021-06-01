@@ -1,38 +1,113 @@
 # Analysis of Gene Expression @ University of Chemistry and Technology in Prague
 
-- Authors:
-  - Jiri Novotny &lt;jiri.novotny@img.cas.cz&gt;
-  - Michal Kolar &lt;kolarmi@img.cas.cz&gt;
+These materials are for the course [Analysis of Gene Expression](https://student.vscht.cz/eng/predmety/index.php?do=predmet&kod=M143004)
+taught at the [University of Chemistry and Technology in Prague](https://www.vscht.cz//?jazyk=en),
+and guaranteed by [Department of Informatics and Chemistry](https://lich.vscht.cz/?jazyk=en)
+in the study programme [Bioinformatics](http://studuj.bioinformatiku.cz/) (available for the bachelor, master, and PhD. levels).
+
+The authors are from the [Laboratory of Genomics and Bioinformatics](https://www.img.cas.cz/research/michal-kolar/) at the
+Institute of Molecular Genetics of the Czech Academy of Sciences:
+
+- Michal Kolar \<kolarmi@img.cas.cz\> (guarantor, theoretical lectures)
+- Jiri Novotny \<jiri.novotny@img.cas.cz\> (exercises)
+
+In case of suggestions or problems, create a new issue.
+We will be happy to answer your questions, integrate new ideas, or resolve any problems :blush:
+
+# Lectures
+
+Recordings and materials for theoretical lectures are stored at school's MS Teams,
+and currently available only to course's participants.
+
+# Exercises
+
+## Prerequisites
+
+We expect all participants to have a basic knowledge of base R and Linux shell (bash).
+Links to relevant materials can be found in E01 - Intro.
+
+## Software prerequisites
+
+We are using virtual machines (VMs) with images based on Debian 10 and including all the necessary software
+(R 4.0, RStudio Server, `conda`, and various tools).
+We gratefully thank to the [Metacentrum Cloud](https://www.metacentrum.cz/en/Sluzby/Cloud/index.html)
+team for a great assistance with virtual machines :heart:
+
+However, it is possible to install all the stuff in order to have the same environment as our VMs offer (or be very close to it).
+Generally, we recommend to work on Linux-based system (our tip: [Linux Mint](https://linuxmint.com/)).
+
+### Getting the exercises' files
+
+Just download and unzip this repository.
+Additional data files for E07 - RNA-seq must be downloaded, see the relevant section below.
+
+### RStudio IDE
+
+We recommend to use [RStudio IDE](https://www.rstudio.com/) for programming.
+
+### R dependencies
+
+You need [R](https://www.r-project.org/) 4.0+ and [Bioconductor](http://www.bioconductor.org/install/) 3.12+ installed.
+
+A lockfile for [renv](https://rstudio.github.io/renv/articles/renv.html) is included -
+it captures all packages needed to run the exercises. Moreover, `renv` ensures all packages
+are installed to a local R library, and thus, the installation doesn't pollute the system library.
+
+To start the installation of required packages:
+
+1. Create a new RStudio project in `Exercises/` directory. If you are not using RStudio, just change R's working directory to `Exercises/`.
+2. Start R.
+3. Run `renv::init()`. This will create a new project-specific library and install packages from `renv.lock`.
+   If `renv` is not available, install it first by `install.packages("renv")`.
+
+### Other tools
+
+Other tools could be installed through your OS package manager or the `conda` tool (see E01 - Intro).
+The latter is recommended for bioinformatics tools, which are mainly used during RNA-seq exercises.
+
+***
 
 ## [E01](Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd)) - _Jiri Novotny_
 
-- `sshfs` - mount directory on remote server
+- Some information about our virtual machines and files.
+- `sshfs` - mount directory on a remote server
 - `tmux` - termimal multiplexer
-- Conda package manager
-- Programming in R
-  - Links to base R tutorials and other useful stuff.
-  - Debugging.
-  - Introduction to RMarkdown.
-    - [Tab design](Exercises/E01-intro/tab_design.html) ([Rmd](Exercises/E01-intro/tab_design.Rmd)).
+- `fish` - a friendly, interactive shell
+- `conda` - package and virtual environment manager
+- Links to beginner base R tutorials and other useful stuff.
 
-## [E02](Exercises/E02-intro_to_advanced_R/intro_to_advanced_R.html) - Intro to advanced R ([Rmd](Exercises/E02-intro_to_advanced_R/intro_to_advanced_R.Rmd)) - _Jiri Novotny_
+## [E02](Exercises/E02-intro_to_R/intro_to_R.html) - Intro to R ([Rmd](Exercises/E02-intro_to_R/intro_to_R.Rmd)) - _Jiri Novotny_
 
+- [Introduction to RMarkdown](Exercises/E02-intro_to_R/intro_to_Rmd.html)
+  ([Rmd](Exercises/E02-intro_to_R/intro_to_R.Rmd)).
+- Reproducible R (project-oriented workflow, consistent paths using [here()](https://here.r-lib.org/),
+  namespace conflicts, [renv](https://rstudio.github.io/renv/articles/renv.html), etc.).
+- Installing R packages.
+- Debugging R.
+- Writing your own functions.
+- Vectorized operations, avoiding for loops, parallelization.
 - Introduction to tidyverse
+  - Overview of tidy data and non-standard/tidy evaluation.
   - `magrittr` - pipe operator
   - `tibble` - enhanced data.frame
   - `dplyr` - data manipulation
   - `tidyr` - tools for tidy data
   - `stringr` - consistent wrappers for common string operations
-- `ggplot2`
-  - Basic philosophy.
-  - Libraries extending the `ggplot2`.
-  - Additional themes.
+  - `glue` - string interpolation
+  - `purrr` - functional programming tools
+  - `ggplot2`
+    - Basic philosophy and usage.
+    - Libraries extending the `ggplot2`.
+    - Additional themes.
 - Other useful libraries
-  - `janitor` - table summaries (RIP `table()`)
+  - `janitor` - table summaries
   - `plotly` - interactive HTML plots
   - `heatmaply` - interactive HTML heatmaps
   - `pheatmap` - pretty heatmaps in base R
-- Parallelization
+  - `ComplexHeatmap` -
+    [introduction](Exercises/E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.html)
+    ([Rmd](Exercises/E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.Rmd))
+  - `BiocParallel` - parallelized `lapply()` and others
 
 ## [E03](Exercises/E03-qPCR/qPCR.html) - qPCR ([Rmd](Exercises/E03-qPCR/qPCR.Rmd)) - _Jiri Novotny_
 
@@ -57,10 +132,14 @@
 
 ## [E07](Exercises/E07-RNA_seq) - RNA-seq - _Jiri Novotny_
 
-- This exercise is using [experimental data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778) from human airway smooth muscle cells treatment,
-and is largely based on a great tutorial
+- This exercise is using [experimental data](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778)
+from human airway smooth muscle cells treatment, and is largely based on a great tutorial
 [RNA-Seq workflow: gene-level exploratory analysis and differential expression](https://f1000research.com/articles/4-1070/v2),
-from which preprocessed R data are used.
+from which preprocessed R data are later used (starting from `03 - exploratory analysis` part).
+
+Additional data files must be downloaded prior from [here](https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar.gz).
+If you are working on a remote server, you can use `wget` for downloading: `wget https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar`.
+Then decompress the downloaded archive to `Exercises/E07-RNA_seq`, e.g. `tar xzf AGE2021_data.tar -C /path/to/Exercises/E07-RNA_seq`.
 
 ### [01](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
 

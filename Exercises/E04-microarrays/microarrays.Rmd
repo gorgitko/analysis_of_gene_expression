@@ -123,7 +123,10 @@ Intensities are summarised and analysis of data usually starts with normalizatio
 and is followed by exploratory analysis and testing for differential expression.
 Image adapted from Wikipedia
 ([1](https://en.wikipedia.org/wiki/DNA_microarray#/media/File:Microarray_exp_horizontal.svg), 
-[2](https://commons.wikimedia.org/wiki/File:Microarray_and_sequencing_flow_cell.svg)).](`r here("E04-microarrays/images/microarray.png")`)
+[2](https://commons.wikimedia.org/wiki/File:Microarray_and_sequencing_flow_cell.svg)).](`r here("E04-microarrays/_rmd_images/microarray.png")`)
+
+For a comphrehensive overview of Affymetrix microarrays data analysis check
+[An end to end workflow for differential gene expression using Affymetrix microarrays](https://f1000research.com/articles/5-1384).
 
 ***
 
@@ -155,6 +158,7 @@ library(tidyverse)
 library(glue)
 library(oligo)
 library(limma)
+conflict_prefer("plotMA", "limma")
 library(ReportingTools)
 library(lattice)
 library(sva)
@@ -257,7 +261,7 @@ rownames of the <span class="pData">phenotypical matrix</span> match colnames of
 <span class="fData">feature matrix</span> match rownames of the
 <span class="assay">expression matrix</span>.
 Anytime you subset any of the matrices, the rest will be automatically subsetted ("synchronization").
-](`r here("E04-microarrays/images/ExpressionSet.png")`)
+](`r here("E04-microarrays/_rmd_images/ExpressionSet.png")`)
 
 There is also other data stored in `ExpressionSet`, such as `experimentData`, but that is not important for now.
 You can find it in the manual above or see `?ExpressionSet`.
@@ -481,7 +485,7 @@ corresponding to our chip to annotate the probes.
 All of those annotation packages use SQLite database as a backend and have a common interface called
 [`AnnotationDbi`](https://bioconductor.org/packages/release/bioc/html/AnnotationDbi.html).
 
-Some methods in `AnnotationDbi` have names similar to the ones from other packages (like `dplyr::select()`).
+Some methods in `AnnotationDbi` have names similar to those from other packages (like `dplyr::select()`).
 So always rather use the `AnnotationDbi::` prefix.
 
 Note: because SQLite is a very simple database, it allows only one session (i.e. database file can be opened by only one user at the time).
@@ -695,7 +699,7 @@ On the other hand, data from the high-throughput methods, such as microarrays an
 much bigger and one of their properties is that the number of samples is always **much** smaller than the number of features.
 For that reason, we have to do DEA using a more complex statistical method: linear models.
 
-## limma
+## `limma`
 
 For DEA we will be using [limma](https://bioconductor.org/packages/release/bioc/html/limma.html).
 It is the most known package (in top 20 packages in Bioconductor) for DEA of microarray data and was probably the first which has used linear models for that.
@@ -779,7 +783,7 @@ Let's inspect the `topTable` columns:
 - `B`: log-odds that the gene is differentially expressed.
 
 We didn't specify any parameter to `topTable`, but if you look at its help page,
-you can see that it is possible to set p-value adjust method and also to set thresholds for
+you can see that it is possible to set p-value adjust method and also thresholds for
 adjusted p-value, as well as for minimal absolute value of LFC.
 By default, it won't filter anything and return DEA statistics for first 10 genes by their `B` value.
 
@@ -794,12 +798,11 @@ contrasts <- makeContrasts(
   acetaminophen_vs_diclofenac = groupacetaminophen - groupdiclofenac,
   levels = dea_model
 )
-
 contrasts
 ```
 
 Behind it is just $(aspirin - control) - (ibuprofen - control) = aspirin - ibuprofen$, so comparison to control (reference) group simply cancels out.
-Now we can refit our model using our defined contrasts:
+Now we can refit our model using the defined contrasts:
 
 ```{r}
 fit_c <- contrasts.fit(fit, contrasts = contrasts) %>% eBayes()
@@ -807,7 +810,64 @@ colnames(fit_c)
 topTable(fit_c, coef = "aspirin_vs_ibuprofen")
 ```
 
-## ReportingTools
+## MA plot
+
+The MA plot shows the mean of the expression intesity versus the LFCs for all genes tested.
+The genes that are significantly DE are colored to be easily identified.
+You can see that besides the technical quality control, MA plot is also usable to check for
+to evaluate the magnitude of fold changes and how they are distributed relative to mean expression.
+Generally, we would expect to see significantly DE genes across the full range of expression levels.
+
+We use the [ggmaplot()](https://rpkgs.datanovia.com/ggpubr/reference/ggmaplot.html) function from `ggpubr` package,
+which expects a dataframe with specifically named columns as the input (see `?ggmaplot()` for more details).
+We also specify that genes with adjusted p-value (FDR) below 0.1 and fold-change of 2 (LFC = 1) will be treated as DE.
+
+```{r}
+res <- topTable(fit, coef = "groupacetaminophen", number = Inf) %>%
+  dplyr::select(SYMBOL, baseMeanLog2 = AveExpr, log2FoldChange = logFC, padj = adj.P.Val)
+
+ggpubr::ggmaplot(
+  res,
+  fdr = 0.1,
+  fc = 2,
+  genenames = res$SYMBOL,
+  size = 1
+)
+```
+
+## Volcano plot
+
+Volcano plots are commonly used to display the results of RNA-seq or other omics experiments.
+A volcano plot is a type of scatterplot that shows statistical significance (p-value) versus magnitude of change (LFC).
+It enables quick visual identification of genes with large LFCs that are also statistically significant.
+In a volcano plot, the most upregulated genes are towards the right, the most downregulated genes are towards the left,
+and the most statistically significant genes are towards the top.
+
+We will use [EnhancedVolcano](https://bioconductor.org/packages/release/bioc/html/EnhancedVolcano.html) package
+which produces [highly customizable](https://bioconductor.org/packages/release/bioc/vignettes/EnhancedVolcano/inst/doc/EnhancedVolcano.html)
+volcano plots in publication-ready quality.
+
+```{r, fig.height = 8, fig.width = 8}
+EnhancedVolcano::EnhancedVolcano(
+  # A dataframe.
+  toptable = res,
+  # Vector of gene names.
+  lab = res$SYMBOL,
+  # Which column from toptable parameter to use for x and y values.
+  x = "log2FoldChange",
+  y = "padj",
+  pCutoff = 0.1,
+  # LFC cutoff (applied on x parameter).
+  FCcutoff = 2,
+  title = "Volcano plot",
+  subtitle = "acetoaminophen vs. control",
+  ylab = "-log10(adjusted p-value)",
+  # To avoid overlapping gene labels, draw arrows for them.
+  drawConnectors = TRUE
+)
+```
+
+## `ReportingTools`
 
 [ReportingTools](https://bioconductor.org/packages/release/bioc/html/ReportingTools.html) is a great package for HTML reporting of, but not only, DEA.
 Basically, it outputs a table from the `topTable()`, but in an interactive HTML form.
@@ -826,8 +886,6 @@ rep_theme <- reporting.theme()
 lattice.options(default.theme = rep_theme)
 
 for (group in output_groups) {
-  cat(glue("\n\nDEA for group '{group}': ", .trim = FALSE))
-  
   tryCatch(
     {
       # This is an object (and a file) to which we are publishing.
@@ -841,7 +899,7 @@ for (group in output_groups) {
       
       # We can control what to take from topTable.
       # Here, we want top REPORT_N_GENES DE genes (ranked by p-value adjusted by FDR) with minimal LFC of 1 (i.e. two-fold up or down).
-      # We won't be much conservative and set adjusted p-value cutoff to 0.1. That means we expect 10% of our DE genes to be false positives.
+      # We won't be much conservative and set adjusted p-value cutoff to 0.1. That means we expect 10 % of our DE genes to be false positives.
       publish(
         fit,
         de_report,
@@ -856,17 +914,14 @@ for (group in output_groups) {
       
       finish(de_report)
       
-      cat(glue("<a href='{REPORT_DIR}/{group}.html' target='_blank'>report</a>"))
+      cat(glue("\n\n<a href='{basename(REPORT_DIR)}/{group}.html' target='_blank'>Report of DEGs for <b>{group}</b> vs. control</a>", .trim = FALSE))
     },
     
     error = function(e) {
-      cat(e$message)
+      cat(glue("\n\n<b>{group}</b> vs. control: {e$message}", .trim = FALSE))
   })
 }
 ```
-
-However, for a HTML report to be loaded correctly, you must open it from a normal filesystem, not the RStudio file browser.
-So copy the `r basename(REPORT_DIR)` directory to your local computer or access the HTML files with `sshfs`.
 
 ## Custom reporting of DEGs
 
@@ -950,7 +1005,7 @@ These two different ways are nicely summarised [here](https://www.biostars.org/p
 
 To demonstrate the batch effect, we will join two experiments. The one we have been working with and the
 [second one](https://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-68065/) in which rats were treated with acetaminophen,
-and which used the same microarray technology as in the former.
+and which used the same microarray technology as the former.
 
 The preprocessing is quite similar to what we have already done.
 
@@ -1062,7 +1117,7 @@ norm_data_batch_combat <- norm_data_batch
 exprs(norm_data_batch_combat) <- ComBat(exprs(norm_data_batch_combat), batch = batches, mod = model.matrix(~ groups_batch))
 ```
 
-Let's look again at biological exploratory analysis. The batch effect seems to be corrected `r emo::ji("slightly_smiling_face")`
+Let's look again at the biological exploratory analysis. The batch effect seems to be corrected `r emo::ji("slightly_smiling_face")`
 
 ```{r}
 plot_hc(exprs(norm_data_batch_combat), color_by = groups_batch, color_by_lab = "Sample Group")
@@ -1107,8 +1162,8 @@ plot_heatmap(
 
 ## Taking batch effect into account in DEA
 
-Now we take the batch effect into account in the linear model used for DEA.
-We will add the batch effect as an another factor:
+Now we take the batch effect into account in the linear model used for DEA,
+adding it as an another factor (covariate):
 
 ```{r}
 dea_model_batch <- model.matrix(~ groups_batch + batches)
@@ -1118,7 +1173,11 @@ fit_batch <- lmFit(norm_data_batch, dea_model_batch) %>% eBayes()
 colnames(fit_batch)
 ```
 
-The batch effect is now "eaten" by the `batches` covariate, and so we observe the correct statistics for the main biological effect of used drug (the `groups_batch` covariate).
+We are assuming that effects of `groups_batch` and `batches` are additive,
+and so we can ask e.g. whether is there difference between `ibuprofen` and `control` regardless the
+batch, which is assumed to have the same effect for all sample groups.
+In other words, the batch effect is now "eaten" by the `batches` covariate, and so we observe the correct statistics
+for the main biological effect of used drug (the `groups_batch` covariate).
 
 ***
 
@@ -1133,7 +1192,7 @@ saveRDS(fit, here(BASE_DIR, "fit.Rds"))
 ```
 
 ```{r, warning = TRUE, message = TRUE}
-save.image(here(BASE_DIR, "microarrays.RData"))
+save(list = ls(all.names = TRUE), file = here(BASE_DIR, "microarrays.RData"), envir = environment())
 
 warnings()
 traceback()
@@ -1158,5 +1217,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-rmarkdown::render(here("E04-microarrays/microarrays.Rmd"), output_file = here("E04-microarrays/microarrays.html"), envir = new.env())
+opts_knit$set(root.dir = here())
+rmarkdown::render(
+  here("E04-microarrays/microarrays.Rmd"),
+  output_file = here("E04-microarrays/microarrays.html"),
+  envir = new.env()
+)
 ```

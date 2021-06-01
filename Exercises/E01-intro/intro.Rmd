@@ -93,11 +93,11 @@ cp -r ~/shared/AGE2021/Exercises/{_assets,E01-intro} ~/AGE2021/Exercises
 
 And make a new RStudio project using the existing directory (`~/AGE2021/Exercises`):
 
-![File > New Project...](`r here("E01-intro/images/new_project_01.png")`)
+![File > New Project...](`r here("E01-intro/_rmd_images/new_project_01.png")`)
 
-![Choose "Existing Directory"](`r here("E01-intro/images/new_project_02.png")`)
+![Choose "Existing Directory"](`r here("E01-intro/_rmd_images/new_project_02.png")`)
 
-![Navigate to and select directory "~/AGE2021/Exercises"](`r here("E01-intro/images/new_project_03.png")`)
+![Navigate to and select directory "~/AGE2021/Exercises"](`r here("E01-intro/_rmd_images/new_project_03.png")`)
 
 ## Accessing files on your VM
 
@@ -123,7 +123,7 @@ It is somewhat similar to quite old `screen`, but `tmux` is a better choice in m
 
 `tmux` has a following hierarchy:
 
-!["In sessions, you create windows which can be split to panes.](`r here("E01-intro/images/tmux.png")`)
+!["In sessions, you create windows which can be split to panes.](`r here("E01-intro/_rmd_images/tmux.png")`)
 
 **The important thing is that `tmux` sessions are persistent until you restart the server.**
 And so you can return back to your work after network outage, or run a long-term task and
@@ -343,6 +343,7 @@ Here are some links to refresh or gain your skills.
 - [Data Analysis for the Life Sciences](https://leanpub.com/dataanalysisforthelifesciences)
 - [Modern Statistics for Modern Biology](https://www.huber.embl.de/msmb/index.html)
 - [R for Data Science](https://r4ds.had.co.nz/)
+- [Bioconductor for Genomic Data Science](https://kasperdanielhansen.github.io/genbioconductor/)
 - [Coding Club](https://ourcodingclub.github.io/tutorials.html)
 - [STAT 545](https://stat545.com/) - mainly about [tidyverse](https://www.tidyverse.org/).
 - [R tutorial from University of Georgia](https://www.cyclismo.org/tutorial/R/index.html)
@@ -413,5 +414,6 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
+opts_knit$set(root.dir = here())
 rmarkdown::render(here("E01-intro/intro.Rmd"), output_file = here("E01-intro/intro.html"), envir = new.env())
 ```

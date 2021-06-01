@@ -558,6 +558,7 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
+opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E07-RNA_seq/01_quality_control/01_quality_control.Rmd"),
   output_file = here("E07-RNA_seq/01_quality_control/01_quality_control.html"),

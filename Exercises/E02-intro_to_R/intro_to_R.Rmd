@@ -57,7 +57,7 @@ It is quite long, but some sections are really necessary to go through, as we wi
 - [Installing R packages](#installing-r-packages)
 - [Writing your own functions](#writing-your-own-functions)
 - [Try to utilize vectorized operations](#try-to-utilize-vectorized-operations)
-- Introduction to tidyverse
+- Introduction to the `tidyverse`
   - Tidy (long) data
   - `magrittr`
   - `tibble`
@@ -79,7 +79,7 @@ It is quite long, but some sections are really necessary to go through, as we wi
 Well, this could be a chapter on its own, but only a few **important** tips will be given,
 basically to avoid things like [these](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/):
 
-![[Source](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/)](`r here("E02-intro_to_R/images/not_reproducible.png")`)
+![[Source](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/)](`r here("E02-intro_to_R/_rmd_images/not_reproducible.png")`)
 
 - `setwd("C:\Users\jenny\path\that\only\I\have")` will obviously work only on the computer of creator.
 - `rm(list = ls())` will not perform the full restart of R, it will just remove user-defined objects.
@@ -146,8 +146,23 @@ Hmm, nothing happened after `setwd()`, right? This way, no hidden `setwd()` can 
 
 How is it possible `here` always knows where is the top-level of project located?
 Well, `here` is smart: it scans your project directory structure and do some heuristics.
-The most basic one is searching for file ending with `.Rproj`.
+The most basic one is searching for file ending with `.here` or `.Rproj`.
 Wait! Is that one of the reasons why we have created our RStudio project? Yes, exactly `r emo::ji("nerd_face")`
+However, for those which are not using RStudio (or its projects),
+this repository contains `.here` file in the root directory (`Exercises/`).
+
+Besides `.here` and `.Rproj` files, `here` automatically recognizes some other files,
+see [?here::here()](https://here.r-lib.org/reference/here.html).
+
+Also, root directory can be set manually with `here::i_am("<path to file>")`,
+e.g. we can call `here::i_am("path/to/age_library_empty.R")` (this file is located in `Exercises/` directory).
+Based on directory this file is located in, `here` uses `Exercises/` as the root directory.
+
+You can inspect the reason why `here` is using a particular directory as the root one:
+
+```{r}
+here::dr_here()
+```
 
 If you want to save space and typing, you can also define variables with `here` paths and use them to construct paths relative to them:
 
@@ -159,6 +174,19 @@ here(output_dir, "analysis_1")
 You can find more information about project-oriented workflow [here](https://rstats.wtf/project-oriented-workflow.html)
 and about safe `here` paths [here](https://www.tidyverse.org/blog/2017/12/workflow-vs-script/) and
 [here](https://rstats.wtf/safe-paths.html).
+
+### Working directory in RMarkdown code chunks
+
+By default, RMarkdown code chunks in RStudio are evaluated in the directory of opened Rmd file.
+That is violating our project-oriented workflow described above, but it can be changed in RStudio options:
+
+![RMarkdown code chunks should be evaluated in the project's root directory.](`r here("E02-intro_to_R/_rmd_images/rstudio_code_chunks_eval.png")`)
+
+The same applies for `render()` (respectively for `knitr`), but can be changed (before you call `render()`) with:
+
+```{r, eval = FALSE}
+opts_knit$set(root.dir = here())
+```
 
 ## Put runtime information to the end of your script/Rmd file
 
@@ -663,10 +691,10 @@ In short, objects need to be copied to a new thread or R process and that brings
 
 ***
 
-# Introduction to [tidyverse](https://www.tidyverse.org/)
+# Introduction to the [tidyverse](https://www.tidyverse.org/)
 
 Until now you have been probably using only the base R.
-[Tidyverse](https://www.tidyverse.org/) can be seen as a dialect of R and is described as follows:
+The [tidyverse](https://www.tidyverse.org/) can be seen as a dialect of R and is described as follows:
 
 > The `tidyverse` is an opinionated collection of R packages designed for data science.
   All packages share an underlying design philosophy, grammar, and data structures.
@@ -694,7 +722,7 @@ The following three rules make a dataset tidy:
 - Each observation must have its own row.
 - Each value must have its own cell.
 
-![Following three rules makes a dataset tidy: variables are in columns, observations are in rows, and values are in cells.](`r here("E02-intro_to_R/images/tidy_data.png")`)
+![Following three rules makes a dataset tidy: variables are in columns, observations are in rows, and values are in cells.](`r here("E02-intro_to_R/_rmd_images/tidy_data.png")`)
 
 As you will see, we will be mostly working with biological matrices (= data in **wide** format).
 For example, consider this datafame:
@@ -724,7 +752,7 @@ df_long
 Now `df_long` is tidy and corresponds to long format of the original dataframe.
 We actually did this:
 
-![Converting wide data to long format.](`r here("E02-intro_to_R/images/wide_to_long.png")`)
+![Converting wide data to long format.](`r here("E02-intro_to_R/_rmd_images/wide_to_long.png")`)
 
 Why is long data useful for some purposes (mainly for plotting)?
 Well, for biological matrix like the one in `df`, you usually also have a sample sheet, for example:
@@ -743,7 +771,7 @@ dplyr::left_join(df_long, sample_sheet, by = "Sample")
 **As you will see later, this long form of data is extremely useful for plotting.**
 In this blog [post](http://varianceexplained.org/r/tidy-genomics/), there is a nice example of using tidy data and `tidyverse` in genomics.
 
-## Non-standard evaluation (NSE)
+## Non-standard evaluation (NSE) / tidy evaluation
 
 Let's go ahead a bit and look at this `select()` function from `dplyr` package (will be introduced later):
 
@@ -751,12 +779,14 @@ Let's go ahead a bit and look at this `select()` function from `dplyr` package (
 dplyr::select(mtcars, cyl, mpg) %>% head()
 ```
 
-You can see that `select()` is filtering columns of a dataframe.
+You can see that `select()` is doing... well, as its name suggests, it is selecting columns of a dataframe.
 But it has a strange syntax, hasn't it? We have used variables, which are not defined in our current environment.
 Don't be scared by this dark magic - it is based on R's [lazy evaluation](https://colinfay.me/tidyeval-1/)
 ([details](https://www.r-bloggers.com/about-lazy-evaluation/))
 and it is called **[non-standard evaluation](https://tidynomicon.tech/nse.html)** (NSE).
 **In short, R only evaluates the expression if the expression is actually used.**
+This particular behaviour could be then "exploited", such as in the `tidyverse` for [**tidy evaluation**](https://tidyeval.tidyverse.org/)
+(which is a special type of NSE).
 Just a quick example:
 
 ```{r}
@@ -768,10 +798,10 @@ my_fn(a, b, c)
 ```
 
 You can see we are passing non-existent variables `a`, `b` and `c` to `my_fn()`, but no errors are thrown!
-That is because R is evaluating variables (or more generally expressions) only when needed (i.e. lazily).
+That is because R is evaluating variables (or more generally expressions) only when they are needed (evaluated), i.e. lazily.
 
 Also R has quite advanced metaprogramming abilities, so inside a function, we can do things like:
-"Get the name (symbol) of variable, which was passed to the function.".
+"Get the name (symbol) of a variable, which was passed to the function.".
 So for example, you can find out that you passed
 variable named `a` as the argument `x` and expression `mean(b)` as the argument `y`:
 
@@ -794,24 +824,70 @@ my_fn <- function(df, column) {
 my_fn(mtcars, cyl)
 ```
 
-This is very roughly how most `tidyverse` functions work. They are using NSE to look first at variables inside a passed object (columns = variables).
+This is very roughly how most `tidyverse` functions work. They are using NSE/tidy evaluation to look first at variables inside a passed object,
+which is usually `data.frame`-like (where columns = variables).
 Most of these functions are designed to have their first parameter as data object.
-When variables are not found inside the object, function will look for variables in the global environment
-(this can cause unwanted problems, when object has variable with the same name as the one in global environment).
-So in the example above, `cyl` and `mpg` variables are evaluated in the context of `mtcars` object and environment
-defined in `select()` function call.
+When variables are not found inside the object, a function will look for them in the current environment
+(this can cause unwanted problems, when object has variable with the same name as some in the current environment, see the solution below).
+So in the first example above, `cyl` and `mpg` variables are evaluated in the context of `mtcars` object and environment
+defined in `select()` function call (which is the global environment).
+This particular feature of `tidyverse` functions is called [data-masking](https://dplyr.tidyverse.org/reference/dplyr_data_masking.html).
+
+To specify that a variable comes from the current environment (i.e not from the passed object),
+use the bang-bang operator `!!`, which forces evaluation of a variable.
+That means its *value* will be used instead of its *name*, preventing the data-masking usage.
+
+```{r}
+cyl <- c(4, 6)
+dplyr::filter(mtcars, cyl %in% !!cyl)
+
+fn <- function(data, cyl) {
+  dplyr::filter(data, cyl %in% !!cyl)
+}
+
+fn(mtcars, cyl)
+```
+
+NSE is a quite advanced topic and its knowledge is mainly needed for implementation of custom functions, which share the `tidyverse` philosophy.
+See `vignette("programming")` and [friendlyeval](https://github.com/MilesMcBain/friendlyeval), a friendly interface for NSE programming.
+I also suggest watching ["Tidy evaluation in 5 mins"](https://youtu.be/nERXS3ssntw) from Hadley Wickham, the father of the `tidyverse`.
+The basic programming tips are given in the next section.
 
 Of note, there are some base R functions which also use NSE. Some examples:
 
 ```{r}
-cyl2 <- with(mtcars, {cyl ** 2})
-head(cyl2)
+with(mtcars, cyl ** 2) %>% head()
 subset(mtcars, hp < 90)
 ```
 
-NSE is a quite advanced topic and its knowledge is mainly needed for implementation of custom functions, which share the `tidyverse` philosophy.
-See `vignette("programming")` and [friendlyeval](https://github.com/MilesMcBain/friendlyeval),
-a friendly interface for NSE programming.
+### Using dynamic variable names
+
+Here are just quick examples how to use dynamic variable names inside custom functions.
+
+- For the `tidyverse` style (unquoted variable names), use double braces `{{ variable }}`:
+
+```{r}
+dist_summary <- function(df, var) {
+  dplyr::summarise(df, n = n(), min = min({{ var }}), max = max({{ var }}))
+}
+dist_summary(mtcars, mpg)
+```
+
+- To use variable names as character vectors (scalars), use the `.data` pronoun:
+
+```{r}
+dist_summary_chr <- function(df, var) {
+  dplyr::summarise(df, n = n(), min = min(.data[[var]]), max = max(.data[[var]]))
+}
+dist_summary_chr(mtcars, "mpg")
+```
+
+It can be also used outside of a function:
+
+```{r}
+my_var <- "mpg"
+dplyr::summarise(mtcars, n = n(), min = min(.data[[my_var]]), max = max(.data[[my_var]]))
+```
 
 Now we will quickly look at the most popular `tidyverse` packages.
 
@@ -892,7 +968,7 @@ But for the sake of consistency, rather use operator aliases:
 
 It is not possible to use some operators without aliases, e.g. `==` or `*`:
 
-```{r, error = TRUE}
+```{r, eval = FALSE}
 1 %>% == 2
 1 %>% * 3
 ```
@@ -944,7 +1020,7 @@ not by object's attribute, accessible by `rownames()` method.
 
 **This is bad particularly for usage of `tidyverse` together with Bioconductor, where
 rownames are an essential component.**
-Many tidyverse functions return a `tibble` or drop rownames, but most of times we rather want `data.frame`
+Many `tidyverse` functions return a `tibble` or drop rownames, but most of times we rather want `data.frame`
 with defined rownames.
 `tibble` can be converted to a `data.frame` by `as.data.frame()` function.
 
@@ -1051,17 +1127,21 @@ Select column at `last - 1` position:
 dplyr::select(mtcars_sm, last_col(1))
 ```
 
-Select columns having names in vector and don't throw error on non-existing column:
+Use [any_of()](https://tidyselect.r-lib.org/reference/all_of.html) to select columns contained in a character vector
+without throwing an error for a non-existing column (this can be used for dynamic column names):
 
 ```{r, warning = TRUE}
-dplyr::select(mtcars_sm, one_of(c("mpg", "cyl", "garbage")))
+dplyr::select(mtcars_sm, any_of(c("mpg", "cyl", "garbage")))
 ```
 
-Because this will fail:
+While this will fail:
 
 ```{r, error = TRUE}
 dplyr::select(mtcars_sm, mpg, cyl, garbage)
 ```
+
+A strict version of `any_of()` is `all_of()`, which requires all columns to exist.
+Both of these selection functions can be combined with negative selection (`-`).
 
 `select()` can also select and rename columns at the same time:
 
@@ -1517,6 +1597,36 @@ str_remove_all(x, "[aeiou]")
 str_split(c("a,b", "c,d,e"), ",")
 ```
 
+### Regular expressions
+
+A regular expression (shortened as regex or regexp) is a sequence of characters that specifies a search pattern.
+Usually such patterns are used by string-searching algorithms for "find" or "find and replace" operations on strings, or for input validation. 
+
+Regexes are essential to text processing (not only in R) and you should at least know their basics.
+For example, do you know what does the regex in `str_replace(x, "[aeiou]", "?")` above mean?
+
+To check for a regex explanation, you can use e.g. [regex101.com](https://regex101.com/).
+There is also a handy RStudio addin [RegExplain](https://www.garrickadenbuie.com/project/regexplain/).
+
+![An example from [regex101.com](https://regex101.com/)](`r here("E02-intro_to_R/_rmd_images/regex101.png")`)
+
+Also, there are several packages offering a grammar for regexes, such as
+[rex](https://github.com/kevinushey/rex) and [RVerbalExpressions](https://github.com/VerbalExpressions/RVerbalExpressions).
+They allow to construct regexes by using a sort of human-readable language to solve situations like
+"find something that must contain two words" (the code below is from [RVerbalExpressions examples](https://rverbalexpressions.netlify.app/articles/examples.html)):
+
+```{r, eval = FALSE}
+rx() %>% 
+  rx_find("cat") %>% 
+  rx_anything() %>% 
+  rx_find("dog")
+```
+
+> Just a note - backslash (`\`) character is used in R (and also in other programming languages) for [escaping](https://en.wikipedia.org/wiki/Escape_character).
+  Shortly, character after backslash has a special meaning (e.g. `\n` is used for newline).
+  Because regexes themselves use backslashes (e.g. `\d` means "any digit"), you have to tell R to treat backslash as a normal character, and not as the start of escaping.
+  This is done by using a double backslash (`\\`). Just keep in mind that sites like regex101.com expect single backslashes in regexes.
+
 ***
 
 ## [glue](https://glue.tidyverse.org/) - string interpolation
@@ -1571,6 +1681,7 @@ glue("His name is {my_names}.")
 but if you go in more depth, it offers much more functionality. We will just look at the most basic functions.
 
 - [Cheatsheet](https://github.com/rstudio/cheatsheets/blob/master/purrr.pdf)
+- [Functional Programming tutorial](https://dcl-prog.stanford.edu/)
 
 [map()](https://purrr.tidyverse.org/reference/map.html) is similar to `lapply()`, but allows to use a special formula notation for functions.
 In this formula, iterated variable is referenced by `.` (dot). In the example below, `~ . + 1` is equivalent to `function(x) {x + 1}`.
@@ -1618,16 +1729,16 @@ purrr::keep(my_named_list, ~ length(.) > 2)
 
 ## [ggplot2](https://ggplot2.tidyverse.org/) - plotting made easy
 
-[ggplot2](https://ggplot2.tidyverse.org/) is a package for declaratively creating graphics (part of `tidyverse`), based on
+[ggplot2](https://ggplot2.tidyverse.org/) is a package for declaratively creating graphics based on
 [The Grammar of Graphics](https://byrneslab.net/classes/biol607/readings/wickham_layered-grammar.pdf).
 You provide the data, tell ggplot2 how to map variables to aesthetics, what graphical primitives to use, and it takes care of the details.
 
-![](images/ggplot2_scheme.png){width=50%}
+![`ggplot2` scheme](`r here("E02-intro_to_R/_rmd_images/ggplot2_scheme.png")`){width=50%}
 
 ![To create a plot, you start with initialization of a basic `ggplot2` object holding data, and then you add a
 [geom](https://ggplot2.tidyverse.org/reference/index.html#section-layer-geoms),
 which tells how to visualize the data and how to map variables to aesthetics (color, size, etc.).
-This will provide you sensible defaults. To further modify the plot, you can add more components with `+` operator.](images/ggplot2_basic.png){width=50%}
+This will provide you sensible defaults. To further modify the plot, you can add more components with `+` operator.](`r here("E02-intro_to_R/_rmd_images/ggplot2_basic.png")`){width=50%}
 
 **Useful links**
 
@@ -1694,7 +1805,7 @@ ggplot(mtcars2) +
 
 See how x-axe changed, as `cyl` is now factor variable.
 
-Because `ggplot2` is a part of `tidyverse`, it also uses the non-standard evaluation, and so this is equivalent
+Because `ggplot2` is a part of the `tidyverse`, it also uses the non-standard evaluation, and so this is equivalent
 to the example above, but without modifying the `mtcars` object:
 
 ```{r, eval = FALSE}
@@ -1703,7 +1814,7 @@ ggplot(mtcars) +
 ```
 
 OK, time for a more serious example `r emo::ji("slightly_smiling_face")`
-Instead of `geom_cat()`, we will use more practical `geom_point()`, which is showing classic points instead of cats, and map `carb` to point colors:
+Instead of `geom_cat()`, we will use a more practical `geom_point()`, which is showing classic points instead of cats, and map `carb` to point colors:
 
 ```{r}
 ggplot(mtcars2) +
@@ -1795,13 +1906,13 @@ p + facet_grid(am + vs ~ cyl, labeller = labeller(am = c("0" = "Automatic", "1" 
 Export of plots to image files is done via `ggsave()` function. You can use any format R can handle.
 
 ```{r}
-ggsave("ggplot2_example.png", p)
-ggsave("ggplot2_example.pdf", p)
+ggsave(here("E02-intro_to_R/ggplot2_example.png"), p)
+ggsave(here("E02-intro_to_R/ggplot2_example.pdf"), p)
 ```
 
-[ggplot2_example.png](`r here("E02-intro_to_R/ggplot2_example.png")`)
+[ggplot2_example.png](ggplot2_example.png)
 
-[ggplot2_example.pdf](`r here("E02-intro_to_R/ggplot2_example.pdf")`)
+[ggplot2_example.pdf](ggplot2_example.pdf)
 
 Alternatively, you can use base R functions. This is useful for saving multiple plots to a single multipage PDF.
 
@@ -1816,7 +1927,7 @@ dev.off()
 You probably wondered, how can you use dynamic variable names in `aes()`.
 For example, consider a function `plot_pca(data, color_by)`
 which calculates PCA and shows scatterplot colorized by a specified variable.
-Although it is possible via NSE (see `vignette("programming")`), the easiest way is to use `aes_string()` function.
+The easiest way is to use `aes_string()` function:
 
 ```{r}
 color_by <- "cyl"
@@ -1825,8 +1936,20 @@ ggplot(mtcars) +
   geom_point(aes_string(x = "mpg", y = "qsec", color = color_by))
 ```
 
-The disadvantage is that you cannot use the capabilities of NSE.
-In the example above, you cannot specify `factor(color_by)` to treat `cyl` as a factor variable.
+The disadvantage is that you cannot use the capabilities of NSE, so in the example above,
+you cannot use `factor(color_by)` to treat `cyl` as a factor variable.
+
+But because `ggplot2` is a part of the `tidyverse`, you can use things described in the
+[Using dynamic variable names](#using-dynamic-variable-names) section, such as the double brackets `{{ }}`:
+
+```{r}
+fn <- function(df, color_by) {
+  ggplot(df, aes(x = am, y = mpg, color = {{ color_by }})) +
+    geom_point()
+}
+
+fn(mtcars, factor(cyl))
+```
 
 ### Packages extending the `ggplot2`
 
@@ -2058,7 +2181,7 @@ We can use `htmlwidgets` package to save `plotly` object into HTML file:
 
 ```{r}
 class(p_plotly)
-htmlwidgets::saveWidget(p_plotly, "p_plotly.html")
+htmlwidgets::saveWidget(p_plotly, here("E02-intro_to_R/p_plotly.html"))
 ```
 
 [p_plotly.html](p_plotly.html)
@@ -2099,7 +2222,7 @@ Its design follows the object-oriented scheme, so heatmap body, annotations, leg
 It can do a lot and it can be a bit overhelming, but for simple heatmaps (e.g. z-score of logcounts), unlike `heatmap.2` and similar packages,
 `ComplexHeatmap` is more user-friendly and provides you a great assistance.
 
-Some time ago, I created an introduction for my labmates, which is available in [this GitHub repository](https://github.com/bioinfocz/ComplexHeatmap-intro),
+Some time ago, I have created an introduction for my labmates, which is available in [this GitHub repository](https://github.com/bioinfocz/ComplexHeatmap-intro),
 but you can find all the necessary files in `E02-intro_to_R/ComplexHeatmap-intro`:
 there is a source Rmd file (`ComplexHeatmap.Rmd`) and its rendered HTML document (`ComplexHeatmap.html`).
 
@@ -2112,8 +2235,8 @@ In my opinion, `ComplexHeatmap` is currently the best heatmap package, especiall
 package provides easy-to-use functions for parallel execution.
 We won't go into details and just introduce probably the most used function `bplapply()`, a parallelized version of `lapply()`.
 
-As you know, `lapply(X, FUN, ...)` applies `FUN` with optional arguments `...` to each element
-of `X`:
+As you know, `lapply(X, FUN, ...)` applies a function `FUN` with optional arguments `...` to each element of `X`,
+returning a list of values returned from the `FUN`:
 
 ```{r}
 x <- 1:5
@@ -2121,8 +2244,8 @@ fn <- function(i) i^2
 lapply(x, fn)
 ```
 
-`bplapply(X, FUN, ..., BPREDO = list(), BPPARAM = bpparam())` does the same, but elements are split to chunks, which are processed in parallel.
-Result is guaranteed to have the same order of elements as in `X`.
+`bplapply(X, FUN, ..., BPREDO = list(), BPPARAM = bpparam())` does the same, but elements in `X` are first split to chunks,
+which are processed in parallel. Result is guaranteed to have the same order of elements as in `X`.
 
 ```{r}
 BiocParallel::bplapply(x, fn)
@@ -2165,7 +2288,7 @@ but for now we can live only with the simple multicore usage.
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
-save.image(here("E02-intro_to_R/intro_to_R.RData"))
+save(list = ls(all.names = TRUE), file = here("E02-intro_to_R/intro_to_R.RData"), envir = environment())
 
 warnings()
 traceback()
@@ -2184,7 +2307,6 @@ library(conflicted)
 library(knitr)
 library(glue)
 library(here)
-library(emo)
 
 if (!require(rmdformats)) {
   BiocManager::install("rmdformats")
@@ -2192,5 +2314,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-rmarkdown::render(here("E02-intro_to_R/intro_to_R.Rmd"), output_file = here("E02-intro_to_R/intro_to_R.html"), envir = new.env())
+opts_knit$set(root.dir = here())
+rmarkdown::render(
+  here("E02-intro_to_R/intro_to_R.Rmd"),
+  output_file = here("E02-intro_to_R/intro_to_R.html"),
+  envir = new.env()
+)
 ```

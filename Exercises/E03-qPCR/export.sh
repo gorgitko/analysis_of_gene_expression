@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+##-- Export to directory specified in the first argument.
+
 cd "$(dirname "$0")"
 
-TO_EXPORT=`echo data/ images/ qPCR.{Rmd,html}`
+TO_EXPORT="data/ _rmd_images/ qPCR.Rmd qPCR.html"
 
 if [ -z "$1" ]; then
   echo "Destination path is not set!"

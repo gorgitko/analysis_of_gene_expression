@@ -32,7 +32,7 @@ This is [how it works](https://rmarkdown.rstudio.com/lesson-2.html):
 
 ![Code chunks in RMarkdown document are evaluated by [knitr](https://yihui.name/knitr/) and converted to [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown),
 which is then compiled by [pandoc](https://pandoc.org) to selected output format (in our case HTML).
-All of this is handled automatically by `rmarkdown::render()` function (see the end of this document).](`r here("E02-intro_to_R/images/rmarkdown_flow.png")`)
+All of this is handled automatically by `rmarkdown::render()` function (see the "How to render RMarkdown documents" section).](`r here("E02-intro_to_R/_rmd_images/rmarkdown_flow.png")`)
 
 **Useful links**
 
@@ -52,7 +52,7 @@ All of this is handled automatically by `rmarkdown::render()` function (see the 
 
 ***
 
-## How to use RMarkdown
+# How to write RMarkdown documents
 
 Files with `.Rmd` extension are recognized by RStudio, which automatically adapts its environment to them (notebook mode).
 
@@ -221,11 +221,15 @@ You can view them in `Tools -> Keyboard Shortcuts Help`.
 
 ***
 
-# Rendering RMarkdown
+# How to render RMarkdown documents
 
 To render a Rmd file, use the `rmarkdown::render()` function.
-Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders a HTML file.
-**It is a good practice to specify `envir = new.env()` - this will render the Rmd file in a new R environment, so your current variables won't interfere.**
+Below you can find a code chunk, which loads the `knitr` and `here` packages, sets global chunk options and renders this Rmd file to HTML.
+**It is a good practice to:**
+
+- Specify `envir = new.env()` - this will render the Rmd file in a new R environment, so your current variables won't interfere.
+- Run `opts_knit$set(root.dir = here::here())` before `render()` - this sets R working directory to the project's root during the rendering.
+  More details about this are given in the next section.
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(knitr)
@@ -233,6 +237,7 @@ library(here)
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E02-intro_to_R/intro_to_Rmd.Rmd"),
   output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
@@ -260,22 +265,21 @@ rmarkdown::render(
 > Now when you know the RMarkdown basics and how to render it to HTML, you can try yourself to create a Rmd file and play with it:
   use the Markdown syntax, create code chunks, modify the header, and render it to HTML.
 
-## Working directory in a Rmd file
+## Working directory in Rmd files
 
-Unfortunately, there are discrepancies in the current working directory when you evaluate chunks in RStudio vs. render a Rmd file,
-because `knitr` will automatically set the working directory to that of Rmd file location.
+By default, RMarkdown code chunks in RStudio and in `render()` are evaluated in the directory of opened Rmd file
+(`Exercise/E02-intro_to_R` for this one), whereas your working directory in R terminal is a project's root directory (`Exercises/`).
+That is really annoying, because we want a consistent navigation relative to the project's root directory.
 
-When you evaluate this chunk in RStudio, you get the working directory of your current project.
+To prevent these working directory discrepancies:
 
-```{r}
-current_wd <- getwd()
-current_wd
-```
+- In RStudio:
 
-But as you can see in the output `intro_to_Rmd.html`, the working directory is `Exercises/E02-intro_to_R` there.
+![RMarkdown code chunks should be evaluated in the project's root directory.](`r here("E02-intro_to_R/_rmd_images/rstudio_code_chunks_eval.png")`)
 
-So how to use consistent project-relative paths in a Rmd file?
-Use the [here](https://github.com/jennybc/here_here) package, which is described in `intro_to_R.Rmd` in Reproducible R section.
+- For `render()`, run `opts_knit$set(root.dir = here::here())` before.
+
+**For more details, be sure to check out the `E02 - Intro to R / Reproducible R` section.**
 
 ***
 

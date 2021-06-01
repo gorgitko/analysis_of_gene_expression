@@ -84,7 +84,7 @@ Please, return the assignment in this form:
 [Quantitative real-time PCR](https://en.wikipedia.org/wiki/Real-time_polymerase_chain_reaction) monitors the amplification
 of a targeted DNA molecule during the PCR (i.e., in real time), not at its end, as in conventional PCR.
 
-![qPCR measurement](`r here("E03-qPCR/images/qpcr_curves.png")`)
+![qPCR measurement](`r here("E03-qPCR/_rmd_images/qpcr_curves.png")`)
 
 In real time reverse transcription quantitave PCR (RT-qPCR), we measure the amplification of target reverse transcribed DNA molecules.
 This amplification depends on initial RNA concentration and approximates the gene expression.
@@ -290,13 +290,7 @@ samples <- colnames(cp)
 head(pheno_data)
 ```
 
-If you are not sure what regexes above mean, go to [regex101.com](https://regex101.com/) and try them.
-You can place multiple sample names on separate lines.
-In regexes you just have to replace double backslashes (`\\`) by a single one. That's because backslash is used in R (and other programming languages)
-for [escaping](https://en.wikipedia.org/wiki/Escape_character). Shortly, character after backslash has a special meaning (e.g. `\n` is used for newline)
-and because regexes themselves use backslashes (e.g. `\d` means "any digit"), you have to tell R to treat backslash as normal character, and not as the start of escaping.
-
-![Example from [regex101.com](https://regex101.com/)](`r here("E03-qPCR/images/regex101.png")`)
+If you are not sure what the regexes above mean, refer to the `stringr / Regular expressions` section in E02 - Intro to R.
 
 ## Long data
 
@@ -376,7 +370,7 @@ plot_pca_ggpairs(cp_plot, pheno_data, n_components = 5, color_by = "sample_group
 
 > Function to be implemented within the assignment.
   `ComplexHeatmap` package is preferred. For interactive heatmaps you can use
-  [heatmaply](https://cran.r-project.org/web/packages/heatmaply/vignettes/heatmaply.html) (introduced in E02-intro to R).
+  [heatmaply](https://cran.r-project.org/web/packages/heatmaply/vignettes/heatmaply.html) (introduced in E02 - Intro to R).
 
 ```{r}
 p_heatmap <- plot_heatmap(
@@ -462,7 +456,7 @@ From both hiearchical clustering and PCA you can see that reference genes make a
 ## geNorm M-values `r emo::ji("hammer_and_wrench")`
 
 > Function (`compute_m()`) to be implemented within the assignment.
-  Your functions should output values similar to the below ones (or at least numerically very close to them).
+  Your functions should output values similar to those below (or at least numerically very close to them).
 
 Until now we were doing rather exploratory analysis of reference genes, but it's time to make a more rigorous decision.
 M values are telling you how stable is a gene expressed across the samples.
@@ -718,7 +712,7 @@ You read: Change is...         8x less    4x less    2x less    no change    2x 
 
 This figure summarises how $LFCs$ were calculated and why it is better for boxplots `r emo::ji("nerd_face")`
 
-![](`r here("E03-qPCR/images/boxplot_lfc.png")`)
+![](`r here("E03-qPCR/_rmd_images/boxplot_lfc.png")`)
 
 Now you can clearly see that spirulina group have upregulated genes:
 
@@ -849,7 +843,7 @@ But better is to return a table for all genes:
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
-save.image(here(BASE_DIR, "qPCR.RData"))
+save(list = ls(all.names = TRUE), file = here(BASE_DIR, "qPCR.RData"), envir = environment())
 
 warnings()
 traceback()
@@ -868,7 +862,6 @@ library(conflicted)
 library(knitr)
 library(glue)
 library(here)
-library(emo)
 
 if (!require(rmdformats)) {
   BiocManager::install("rmdformats")
@@ -876,5 +869,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-rmarkdown::render(here("E03-qPCR/qPCR.Rmd"), output_file = here("E03-qPCR/qPCR.html"), envir = new.env())
+opts_knit$set(root.dir = here())
+rmarkdown::render(
+  here("E03-qPCR/qPCR.Rmd"),
+  output_file = here("E03-qPCR/qPCR.html"),
+  envir = new.env()
+)
 ```

@@ -221,7 +221,7 @@ table(q < 0.1)
 # Cleanup
 
 ```{r, warning = TRUE, message = TRUE}
-save.image(here("E05-multiple_testing_issue/multiple_testing_issue.RData"))
+save(list = ls(all.names = TRUE), file = here("E05-multiple_testing_issue/multiple_testing_issue.RData"), envir = environment())
 
 warnings()
 traceback()
@@ -246,8 +246,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E05-multiple_testing_issue/multiple_testing_issue.Rmd"),
-  output_file = here("E05-multiple_testing_issue/multiple_testing_issue.html"), envir = new.env()
+  output_file = here("E05-multiple_testing_issue/multiple_testing_issue.html"),
+  envir = new.env()
 )
 ```

@@ -1,47 +1,28 @@
 ---
-title: "E08 - single-cell RNA-seq (Analysis of Gene Expression 2020 @ VSCHT)"
-author: "Jiri Novotny"
+title: "E08 - single-cell RNA-seq (Analysis of Gene Expression @ UCT Prague)"
+author:
+  - Jiri Novotny jiri.novotny@img.cas.cz
+  - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
-  html_document:
-    # code_folding: "show"
-    df_print: "paged"
-    toc: true
-    toc_float: true
-    toc_collapsed: false
+  rmdformats::readthedown:
+    highlight: "kate"
+    lightbox: true
+    thumbnails: true
+    gallery: true
     toc_depth: 4
-    number_sections: false
-    theme: "united"
     self_contained: true
-    # highlight: "tango"
-    css: "../stylesheet.css"
+    number_sections: false
+    toc_collapsed: false
+    df_print: "paged"
+date: "`r Sys.Date()`"
 ---
-
----
-date: '`r glue("Document generated: {Sys.Date()}")`'
----
-
-```{r, eval = TRUE, include = FALSE, echo = FALSE}
-if (!require(emo))
-  devtools::install_github("hadley/emo")
-```
 
 ```{r, eval = TRUE, echo = FALSE}
-HIGHLIGHT_TYPE <- "highlightjs"
+library(here)
 ```
 
-```{r, eval = TRUE, child = "../tooltip_child.Rmd"}
-```
-
-```{js, echo = FALSE, eval = TRUE}
-$(document).ready(function () {
-  var regex = new RegExp("^NOTE:\\s");
-  var p_note = $("p").filter(function () {
-      return regex.test($(this).text()); 
-  });
-  
-  p_note.addClass("bg-success");
-});
+```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -49,16 +30,14 @@ $(document).ready(function () {
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r /data/shared/AGE2020/Exercises/E08-scRNA_seq ~/AGE2020/Exercises
+cp -r ~/shared/AGE2021/Exercises/E08-scRNA_seq ~/AGE2021/Exercises
 ```
-
-And switch the R working directory to the current exercise: `setwd("~/AGE2020/Exercises/E08-scRNA_seq")`
 
 ***
 
 # Introduction
 
-![scRNA-seq experiment. [Source](https://scrnaseq-course.cog.sanger.ac.uk)](_rmd_images/sc_rnaseq_experiment.jpg)
+![scRNA-seq experiment. [Source](https://scrnaseq-course.cog.sanger.ac.uk)](`r here("E08-scRNA_seq/_rmd_images/sc_rnaseq_experiment.jpg")`)
 
 Taken from [A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor](https://f1000research.com/articles/5-2122/v2):
 
@@ -78,14 +57,16 @@ to characterize differentiation processes, to assign cells into their cell cycle
 or to identify highly variable genes (HVGs) driving variability across the population (Fan et al., 2016; Trapnell et al., 2014; Vallejos et al., 2015).
 This is simply not possible with bulk data, meaning that custom methods are required to perform these analyses.
 
-![Single-cell vs. bulk RNA-seq. [Source](https://lcsciences.com)](_rmd_images/sc_vs_bulk.png)
+![Single-cell vs. bulk RNA-seq. [Source](https://lcsciences.com)](`r here("E08-scRNA_seq/_rmd_images/sc_vs_bulk.png")`)
 
 ![Variance sources in scRNA-seq data - this is why it was (and still is?) a computational challenge.
-[Source](https://ppapasaikas.github.io/ECCB2018_SC)](_rmd_images/sc_variance_sources.png)
+[Source](https://ppapasaikas.github.io/ECCB2018_SC)](`r here("E08-scRNA_seq/_rmd_images/sc_variance_sources.png")`)
 
 ![scRNA-seq analysis outputs. With single-cell data, we can do a lot of things which are impossible for bulk RNA-seq,
 such as cell clustering to reveal new cell subtypes, trajectory inference to observe how cells are differentiating or to reveal novel regulatory mechanisms.
-Source: Hwang et. al Nature 2018](_rmd_images/sc_analysis_outputs.jpg)
+Source: Hwang et. al Nature 2018](`r here("E08-scRNA_seq/_rmd_images/sc_analysis_outputs.jpg")`)
+
+> This won't be a normal exercise, but rather a general overview of scRNA-seq data analysis, including links to related tutorials.
 
 ***
 
@@ -99,22 +80,24 @@ As in the bulk RNA-seq, we can divide tools to
 - Read processing - quality control, quantification, etc.
 - Downstream analysis - mainly packages in R or Python -> normalization, clustering, differential expression, etc.
 
-![A common scRNA-seq pipeline. [Source](cdavis-bioinformatics-training.github.io)](_rmd_images/sc_pipeline.png)
+![A common scRNA-seq pipeline. [Source](cdavis-bioinformatics-training.github.io)](`r here("E08-scRNA_seq/_rmd_images/sc_pipeline.png")`)
 
-![An example what we can. Source: Hwang et. al Nature 2018](_rmd_images/sc_pipeline2.jpg)
+![An example of outputs from scRNA-seq data analysis. Source: Hwang et. al Nature 2018](`r here("E08-scRNA_seq/_rmd_images/sc_pipeline2.jpg")`)
 
 ### Read processing
 
 As in the bulk RNA-seq, the goal of read processing is to obtain a count matrix.
 In case of scRNA-seq, it is often called **gene-barcode matrix**.
+Barcode is an unique nucleotide sequence, which *should* identify reads (fragments) coming from a single cell.
+However, it may happen that two or more cells are having the same barcode, and those cases are called doublets.
 
-Because 10X Chromium platform is the leading one in scRNA-seq, we will mainly look at it.
+Because 10x Chromium platform is the leading one in scRNA-seq, we will mainly look at it.
 
-![10X read. Read 1 usually contains only technical sequences: adapters, cell barcode and UMI.
+![10x read. Read 1 usually contains only technical sequences: adapters, cell barcode and UMI.
 Read 2 is the biological one.
-[Source](davetang.org)](_rmd_images/10xread.png)
+[[Source](davetang.org)](`r here("E08-scRNA_seq/_rmd_images/10xread.png")`)
 
-![10X read simplified. Source: Macosko et. al Cell 2015](_rmd_images/10xread_simple.jpg)
+![10x read simplified. Source: Macosko et. al Cell 2015](`r here("E08-scRNA_seq/_rmd_images/10xread_simple.jpg")`)
 
 - **Technical quality control**: `FastQC/MultiQC`. Same as in bulk RNA-seq, but be ready to see some SC specific artefacts
   (like read 1 contains only adapters and barcodes -> nonrandom nucleotides).
@@ -122,63 +105,67 @@ Read 2 is the biological one.
   because quality trimming can negatively impact a downstream analysis.
   Adapter trimming is OK in case of adapter contamination. You can use the same tools like for bulk
   RNA-seq, such as `cutadapt` or `trimmomatic`.
-- **Cell demultiplexing, alignment/mapping, quantification (i.e. raw reads -> count/UMI matrix)**:
-    - [`cellranger`](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/what-is-cell-ranger).
-      Official and well documented tool for 10X Chromium platform. It should bring you the best results since it uses tuned parameters
-      (specificic for 10X protocol) for external software. For example, it uses special parameters for
-      [`bcl2fastq`](http://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html)
+- **Cell demultiplexing, alignment/mapping, quantification (i.e. raw reads -> gene-barcode matrix)**:
+    - [cellranger](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/what-is-cell-ranger).
+      Official and well documented tool for 10x Chromium platform. It should bring you the best results since it uses tuned parameters
+      (specificic for 10x protocol) for external software. For example, it uses special parameters for
+      [bcl2fastq](http://emea.support.illumina.com/sequencing/sequencing_software/bcl2fastq-conversion-software.html)
       used for obtaining FASTQ from raw Illumina sequencing data. `Cellranger` is parallelized and
       uses the [Martian](https://martian-lang.org/) language specialized for writing pipelines, so every step
-      in a pipeline is cached and can be resumed. And besides, you obtain a file which can be viewed in another software from 10X,
+      in a pipeline is cached and can be resumed. And besides, you obtain a file which can be viewed in another software from 10x,
       [Loupe Browser](https://support.10xgenomics.com/single-cell-gene-expression/software/visualization/latest/what-is-loupe-cell-browser),
       which is quite useful and comfortable for biologists.
-    - [`umitools` SC pipeline](https://github.com/CGATOxford/UMI-tools/blob/master/doc/Single_cell_tutorial.md).
+    - [umitools SC pipeline](https://github.com/CGATOxford/UMI-tools/blob/master/doc/Single_cell_tutorial.md).
       Umitools are designed for experiments with UMI (Unique Molecular Identifiers).
       UMI sequence is specified by regex pattern and later appended to FASTA header. Then `STAR`, `HiSat2` or another splice-aware aligner is used.
       For quantification, `featureCounts` tool from `subread` suite is used. Counts are then collapsed (deduplicated) to UMI level.
       Finally, UMI counts are corrected with error-correction algorithm.
-    - [`alevin`](https://salmon.readthedocs.io/en/latest/alevin.html).
+    - [alevin](https://salmon.readthedocs.io/en/latest/alevin.html).
       `Alevin` is a part of `Salmon` and is now recommended in above
-      [`umitools` SC pipeline](https://github.com/CGATOxford/UMI-tools/blob/master/doc/Single_cell_tutorial.md).
+      [umitools' SC pipeline](https://github.com/CGATOxford/UMI-tools/blob/master/doc/Single_cell_tutorial.md).
       Currently, it supports the following two major droplet based SC protocols: Drop-seq, 10x-Chromium v1/2/3.
-    - [`dropEst` pipeline](https://github.com/hms-dbmi/dropEst). Similar to `umitools` pipeline.
-    - [`zUMIs`](https://github.com/sdparekh/zUMIs). Similar to `umitools` pipeline. Supports a lot of protocols.
+    - [dropEst pipeline](https://github.com/hms-dbmi/dropEst). Similar to the `umitools` pipeline.
+    - [zUMIs](https://github.com/sdparekh/zUMIs). Similar to the `umitools` pipeline. Supports a lot of protocols.
 
-### Downstream analysis
+### Downstream analyses
 
-To downstream analysis, you enter with gene-barcode matrix.
+To downstream analyses you enter with a gene-barcode matrix.
 
 Most of SC related packages in the Bioconductor use
-[`SingleCellExperiment`](https://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html)
-class for storing data. This includes specialized methods to store and retrieve spike-in information,
+[SingleCellExperiment](https://bioconductor.org/packages/release/bioc/html/SingleCellExperiment.html)
+class to store data. This includes specialized methods to store and retrieve spike-in information,
 dimensionality reduction coordinates and size factors for each cell, along with the usual metadata for genes and libraries.
-It is similar to `SummarizedExperiment`, but, for example, multiple matrices can be holded inside,
+It is similar to `SummarizedExperiment`, but, for example, multiple matrices with different dimensions can be held inside,
 such as raw and normalized gene-barcode matrix, respectively.
 
 In the past few years, several main packages have been established.
-They offer a complete pipeline including
+They offer a complete toolkit including
 
 - Data structure (gene-barcode matrix, pheno data, etc.). Bioconductor packages are using `SingleCellExperiment` mentioned above.
 - Quality control.
 - Normalization.
 - Visual exploration: plots of cell properties, PCA, tSNE and other dimensionality reduction methods.
-- Analysis: clustering, marker genes, differential expression, [trajectory inference](https://en.wikipedia.org/wiki/Trajectory_inference).
+- Analysis: clustering, cluster marker genes, differential expression, [trajectory inference](https://en.wikipedia.org/wiki/Trajectory_inference).
 
 We can name some of these packages:
 
-- [`Seurat`](https://satijalab.org/seurat/). Probably the most popular package, as it offers high quality [tutorials](https://satijalab.org/seurat/vignettes.html)
-  and comfortable interface. Surprisingly, it is not a part of the Bioconductor!
+- [Seurat](https://satijalab.org/seurat/). Probably the most popular package with a comfortable interface,
+  offering [tutorials](https://satijalab.org/seurat/vignettes.html) suitable also for R beginners.
+  Surprisingly, it is not a part of the Bioconductor!
   But developers are smart and `Seurat` can convert between `SingleCellExperiment` and its own `Seurat` object.
-- [`scanpy`](https://github.com/theislab/scanpy). Written in Python, but also using some R packages through [`r2py`](https://rpy2.bitbucket.io/).
+- [scran](https://bioconductor.org/packages/release/bioc/html/scran.html). A part of the Bioconductor,
+  offers more functionality than `Seurat`, including low-level stuff. There is a whole book mainly based on `scran`,
+  which I highly recommend: [Orchestrating Single-Cell Analysis with Bioconductor](https://bioconductor.org/books/release/OSCA/).
+  Besides code examples, it also contains a lot of underlying theory, which is very nicely explained.
+- [scanpy](https://github.com/theislab/scanpy). Written in Python, but also using some R packages through [r2py](https://rpy2.bitbucket.io/).
   In my opinion, it tends to be similar to `Seurat`, in terms of interface and also tutorials.
   Like for `Seurat`, there is a great [tutorial](https://github.com/theislab/single-cell-tutorial), which is even published in a
   [paper](https://www.embopress.org/doi/full/10.15252/msb.20188746). This tutorial and paper are showing the best practices in
   scRNA-seq data analysis.
-- [`scater`](https://bioconductor.org/packages/release/bioc/html/scater.html). Mainly serves for quality control and visualization.
 
 ### Trajectory inference
 
-Trajectory inference is a part of downstream analysis, but it is quite advanced, and so we won't do it in the exercise.
+Trajectory inference is a part of downstream analysis, but it is quite advanced, and so we won't go into details now.
 
 From [Wikipedia](https://en.wikipedia.org/wiki/Trajectory_inference):
 
@@ -195,28 +182,38 @@ In some methods this is done by projecting cells onto an axis called pseudotime 
 
 More reading: [A comparison of single-cell trajectory inference methods (2019)](https://www.nature.com/articles/s41587-019-0071-9)
 
-![Trajectory inference. [Source](https://en.wikipedia.org/wiki/Trajectory_inference)](_rmd_images/trajectory inference.png)
+![Trajectory inference. [Source](https://en.wikipedia.org/wiki/Trajectory_inference)](`r here("E08-scRNA_seq/_rmd_images/trajectory_inference.png")`)
 
-## Tutorials and readings
+Based on the paper above, [dynverse](https://dynverse.org/) was created.
+This awesome R package offers interface to many trajectory inference packages, which are used internally as Docker images
+(you won't directly interact with Docker). These packages also include some non-R ones.
+As each trajectory inference method is usually suitable for a specific type of scRNA-seq data,
+there is also an interactive Shiny application in which, based on known cell properties or expected results,
+you can select the most suitable methods. You can run it through `dynguidelines::guidelines_shiny()` or
+it is hosted [here](https://zouter.shinyapps.io/server/) (but I don't know if this is a recent version).
+
+***
+
+# Tutorials and readings
 
 Besides tutorials for recommended downstream analysis packages above
-([`Seurat`](https://satijalab.org/seurat/vignettes.html), [`scanpy`](https://github.com/theislab/single-cell-tutorial)),
-there are some other ones. In my opinion, the first one is currently the best, and is also updated frequently.
+([Seurat](https://satijalab.org/seurat/vignettes.html), [scanpy](https://github.com/theislab/single-cell-tutorial)),
+there are some other materials In my opinion, the first one is currently the best, and is also updated frequently.
 
-- [Orchestrating Single-Cell Analysis with Bioconductor](https://osca.bioconductor.org/)
+- [**Orchestrating Single-Cell Analysis with Bioconductor**](https://osca.bioconductor.org/) (OSCA).
   For now it's probably the most detailed tutorial. Theory is also well described here.
   It uses packages from the Bioconductor.
 - [A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor](https://f1000research.com/articles/5-2122/v2).
   A peer reviewed tutorial. It is quite detailed and each step of analysis is well explained.
-  It starts from count matrix. A small disadvantage is that this tutorial was lastly revised on 31. October 2016 and
-  many new methods/packages/updates have appeared since then.
+  It starts from a gene-barcode matrix. A small disadvantage is that this tutorial was lastly revised on 31. October 2016 and
+  many new methods/packages/updates have appeared since then. The first author (Aaron Lun) is the same as for OSCA's authors.
 - [Analysis of single cell RNA-seq data (Hemberg Lab)](https://scrnaseq-course.cog.sanger.ac.uk/website/index.html).
   Includes SC theory, experimental design and common problems. Analysis goes through quality control, alignment,
   quantification, filtering, normalization and biological analysis (clustering, DE, pseudotime, etc.).
 - [ECCB 2018 Single Cell Tutorial](https://ppapasaikas.github.io/ECCB2018_SC/).
   Includes some SC theory. It mostly uses a base R, so you get to know
   how some blackbox functions you are normally using work.
-  This tutorial starts with count matrix and goes through quality control,
+  This tutorial starts with gene-barcode matrix and goes through quality control,
   filtering, normalization, clustering and DE.
 - [Single-cell RNA sequencing technologies and bioinformatics pipelines (2018)](https://www.nature.com/articles/s12276-018-0071-8).
   A review of scRNA-seq processing, very nice illustrations.
@@ -227,23 +224,23 @@ Some URL lists to various SC materials/softwares:
 
 - [Awesome single-cell](https://github.com/seandavi/awesome-single-cell)
 - [scRNA-tools](https://www.scrna-tools.org/)
-- [OMICtools](https://omictools.com/single-cell-rna-seq-category)
 - [List of SC packages in Bioconductor](https://www.bioconductor.org/packages/release/BiocViews.html#___SingleCell)
 
 ***
 
 # Exercise
 
-`Seurat` offers so pretty [tutorial](https://satijalab.org/seurat/v3.1/pbmc3k_tutorial.html)
+`Seurat` offers so pretty [tutorial](https://satijalab.org/seurat/articles/pbmc3k_tutorial.html)
 that we decided to go with it `r emo::ji("slightly_smiling_face")`
 
 Just some useful links:
 
-- `Seurat` [cheatsheet](https://satijalab.org/seurat/essential_commands.html).
-- [`sctransform`](https://satijalab.org/seurat/v3.1/sctransform_vignette.html) - recent normalization method.
-- [Visualization](https://satijalab.org/seurat/v3.1/visualization_vignette.html).
-- [Conversions](https://satijalab.org/seurat/v3.1/conversion_vignette.html) to other data formats.
+- `Seurat` [cheatsheet](https://satijalab.org/seurat/articles/essential_commands.html).
+- [sctransform](https://satijalab.org/seurat/articles/sctransform_vignette.html) - a recent normalization method.
+- [Visualization](https://satijalab.org/seurat/articles/visualization_vignette.html).
+- [Conversions](https://satijalab.org/seurat/articles/conversion_vignette.html) to other data formats (e.g. `SingleCellExperiment`).
 
+***
 ***
 
 # HTML rendering
@@ -251,11 +248,20 @@ Just some useful links:
 This chunk is not evaluated (`eval = FALSE`). Otherwise you will probably end up in recursive hell `r emo::ji("exploding_head")`
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
-library(rmarkdown)
+library(conflicted)
 library(knitr)
-library(glue)
+library(here)
+
+if (!require(rmdformats)) {
+  BiocManager::install("rmdformats")
+}
 
 # You can set global chunk options. Options set in individual chunks will override this.
-opts_chunk$set(warning = FALSE, message = FALSE)
-render("scRNA_seq.Rmd", output_file = "scRNA_seq.html")
+opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
+opts_knit$set(root.dir = here())
+rmarkdown::render(
+  here("E08-scRNA_seq/scRNA_seq.Rmd"),
+  output_file = here("E08-scRNA_seq/scRNA_seq.html"),
+  envir = new.env()
+)
 ```

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
+##-- Export to directory specified in the first argument.
+
 cd "$(dirname "$0")"
 
-TO_EXPORT=`echo data/ fit.Rds html_reports/ images/ microarrays.{Rmd,html} norm_data.Rds`
+TO_EXPORT="data/ fit.Rds html_reports/ images/ microarrays.Rmd microarrays.html norm_data.Rds"
 
 if [ -z "$1" ]; then
   echo "Destination path is not set!"
