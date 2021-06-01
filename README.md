@@ -62,7 +62,13 @@ To start the installation of required packages:
 Other tools could be installed through your OS package manager or the `conda` tool (see E01 - Intro).
 The latter is recommended for bioinformatics tools, which are mainly used during RNA-seq exercises.
 
+## Solutions of assignments
+
+Due to educational purposes, those are held in a private repository and available upon request.
+
 ***
+
+# Overview of exercises
 
 ## [E01](https://gitcdn.link/repo/gorgitko/analysis_of_gene_expression/master/Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd)) - _Jiri Novotny_
 
