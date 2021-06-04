@@ -362,7 +362,8 @@ for sample_id in ${SAMPLE_NAMES[@]}; do
   mv $SORTMERNA_TMP_DIR/${sample_id}*.log $SORTMERNA_LOG_DIR
 done
 
-rm -r $SORTMERNA_TMP_DIR/*
+# First, change to the directory to prevent a catastrophic scenario when SORTMERNA_TMP_DIR is not defined.
+cd $SORTMERNA_TMP_DIR && rm -r ./* && cd -
 ```
 
 <p>

@@ -8,7 +8,7 @@
         <meta name="author" content="Jiri Novotny jiri.novotny@img.cas.cz" />
         <meta name="author" content="Studuj bioinformatiku! http://studuj.bioinformatiku.cz" />
     
-        <meta name="date" content="2021-05-24" />
+        <meta name="date" content="2021-06-04" />
     
     <title>E07 - RNA-seq / 02 - quantification (Analysis of Gene Expression @ UCT Prague)</title>
 
@@ -235,7 +235,7 @@
     <div id="postamble" data-toggle="wy-nav-shift" class="status">
                   <p class="author"><span class="glyphicon glyphicon-user"></span> Jiri Novotny <a href="mailto:jiri.novotny@img.cas.cz" class="email">jiri.novotny@img.cas.cz</a></p>
                         <p class="author"><span class="glyphicon glyphicon-user"></span> Studuj bioinformatiku! <a href="http://studuj.bioinformatiku.cz" class="uri">http://studuj.bioinformatiku.cz</a></p>
-                        <p class="date"><span class="glyphicon glyphicon-calendar"></span> 2021-05-24</p>
+                        <p class="date"><span class="glyphicon glyphicon-calendar"></span> 2021-06-04</p>
           </div>
    </div>
      
@@ -557,7 +557,8 @@ $(document).ready(function() {
 <span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mv</span> <span class="va">$SORTMERNA_TMP_DIR</span>/<span class="va">${sample_id}</span>*.log <span class="va">$SORTMERNA_LOG_DIR</span></span>
 <span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a><span class="kw">done</span></span>
 <span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> -r <span class="va">$SORTMERNA_TMP_DIR</span>/*</span></code></pre></div>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a><span class="co"># First, change to the directory to prevent a catastrophic scenario when SORTMERNA_TMP_DIR is not defined.</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> <span class="va">$SORTMERNA_TMP_DIR</span> <span class="kw">&amp;&amp;</span> <span class="fu">rm</span> -r ./* <span class="kw">&amp;&amp;</span> <span class="bu">cd</span> -</span></code></pre></div>
 <p>
 <button class="btn btn-primary btn-sm" type="button" data-toggle="collapse" data-target="#div_info_sortmerna" aria-expanded="false" aria-controls="collapseExample">
 Show parameters info
@@ -1029,7 +1030,7 @@ Mt_rRNA                   0                         0                         0 
 ## ||    Paired-end reads are included.                                          ||
 ## ||    Total alignments : 1215762                                              ||
 ## ||    Successfully assigned alignments : 75070 (6.2%)                         ||
-## ||    Running time : 0.04 minutes                                             ||
+## ||    Running time : 0.05 minutes                                             ||
 ## ||                                                                            ||
 ## || Process BAM file SRR1039509.bam...                                         ||
 ## ||    Paired-end reads are included.                                          ||
@@ -1041,13 +1042,13 @@ Mt_rRNA                   0                         0                         0 
 ## ||    Paired-end reads are included.                                          ||
 ## ||    Total alignments : 1205328                                              ||
 ## ||    Successfully assigned alignments : 68775 (5.7%)                         ||
-## ||    Running time : 0.04 minutes                                             ||
+## ||    Running time : 0.05 minutes                                             ||
 ## ||                                                                            ||
 ## || Process BAM file SRR1039513.bam...                                         ||
 ## ||    Paired-end reads are included.                                          ||
 ## ||    Total alignments : 1181135                                              ||
 ## ||    Successfully assigned alignments : 60970 (5.2%)                         ||
-## ||    Running time : 0.04 minutes                                             ||
+## ||    Running time : 0.05 minutes                                             ||
 ## ||                                                                            ||
 ## || Write the final count table.                                               ||
 ## || Write the read assignment summary.                                         ||
@@ -1442,7 +1443,7 @@ ENST00000390591  31      32.000           0.000000      0.000</code></pre>
 </div>
 <div id="cleanup" class="section level1">
 <h1>Cleanup</h1>
-<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save.image</span>(<span class="fu">here</span>(<span class="st">&quot;E07-RNA_seq/02_quantification/quantification.RData&quot;</span>))</span>
+<div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1" aria-hidden="true" tabindex="-1"></a><span class="fu">save</span>(<span class="at">list =</span> <span class="fu">ls</span>(<span class="at">all.names =</span> <span class="cn">TRUE</span>), <span class="at">file =</span> <span class="fu">here</span>(<span class="st">&quot;E07-RNA_seq/02_quantification/02_quantification.RData&quot;</span>), <span class="at">envir =</span> <span class="fu">environment</span>())</span>
 <span id="cb88-2"><a href="#cb88-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb88-3"><a href="#cb88-3" aria-hidden="true" tabindex="-1"></a><span class="fu">warnings</span>()</span>
 <span id="cb88-4"><a href="#cb88-4" aria-hidden="true" tabindex="-1"></a><span class="fu">traceback</span>()</span></code></pre></div>
@@ -1457,8 +1458,8 @@ ENST00000390591  31      32.000           0.000000      0.000</code></pre>
 ##  language (EN)                        
 ##  collate  en_US.UTF-8                 
 ##  ctype    en_US.UTF-8                 
-##  tz       Etc/UTC                     
-##  date     2021-05-24                  
+##  tz       Europe/Prague               
+##  date     2021-06-04                  
 ## 
 ## ─ Packages ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ##  package              * version    date       lib source                        
@@ -1592,11 +1593,12 @@ ENST00000390591  31      32.000           0.000000      0.000</code></pre>
 <span id="cb92-8"><a href="#cb92-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb92-9"><a href="#cb92-9" aria-hidden="true" tabindex="-1"></a><span class="co"># You can set global chunk options. Options set in individual chunks will override this.</span></span>
 <span id="cb92-10"><a href="#cb92-10" aria-hidden="true" tabindex="-1"></a>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">warning =</span> <span class="cn">FALSE</span>, <span class="at">message =</span> <span class="cn">FALSE</span>, <span class="at">eval =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>rmarkdown<span class="sc">::</span><span class="fu">render</span>(</span>
-<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">&quot;E07-RNA_seq/02_quantification/02_quantification.Rmd&quot;</span>),</span>
-<span id="cb92-13"><a href="#cb92-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="fu">here</span>(<span class="st">&quot;E07-RNA_seq/02_quantification/02_quantification.html&quot;</span>),</span>
-<span id="cb92-14"><a href="#cb92-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">envir =</span> <span class="fu">new.env</span>()</span>
-<span id="cb92-15"><a href="#cb92-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<span id="cb92-11"><a href="#cb92-11" aria-hidden="true" tabindex="-1"></a>opts_knit<span class="sc">$</span><span class="fu">set</span>(<span class="at">root.dir =</span> <span class="fu">here</span>())</span>
+<span id="cb92-12"><a href="#cb92-12" aria-hidden="true" tabindex="-1"></a>rmarkdown<span class="sc">::</span><span class="fu">render</span>(</span>
+<span id="cb92-13"><a href="#cb92-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">here</span>(<span class="st">&quot;E07-RNA_seq/02_quantification/02_quantification.Rmd&quot;</span>),</span>
+<span id="cb92-14"><a href="#cb92-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">output_file =</span> <span class="fu">here</span>(<span class="st">&quot;E07-RNA_seq/02_quantification/02_quantification.html&quot;</span>),</span>
+<span id="cb92-15"><a href="#cb92-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">envir =</span> <span class="fu">new.env</span>()</span>
+<span id="cb92-16"><a href="#cb92-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 </div>
 
