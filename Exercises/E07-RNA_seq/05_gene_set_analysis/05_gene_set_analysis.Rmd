@@ -141,7 +141,9 @@ Similarly, categories with highly expressed genes are also more likely to be fou
 Having identified this issue, it is possible to compensate for the effect of selection bias
 in the statistical test of a category's enrichment among differentially expressed genes.
 
-TLDR: In ORA, `goseq` accounts for the bias in length of genes/transcripts.
+> TLDR: In ORA and in case of RNA-seq data, `goseq` accounts for the bias in length of genes/transcripts,
+  which causes that longer genes/transcripts are producing more reads, and thus, are more likely to be called as
+  differentially expressed. **You don't need `goseq` for microarrays.**
 
 As an input, `goseq` needs a named vector:
 
@@ -251,7 +253,7 @@ However, we can use `clusterProfiler::go2term(go_ann$GOALL)` to retrieve GO term
 
 In case of microarray data or if you for some reason don't want to use `goseq`,
 ORA can be easily performed in [clusterProfiler](https://bioconductor.org/packages/release/bioc/html/clusterProfiler.html) package,
-which is used for GSEA in the next section.
+which is also used for GSEA in the next section.
 
 ***
 
@@ -609,10 +611,12 @@ We got a dataframe with several columns:
 - **Status**: gives the direction in which the pathway is perturbed (activated or inhibited).
 - **KEGGLINK**: gives a web link to the KEGG website that displays the pathway image with the differentially expressed genes highlighted in red.
 
-Now we will look at the two-evidence plot:
+Now we will look at the two-evidence plot.
+Note that we are using an extremely high p-value threshold, but only for the purpose of this exercise.
+Otherwise this function will unexpectedly throw an error, because no significant pathways will meet the threshold.
 
 ```{r}
-plotP(spia_results, threshold = 0.3)
+plotP(spia_results, threshold = 0.5)
 ```
 
 - The horizontal axis represents the p-value (minus log of) corresponding to the probability of obtaining at
