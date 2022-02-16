@@ -11,6 +11,8 @@ Exercises/E07-RNA_seq/02_quantification/multiqc_quantification
 Exercises/E07-RNA_seq/02_quantification/sortmerna*
 Exercises/E07-RNA_seq/05_gene_set_analysis/*.png
 Exercises/E07-RNA_seq/05_gene_set_analysis/kegg_data/
+Exercises/age_library.R
+Exercises/age_library_empty.sh
 .Rproj.user
 tmp/
 fastqc/
