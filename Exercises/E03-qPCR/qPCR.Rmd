@@ -32,7 +32,7 @@ $(document).ready(function() {
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/{E03-qPCR,age_library.R} ~/AGE2021/Exercises
+cp -r ~/shared/AGE_current/Exercises/{E03-qPCR,age_library.R} ~/AGE/Exercises
 ```
 
 **Assignment**
@@ -46,21 +46,22 @@ Sections containing functions to be implemented are marked with `r emo::ji("hamm
 Anyway, here is the minimum set of functions you need to implement (arguments are up to you, it's about the output):
 
 - `plot_hc(m, color_by)`:
-  Calculate hiearchical clustering of matrix `m` columns and plot a dendrogram, whose labels are colored according to `color_by` vector.
+  Calculates hiearchical clustering of matrix `m` columns and plot a dendrogram, whose labels are colored according to `color_by` vector.
 - `plot_pca(m, sample_data, color_by)`:
-  Calculate PCA of matrix `m` and make a scatterplot of first two principal compoments with points colored by `color_by` column in `sample_data`.
+  Calculates PCA of matrix `m` and makes a scatterplot of first two principal compoments with points colored by `color_by` column in `sample_data`.
 - `plot_heatmap(m, column_annotation, z_score = FALSE)`:
-  Make a heatmap of matrix `m` with column annotation specified in `column_annotation` dataframe.
-  Optionally, convert values in `m` to z-score (row-wise).
+  Makes a heatmap of matrix `m` with column annotation specified in `column_annotation` dataframe.
+  Optionally, converts values in `m` to z-score (row-wise).
 - `plot_boxplots(plot_data, x, y)`:
-  Using long `plot_data`, plot boxplots of values in `y` column, splitted to groups defined in `x` column.
+  Using long `plot_data`, plots boxplots of values in `y` column, splitted to groups defined in `x` column.
 - `compute_m(gene, cp)`:
-  Compute the M value of $C_P$ values (geNorm algorithm).
+  Computes the M value of $C_P$ values (geNorm algorithm).
+  Pseudocode can be found in documentation for this function in `age_library.R`.
 - `test_gene(gene, gene_data, gene_col, value_col, group_col)`:
-  Using long `gene_data`, calculate between group statistical test (e.g. t-test) of `gene`
+  Using long `gene_data`, calculates between group statistical test (e.g. t-test) of `gene`
   defined in `gene_col` column with values in `value_col` column, and groups in `group_col` column.
 - `test_gene_table(gene_data, gene_col, value_col, group_col)`:
-  The same as `test_gene()`, but calculate tests for all genes in `gene_col` column and return a dataframe of results.
+  The same as `test_gene()`, but calculates tests for all genes in `gene_col` column and returns a dataframe of results.
 
 **After you implement these functions, modify their calling in this document and render it again.**
 Obviously, you need to remove sections with functions you haven't implemented.
@@ -75,7 +76,7 @@ Please, return the assignment in this form:
 
 > Note that your functions will be universal, serving not only for qPCR data.
   This is mainly true for exploratory analysis functions (hiearchical clustering, PCA, etc.),
-  where input (expression matrix) is same also for microarrays and RNA-seq data.
+  where input (expression matrix) is the same also for microarray and RNA-seq data.
 
 ***
 
@@ -103,7 +104,7 @@ Otherwise $FC = (1+E)^{-\Delta\Delta C_P}$, where $E$ is the PCR efficiency.
 
 # Our experiment
 
-We will work with data from pancreatic tumor experiment where
+We will work with data from a pancreatic tumor experiment where
 an influence of [spirulina](https://en.wikipedia.org/wiki/Spirulina_(dietary_supplement)) algae was investigated.
 In this experiment there are two sample groups:
 
@@ -231,13 +232,14 @@ The latter have `H<number>` on the end of their names, which we can match with r
 ref_genes <- str_subset(genes, "H\\d+$")
 target_genes <- setdiff(genes, ref_genes)
 gene_groups <- if_else(genes %in% ref_genes, "reference", "target")
-(genes_df <- data.frame(
+genes_df <- data.frame(
   gene = as.character(genes),
   gene_group = factor(gene_groups, levels = c("reference", "target")),
   
   row.names = genes,
-  stringsAsFactors = FALSE)
+  stringsAsFactors = FALSE
 )
+genes_df
 ```
 
 For plotting purposes, we create a new dataframe with `NA`s replaced by `40`:
@@ -248,7 +250,7 @@ cp_plot <- replace(cp, is.na(cp), 40)
 
 ## Phenotypical data (sample sheet)
 
-Along with measured data you usually obtain a sample sheet, but in this case we are going to parse the column names of $C_P$ matrix.
+Along with measured data you usually obtain a sample sheet, but in this case we are going to parse the column names of the $C_P$ matrix.
 Everything needed is contained there:
 
 - K and SP: sample groups
@@ -456,7 +458,8 @@ From both hiearchical clustering and PCA you can see that reference genes make a
 ## geNorm M-values `r emo::ji("hammer_and_wrench")`
 
 > Function (`compute_m()`) to be implemented within the assignment.
-  Your functions should output values similar to those below (or at least numerically very close to them).
+  Pseudocode can be found in documentation for this function in `age_library.R`.
+  Your function should output values similar to those below (or at least numerically very close to them).
 
 Until now we were doing rather exploratory analysis of reference genes, but it's time to make a more rigorous decision.
 M values are telling you how stable is a gene expressed across the samples.
@@ -760,7 +763,9 @@ ggpubr::ggbarplot(
 Or we can plot a heatmap of LFC values or their z-scores:
 
 ```{r}
-lfc_wide <- pivot_wider(cp_long_target, id_cols = c(sample_name, gene), names_from = sample_name, values_from = lfc) %>%
+lfc_wide <- cp_long_target %>%
+  dplyr::select(sample_name, gene, lfc) %>%
+  pivot_wider(names_from = sample_name, values_from = lfc) %>%
   column_to_rownames(var = "gene")
 lfc_wide[, 1:5]
 
@@ -788,10 +793,10 @@ plot_heatmap(
 
 > Functions to be implemented within the assignment. You should implement both `test_gene()` and `test_gene_table()`.
   If you do it smart, you can just call the former from the latter.
-  Hint: look at the `formula` parameter of `t.test` function.
+  Hint: look at the `formula` parameter of `t.test()` function.
 
 t-test is testing whether two means, coming from samples having Student's distribution, significantly differ.
-T-test assumes that the input $C_P$ values are normally distributed and the variance between conditions is comparable.
+t-test assumes that the input $C_P$ values are normally distributed and the variance between conditions is comparable.
 Wilcoxon test can be used when sample size is small and those two last assumptions are hard to achieve.
 
 As we will use two-sided alternative (i.e. gene is up- or downregulated = deregulated),
@@ -830,12 +835,13 @@ for (g in target_genes) {
 But better is to return a table for all genes:
 
 ```{r}
-(test_table <- test_gene_table(
+test_table <- test_gene_table(
   gene_data = cp_long_target,
   gene_col = "gene",
   value_col = "delta_cp",
   group_col = "sample_group"
-))
+)
+test_table
 ```
 
 ***
@@ -869,10 +875,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E03-qPCR/qPCR.Rmd"),
   output_file = here("E03-qPCR/qPCR.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```

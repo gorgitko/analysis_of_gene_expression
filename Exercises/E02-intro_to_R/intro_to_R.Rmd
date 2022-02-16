@@ -26,7 +26,7 @@ date: "`r Sys.Date()`"
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/E02-intro_to_R ~/AGE2021/Exercises
+cp -r ~/shared/AGE_current/Exercises/E02-intro_to_R ~/AGE/Exercises
 ```
 
 **Assignment**
@@ -89,7 +89,7 @@ Almost all aspects of using R for reproducible research are summarized in [these
 
 ## Project-oriented workflow
 
-As you know, we have created the RStudio project for AGE exercises, with its top-level directory being `~/AGE2021/Exercises`
+As you know, we have created the RStudio project for AGE exercises, with its top-level directory being `~/AGE/Exercises`
 (you can find the `Exercises.Rproj` file there).
 Whenever you open a project in RStudio, it will automatically set the working directory to its top-level.
 
@@ -118,7 +118,7 @@ getwd()
 
 ```
 Current working directory:
-[1] "/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises/E01-intro"
+[1] "/data/persistent/jirinovo/AGE/Exercises/E01-intro"
 ```
 
 ```{r, warning = FALSE, eval = FALSE}
@@ -128,7 +128,7 @@ here()
 
 ```
 here():
-[1] "/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises"
+[1] "/data/persistent/jirinovo/AGE/Exercises"
 ```
 
 ```{r, warning = FALSE, eval = FALSE}
@@ -139,7 +139,7 @@ setwd(here())
 
 ```
 Some path:
-[1] "/data/persistent/jirinovo/bio-class-deb10/AGE2021/Exercises/E02-intro_to_R/images"
+[1] "/data/persistent/jirinovo/AGE/Exercises/E02-intro_to_R/images"
 ```
 
 Hmm, nothing happened after `setwd()`, right? This way, no hidden `setwd()` can surprise you `r emo::ji("sunglasses")`
@@ -156,7 +156,7 @@ see [?here::here()](https://here.r-lib.org/reference/here.html).
 
 Also, root directory can be set manually with `here::i_am("<path to file>")`,
 e.g. we can call `here::i_am("path/to/age_library_empty.R")` (this file is located in `Exercises/` directory).
-Based on directory this file is located in, `here` uses `Exercises/` as the root directory.
+Based on relative path this file is located in, `here` uses `Exercises/` as the root directory.
 
 You can inspect the reason why `here` is using a particular directory as the root one:
 
@@ -182,11 +182,13 @@ That is violating our project-oriented workflow described above, but it can be c
 
 ![RMarkdown code chunks should be evaluated in the project's root directory.](`r here("E02-intro_to_R/_rmd_images/rstudio_code_chunks_eval.png")`)
 
-The same applies for `render()` (respectively for `knitr`), but can be changed (before you call `render()`) with:
+The same applies for `rmarkdown::render()` (respectively for `knitr`), but can be changed (before you call `render()`) with:
 
 ```{r, eval = FALSE}
 opts_knit$set(root.dir = here())
 ```
+
+Or directly in `rmarkdown::render(knit_root_dir = here::here())`.
 
 ## Put runtime information to the end of your script/Rmd file
 
@@ -667,7 +669,6 @@ apply(mtcars, MARGIN = 1, mean)
 apply(mtcars, MARGIN = 2, mean)
 ```
 
-
 ### Parallelization
 
 There are several packages offering parallelization of common apply-family functions,
@@ -851,6 +852,7 @@ fn(mtcars, cyl)
 NSE is a quite advanced topic and its knowledge is mainly needed for implementation of custom functions, which share the `tidyverse` philosophy.
 See `vignette("programming")` and [friendlyeval](https://github.com/MilesMcBain/friendlyeval), a friendly interface for NSE programming.
 I also suggest watching ["Tidy evaluation in 5 mins"](https://youtu.be/nERXS3ssntw) from Hadley Wickham, the father of the `tidyverse`.
+There is also a very practical [interactive tutorial](https://ijlyttle.shinyapps.io/tidyeval/) on tidy evaluation.
 The basic programming tips are given in the next section.
 
 Of note, there are some base R functions which also use NSE. Some examples:
@@ -1005,9 +1007,11 @@ When you want to continue the pipe chain execution, just send `c` to console or 
 
 ## [tibble](https://tibble.tidyverse.org/) - an enhanced data.frame
 
-There are some differences between [tibble](https://tibble.tidyverse.org/) and base R `data.frame`
-(see link above and examples [here](https://r4ds.had.co.nz/tibbles.html)),
-but the most visible difference is in printing of a tibble:
+There are some differences between [tibble](https://tibble.tidyverse.org/) and the base R's `data.frame`.
+A comparison of these data structures can be found [here](https://tibble.tidyverse.org/articles/invariants.html) and
+a short introduction to `tibble` [here](https://r4ds.had.co.nz/tibbles.html).
+
+Anyway, the most visible difference is in printing of a `tibble`:
 
 ```{r}
 tibble::as_tibble(mtcars)
@@ -1015,18 +1019,17 @@ tibble::as_tibble(mtcars)
 
 `tibble` is showing the data types of variables. Also you can see that there aren't rownames -
 this is strange, but it is one of the features of `tibble`.
-Authors of `tibble` package are convinced that rownames should be represented by variable (column) and
+Authors of `tibble` package are convinced that rownames should be represented by a variable (column) and
 not by object's attribute, accessible by `rownames()` method.
 
 **This is bad particularly for usage of `tidyverse` together with Bioconductor, where
 rownames are an essential component.**
 Many `tidyverse` functions return a `tibble` or drop rownames, but most of times we rather want `data.frame`
-with defined rownames.
-`tibble` can be converted to a `data.frame` by `as.data.frame()` function.
+with defined rownames. A `tibble` can be converted to `data.frame` by the `as.data.frame()` function.
 
-**To preserve rownames in a new column, use the `tibble::rownames_to_column("name_of_new_column")` function.**
+**To preserve rownames in a new column, use the `tibble::rownames_to_column(df, "name_of_new_column")` function.**
 
-Useful is the `tribble()` function for more readable creation of (small) tables in code:
+Useful is the `tribble()` function for more readable creation of (small) tables within a code:
 
 ```{r}
 my_tibble <- tibble::tribble(
@@ -1059,7 +1062,7 @@ mtcars_nested <- mtcars %>%
 mtcars_nested
 ```
 
-So this is nested dataframe for `cyl == 4`:
+So this is a nested dataframe for `cyl == 4`:
 
 ```{r}
 dplyr::filter(mtcars_nested, cyl == 4) %>%
@@ -1149,7 +1152,7 @@ Both of these selection functions can be combined with negative selection (`-`).
 dplyr::select(mtcars_sm, cylinders = cyl, horse_power = hp)
 ```
 
-To only rename specific and keep other columns, use `rename()` function:
+To only rename specific and keep other columns, use the [rename()](https://dplyr.tidyverse.org/reference/rename.html) function:
 
 ```{r}
 dplyr::rename(mtcars_sm, cylinders = cyl, horse_power = hp)
@@ -1159,6 +1162,19 @@ Using the `everything()` select helper also works, but you will lose the origina
 
 ```{r}
 dplyr::select(mtcars_sm, cylinders = cyl, horse_power = hp, everything())
+```
+
+Also, you can use the [relocate()](https://dplyr.tidyverse.org/reference/relocate.html) to change order of columns:
+
+```{r}
+dplyr::relocate(mtcars_sm, cyl)
+```
+
+It is basically a shortcut for `dplyr::select(mtcars, cyl, everything())`, but in addition, in `relocate()` you
+can use the `.before` and `.after` parameters that specify the relative position of relocated columns:
+
+```{r}
+dplyr::relocate(mtcars_sm, cyl, .after = hp)
 ```
 
 `select()` always returns an object of the same type as input.
@@ -1179,14 +1195,14 @@ dplyr::arrange(mtcars_sm, cyl, disp)
 Use `desc()` or `-` for descending order:
 
 ```{r, results = "hold"}
-dplyr::arrange(mtcars_sm, desc(cyl))
+dplyr::arrange(mtcars_sm, dplyr::desc(cyl))
 # or
 # dplyr::arrange(mtcars_sm, -cyl)
 ```
 
 ### [filter()](https://dplyr.tidyverse.org/reference/filter.html) - filter rows
 
-In fact, `filter()` is very similar to base R function `subset()`, but offers much more functionality.
+In fact, `filter()` is very similar to base R's function `subset()`, but offers much more functionality.
 
 Multiple arguments are equivalent to AND operator:
 
@@ -1212,6 +1228,14 @@ Thanks to NSE we can do some magic. Here, we want rows where `hp` is greater tha
 dplyr::filter(mtcars_sm, hp > mean(hp) - 10)
 ```
 
+Important is to realize that expression inside `filter()` must return a logical vector of the same length as the number of rows
+of input dataframe, or scalar `TRUE` or `FALSE`. Let's see what happens if we violate this rule:
+
+```{r, error = TRUE}
+dplyr::filter(mtcars, c(TRUE, FALSE))
+dplyr::filter(mtcars, 1:nrow(mtcars))
+```
+
 ### [mutate()](https://dplyr.tidyverse.org/reference/mutate.html) - add new or modify existing variables
 
 Named parameters of `mutate()` function create new variables (or modify existing, if a parameter name is same).
@@ -1235,7 +1259,7 @@ Very useful are these vectorized if functions:
 
 [if_else()](https://dplyr.tidyverse.org/reference/if_else.html) checks for a condition and returns values for `TRUE` and `FALSE` matches.
 In `missing` parameter you can also specify a return value for `NA` values.
-`if_else()` is similar to base R `ifelse()`, but checks for the same return types.
+`if_else()` is similar to base R's `ifelse()`, but checks for the same return types.
 
 ```{r}
 dplyr::mutate(mtcars_sm, car_category = if_else(hp >= 100, "strong", "weak")) %>%
@@ -1296,7 +1320,7 @@ dplyr::mutate(
 You can notice that `mutate()` parameters are evaluated from first to last.
 So to `am_char` is already passed `am` as factor, as `am` is mutated before `am_char`.
 
-Of course you can use all of these functions for vectors outside of `mutate()`:
+Of course you can use all of these functions outside of `mutate()`:
 
 ```{r}
 v <- c(1, 1, 2, 3, 10)
@@ -1312,7 +1336,7 @@ recode_factor(am_factor, `1` = "one", `0` = "zero")
 ### [group_by()](https://dplyr.tidyverse.org/reference/group_by.html) and [summarise()](https://dplyr.tidyverse.org/reference/summarise.html)
 
 `group_by()` is similar to SQL operation of the same name.
-It takes an existing dataframe and converts it into a grouped dataframe where operations are performed "by group".
+It takes an existing dataframe and converts it into a grouped dataframe in which operations are performed "by group".
 
 ```{r}
 by_cyl <- dplyr::group_by(mtcars, cyl)
@@ -1336,7 +1360,7 @@ dplyr::summarise(
 )
 ```
 
-[n()](https://dplyr.tidyverse.org/reference/n.html) is a special function to get counts inside groups:
+[n()](https://dplyr.tidyverse.org/reference/n.html) is a special function to get counts inside groups.
 
 `filter()` is now acting on groups. Let's compare these two filter operations:
 
@@ -1348,12 +1372,12 @@ dplyr::filter(by_cyl, mpg > mean(mpg))
 The former keeps rows with `mpg` greater than the global average whereas the latter acts within the `cyl` groups, and, thus,
 keeps rows with `mpg` greater than the average inside the `cyl` groups.
 
-To remove grouping, use the `ungroup()` function.
+To remove a grouping, use the `ungroup()` function.
 
 ### [*_join()](https://dplyr.tidyverse.org/reference/join.html) and [bind_rows()](https://dplyr.tidyverse.org/reference/bind.html) - joining dataframes
 
 A collection of `*_join()` functions acts in the same way as in SQL -
-based on common keys, they join two dataframes together.
+based on common keys, they join two dataframes together (column wise).
 
 See [these beautiful animations of joins](https://www.garrickadenbuie.com/project/tidyexplain/#mutating-joins)
 and [this chapter](https://r4ds.had.co.nz/relational-data.html) in R for Data Science for more explanation.
@@ -1370,7 +1394,8 @@ dplyr::left_join(mtcars_sm, mtcars_prices, by = "cyl") %>%
   dplyr::select(cyl, price)
 ```
 
-[bind_rows()](https://dplyr.tidyverse.org/reference/bind.html) appends rows to a dataframe. It puts `NA`s to columns not present in both dataframes.
+[bind_rows()](https://dplyr.tidyverse.org/reference/bind.html) appends rows to a dataframe.
+It puts `NA`s to columns not present in both dataframes.
 
 ```{r}
 dplyr::bind_rows(mtcars_sm, mtcars_prices) %>%
@@ -1384,7 +1409,7 @@ dplyr::bind_rows(mtcars_sm, mtcars_prices) %>%
 The goal of [tidyr](https://tidyr.tidyverse.org/) is to help you to create [tidy data](https://tidyr.tidyverse.org/articles/tidy-data.html).
 Just to remind you, tidy data is data where:
 
-- Every column is variable.
+- Every column is a variable.
 - Every row is an observation.
 - Every cell is a single value.
 
@@ -1924,10 +1949,10 @@ dev.off()
 
 ### Using dynamic variable names in aesthetics
 
-You probably wondered, how can you use dynamic variable names in `aes()`.
+You probably wondered how can you use dynamic variable names in `aes()`.
 For example, consider a function `plot_pca(data, color_by)`
 which calculates PCA and shows scatterplot colorized by a specified variable.
-The easiest way is to use `aes_string()` function:
+The easiest way is to use the `aes_string()` function:
 
 ```{r}
 color_by <- "cyl"
@@ -2106,7 +2131,7 @@ Not really a collection of e.g. colors, but there are useful visual helpers with
 Personally, I am mainly using these functions:
 
 [tabyl()](http://sfirke.github.io/janitor/reference/tabyl.html) ([vignette](http://sfirke.github.io/janitor/articles/tabyls.html)) creates a frequency table.
-It is a tidy replacement for base R `table()`:
+It is a tidy replacement for base R's `table()`:
 
 ```{r}
 table(mtcars$cyl)
@@ -2314,10 +2339,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E02-intro_to_R/intro_to_R.Rmd"),
   output_file = here("E02-intro_to_R/intro_to_R.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```

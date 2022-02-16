@@ -21,6 +21,8 @@ rinline <- function(code) {
   html <- '<code  class="r">``` `r CODE` ```</code>'
   sub("CODE", code, html)
 }
+
+library(here)
 ```
 
 # RMarkdown (Rmd)
@@ -30,8 +32,9 @@ It allows to combine [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown)
 to generate documents in HTML, PDF, Word (docx) and many more formats.
 This is [how it works](https://rmarkdown.rstudio.com/lesson-2.html):
 
-![Code chunks in RMarkdown document are evaluated by [knitr](https://yihui.name/knitr/) and converted to [Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown),
-which is then compiled by [pandoc](https://pandoc.org) to selected output format (in our case HTML).
+![Code chunks in RMarkdown document are evaluated by [knitr](https://yihui.name/knitr/) and their output converted to
+[Markdown](https://pandoc.org/MANUAL.html#pandocs-markdown), which is then compiled by
+[pandoc](https://pandoc.org) to selected output format (in our case HTML).
 All of this is handled automatically by `rmarkdown::render()` function (see the "How to render RMarkdown documents" section).](`r here("E02-intro_to_R/_rmd_images/rmarkdown_flow.png")`)
 
 **Useful links**
@@ -229,7 +232,7 @@ Below you can find a code chunk, which loads the `knitr` and `here` packages, se
 
 - Specify `envir = new.env()` - this will render the Rmd file in a new R environment, so your current variables won't interfere.
 - Run `opts_knit$set(root.dir = here::here())` before `render()` - this sets R working directory to the project's root during the rendering.
-  More details about this are given in the next section.
+  Alternatively, use the `knit_root_dir` parameter in `render()`. More details about this are given in the next section.
 
 ```{r, eval = FALSE, message = FALSE, warning = FALSE}
 library(knitr)
@@ -237,11 +240,11 @@ library(here)
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E02-intro_to_R/intro_to_Rmd.Rmd"),
   output_file = here("E02-intro_to_R/intro_to_Rmd.html"),
   envir = new.env(),
+  knit_root_dir = here(),
   clean = FALSE
 )
 ```
@@ -258,7 +261,8 @@ rmarkdown::render(
     here("E02-intro_to_R/intro_to_Rmd.Rmd"),
     output_file = here("E02-intro_to_R/intro_to_Rmd_tufte.html"),
     output_format = "tufte::tufte_html",
-    envir = new.env()
+    envir = new.env(),
+    knit_root_dir = here()
 )
 ```
 
@@ -277,13 +281,19 @@ To prevent these working directory discrepancies:
 
 ![RMarkdown code chunks should be evaluated in the project's root directory.](`r here("E02-intro_to_R/_rmd_images/rstudio_code_chunks_eval.png")`)
 
-- For `render()`, run `opts_knit$set(root.dir = here::here())` before.
+- For `render()`, run `opts_knit$set(root.dir = here::here())` before or use the `knit_root_dir` parameter in `render()`,
+  e.g. `render(..., knit_root_dir = here::here())`.
 
 **For more details, be sure to check out the `E02 - Intro to R / Reproducible R` section.**
 
 ***
 
 # Some RMarkdown tips
+
+## Do not run heavy computations inside RMarkdown documents
+
+RMarkdown documents should be used for reporting of your results that are calculated in separate script/s.
+Otherwise you have to render a whole document again no matter how small code/data changes you make.
 
 ## Pretty tables
 

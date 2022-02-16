@@ -26,6 +26,8 @@ date: "`r Sys.Date()`"
 
 Here you will find some introductory information, e.g. virtual machines, R programming tips etc.
 
+You can find source code for these materials at <https://github.com/gorgitko/analysis_of_gene_expression>
+
 ## Contact
 
 Michal Kolar: kolarmi@img.cas.cz
@@ -36,15 +38,19 @@ Jiri Novotny: jiri.novotny@img.cas.cz
 
 # Virtual machines
 
-We will work at virtual machines (VM) provided by [Metacentrum](https://cloud2.metacentrum.cz/).
+We will work at Linux virtual machines (VM) provided by [Metacentrum](https://cloud2.metacentrum.cz/).
 **The instructions how to set up your VM are in MS Teams
 [class notebook](https://vscht.sharepoint.com/sites/143-O365-AGE/_layouts/15/Doc.aspx?sourcedoc={eda58aae-2580-4edd-b598-96db0c74fce2}&action=edit&wd=target%28_Content%20Library%2FOrganization.one%7C953d92bb-56b0-45a5-bd2d-409979e0959e%2FVirtual%20Machines%20%28VMs%5C%29%7Cb44057ea-406b-4556-bf9c-90dc38447daa%2F%29&wdorigin=703)**
 (or in [this GitHub repository](https://github.com/bio-platform/bio-class-deb10) from Metacentrum Cloud Team).
 Some you already have experience with VMs from *Genomics: Algorithms and Analysis* class.
 
+If you are totally new to Linux shell, we recommend to look at the
+[Shell Novice tutorial](https://swcarpentry.github.io/shell-novice/), which can be followed by
+[Shell Extras](https://carpentries-incubator.github.io/shell-extras/).
+
 ## SSH config on your local machine
 
-SSH config defined in `~/.ssh/config` on your local machine provides you a simple management of SSH hosts.
+SSH config defined in `~/.ssh/config` <sup>1</sup> on your local machine provides you a simple management of SSH hosts.
 In case of the VM for AGE, you can save it there as (replace `Hostname` and `User` by yours):
 
 ```
@@ -54,50 +60,53 @@ Host age
 ```
 
 Then you can simply SSH to your VM using `ssh age`.
+It will automatically use your private key in `~/.ssh`.
+
+<sup>1</sup> `~` refers to your home directory and it is expanded to e.g. `/home/jirinovo`
 
 ## AGE files
 
 We have two persistent storages mounted by `startNFS` command:
 
 - `/data/shared` for shared data, and
-- `/data/persistent/<user>/bio-class-deb10` for your personal data.
+- `/data/persistent/<user>` for your personal data.
 
 To avoid data lose, I would recommend you to use the persistent storage.
-For easier access from your home directory, create symlinks there:
+For easier access from your home directory, create these symlinks:
 
 ```{bash}
 ln -s /data/shared ~/shared
-ln -s /data/persistent/$USER/bio-class-deb10 ~/persistent
+ln -s /data/persistent/$USER/ ~/persistent
 ```
 
-Files for AGE are stored in `/data/shared/AGE2021`.
+Files for AGE are stored in `/data/shared/AGE_current`.
 Because we all have the write permission in `/data/shared` and we don't want to overwrite work of others
 `r emo::ji("slightly_smiling_face")`, please, create your personal directory in which you will
 copy files on the beginning of each exercise:
 
 ```{bash}
-mkdir -p ~/persistent/AGE2021/Exercises
+mkdir -p ~/persistent/AGE/Exercises
 ```
 
 And make a symlink in your home directory:
 
 ```{bash}
-ln -s ~/persistent/AGE2021 ~/AGE2021
+ln -s ~/persistent/AGE ~/AGE
 ```
 
 Now, please, copy these files and directories to your personal directory:
 
 ```{bash}
-cp -r ~/shared/AGE2021/Exercises/{_assets,E01-intro} ~/AGE2021/Exercises
+cp -r ~/shared/AGE_current/Exercises/{_assets,E01-intro} ~/AGE/Exercises
 ```
 
-And make a new RStudio project using the existing directory (`~/AGE2021/Exercises`):
+And make a new RStudio project using the existing directory (`~/AGE/Exercises`):
 
 ![File > New Project...](`r here("E01-intro/_rmd_images/new_project_01.png")`)
 
 ![Choose "Existing Directory"](`r here("E01-intro/_rmd_images/new_project_02.png")`)
 
-![Navigate to and select directory "~/AGE2021/Exercises"](`r here("E01-intro/_rmd_images/new_project_03.png")`)
+![Navigate to and select directory "~/AGE/Exercises"](`r here("E01-intro/_rmd_images/new_project_03.png")`)
 
 ## Accessing files on your VM
 
@@ -312,18 +321,24 @@ In such a case, package is installed from a more priority channel (top > down).
 If you want to install package from a non-current channel,
 you have to specify it: `conda install -c intel numpy`
 
+***
+
 ## Fish shell
 
-For a more comfortable experience in Linux shell, I can recommend [Fish shell](https://fishshell.com/), the *f*riendly *i*nteractive *sh*ell,
-which is already installed on your VMs.
+For a more comfortable experience in Linux shell, I can recommend [Fish shell](https://fishshell.com/),
+the *f*riendly *i*nteractive *sh*ell, which is already installed on your VMs.
 
 > Beware that Fish's syntax is not compatible with the standard sh or bash!
   For example, command substitution is written as `(command)` instead of `$(command)`.
 
+***
+
 ## micro editor
 
-If you need to edit some file in Linux shell, I can recommend [micro](https://micro-editor.github.io/) editor, which is also installed on your VMs.
-It's a lighweight alternative to the classic [GNU nano](https://www.nano-editor.org/), with keybindings and features very similar to editors with graphical user interface.
+If you need to edit some file in Linux shell, I can recommend [micro](https://micro-editor.github.io/) editor,
+which is also installed on your VMs. It's a lighweight alternative to the classic
+[GNU nano](https://www.nano-editor.org/), with keybindings and features very similar
+to editors with graphical user interface.
 
 ***
 
@@ -340,9 +355,11 @@ Here are some links to refresh or gain your skills.
 
 ## More complete tutorials/books
 
+- [Big Book of R](https://www.bigbookofr.com/index.html) - a database of R books/tutorials/materials.
 - [Data Analysis for the Life Sciences](https://leanpub.com/dataanalysisforthelifesciences)
 - [Modern Statistics for Modern Biology](https://www.huber.embl.de/msmb/index.html)
 - [R for Data Science](https://r4ds.had.co.nz/)
+- [R tutorial for UCT subject "Statistická analýza dat" (in Czech)](https://github.com/lich-uct/r_tutorial)
 - [Bioconductor for Genomic Data Science](https://kasperdanielhansen.github.io/genbioconductor/)
 - [Coding Club](https://ourcodingclub.github.io/tutorials.html)
 - [STAT 545](https://stat545.com/) - mainly about [tidyverse](https://www.tidyverse.org/).
@@ -370,6 +387,8 @@ Here are some links to refresh or gain your skills.
     [Superheat](https://rlbarter.github.io/superheat/index.html),
     [Heatplus](https://bioconductor.org/packages/release/bioc/html/Heatplus.html),
     [iheatmapr](https://docs.ropensci.org/iheatmapr/articles/full_vignettes/iheatmapr.html)
+
+***
 
 ## Keyboard shortcuts in RStudio
 
@@ -414,6 +433,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
-opts_knit$set(root.dir = here())
-rmarkdown::render(here("E01-intro/intro.Rmd"), output_file = here("E01-intro/intro.html"), envir = new.env())
+rmarkdown::render(
+  here("E01-intro/intro.Rmd"),
+  output_file = here("E01-intro/intro.html"),
+  envir = new.env(),
+  knit_root_dir = here()
+)
 ```

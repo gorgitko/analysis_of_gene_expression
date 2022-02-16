@@ -1,7 +1,7 @@
 ---
 title: "E05 - Multiple testing issue (Analysis of Gene Expression @ UCT Prague)"
 author:
-  - Michal Kolar jiri.novotny@img.cas.cz
+  - Michal Kolar kolarmi@img.cas.cz
   - Studuj bioinformatiku! http://studuj.bioinformatiku.cz
 institute: "Laboratory of Genomics and Bioinformatics @ Institute of Molecular Genetics of the ASCR"
 output:
@@ -31,7 +31,7 @@ if (!require(emo))
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/E05-multiple_testing_issue ~/AGE2021/Exercises
+cp -r ~/shared/AGE_current/Exercises/E05-multiple_testing_issue ~/AGE/Exercises
 ```
 
 ***
@@ -246,10 +246,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E05-multiple_testing_issue/multiple_testing_issue.Rmd"),
   output_file = here("E05-multiple_testing_issue/multiple_testing_issue.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```

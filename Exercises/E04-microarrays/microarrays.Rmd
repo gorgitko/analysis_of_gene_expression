@@ -40,16 +40,17 @@ date: "`r Sys.Date()`"
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/E04-microarrays ~/AGE2021/Exercises
+cp -r ~/shared/AGE_current/Exercises/E04-microarrays ~/AGE/Exercises
 ```
 
 # Assignment
 
 ## Task 1
 
-Implement the `select_var_features(m, n_top_features)` in `age_library.R`.
-This functions will subset matrix `m`s rows by `n_top_features` with the highest variance across the columns (samples) and
+Implement the `select_var_features(m, n_top_features)` function in `age_library.R`.
+This function will subset matrix `m`s rows by `n_top_features` with the highest variance across the columns (samples) and
 arrange the rows of subsetted matrix by decreasing variance.
+
 Also modify `plot_pca()` and `plot_heatmap()` so they will accept the `n_top_features` parameter,
 pass it to `select_var_features()` and do what should they do on the subsetted matrix `m`.
 
@@ -1217,10 +1218,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E04-microarrays/microarrays.Rmd"),
   output_file = here("E04-microarrays/microarrays.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```
