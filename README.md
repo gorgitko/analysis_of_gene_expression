@@ -140,11 +140,14 @@ from human airway smooth muscle cells treatment, and is largely based on a great
 [RNA-Seq workflow: gene-level exploratory analysis and differential expression](https://f1000research.com/articles/4-1070/v2),
 from which preprocessed R data are later used (starting from `03 - exploratory analysis` part).
 
-Additional data files must be downloaded prior from [here](https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar.gz).
+Additional data files must be downloaded prior from [here](https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar).
 If you are working on a remote server, you can use `wget` for downloading: `wget https://onco.img.cas.cz/novotnyj/age/AGE2021_data.tar`.
 Then decompress the downloaded archive to `Exercises/` directory, e.g. `tar xzf AGE2021_data.tar -C /path/to/Exercises`.
 
-### [01](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
+(These data actually include also the output from this exercise, and so they are so large.
+TODO: also provide data only needed to begin this exercise - reference FASTAs and GTF, sample FASTQs etc.)
+
+### [01](https://gitcdn.link/repo/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
 
 - Downloading from SRA (`fasterq-dump`).
 - Technical quality control (`FastQC`, `MultiQC`).
