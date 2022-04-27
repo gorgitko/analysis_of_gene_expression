@@ -89,6 +89,10 @@ The implementation is very similar to the loop used in [*ReportingTools* section
 but instead of using `ReportingTools` functions you will basically use `rmarkdown::render()`.
 Detailed instructions are given in [*Custom reporting of DEGs* section](#custom-reporting-of-degs).
 
+![Example of `dea_signpost.html`](`r here("E04-microarrays/_rmd_images/dea_signpost.png")`)
+
+![Example of results table for one contrast (`groupacetaminophen.png`)](`r here("E04-microarrays/_rmd_images/groupacetaminophen.png")`)
+
 ***
 
 Please, return the assignment in this form: 
