@@ -18,11 +18,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, eval = TRUE, echo = FALSE}
-library(here)
-```
-
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -30,7 +26,7 @@ library(here)
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/03_exploratory_analysis ~/AGE2021/Exercises/E07-RNA_seq
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/03_exploratory_analysis ~/AGE/Exercises/E07-RNA_seq
 ```
 
 ***
@@ -59,6 +55,7 @@ We create a `BPPARAM` variable containing information about parallelization para
 If we call `register()` with our `BPPARAM`, some packages (e.g. `DESeq2`) will then run parallelized automatically.
 
 ```{r}
+library(here)
 library(BiocParallel)
 
 BPPARAM <- MulticoreParam(workers = 2)
@@ -278,9 +275,10 @@ The median value (column-wise for the above table) of all ratios for a given sam
 (also called "normalization factor") for that sample, as calculated below.
 Notice that the differentially expressed genes should not affect the median value:
 
-`normalization_factor_sampleA <- median(c(1.28, 1.3, 1.39, 1.35, 0.59))`
-
-`normalization_factor_sampleB <- median(c(0.78, 0.77, 0.72, 0.74, 1.35))`
+```{r}
+(normalization_factor_sampleA <- median(c(1.28, 1.3, 1.39, 1.35, 0.59)))
+(normalization_factor_sampleB <- median(c(0.78, 0.77, 0.72, 0.74, 1.35)))
+```
 
 The median of ratios method makes the assumption that **not ALL genes are differentially expressed**; therefore,
 the size factors should account for sequencing depth and RNA composition of the sample
@@ -323,6 +321,8 @@ Normalized counts can be retrieved by:
 ```{r}
 counts(dds, normalized = TRUE) %>% head()
 ```
+
+> Note that normalized counts are not logarithmized.
 
 ### Within/between sample comparison
 
@@ -473,7 +473,8 @@ Taken from [here](https://f1000research.com/articles/4-1070/v2), shortened:
 
 Many common statistical methods for exploratory analysis of multidimensional data, for example clustering and
 principal components analysis (PCA), work best for data that generally has the same range of variance at
-different ranges of the mean values. For RNA-seq raw counts, however, the variance grows with the mean.
+different ranges of the mean values. For RNA-seq raw counts, however, the variance grows with the mean -
+this is also known as [heteroscedasticity](https://en.wikipedia.org/wiki/Heteroscedasticity).
 For example, if one performs PCA directly on a matrix of size-factor-normalized read counts, the result typically
 depends only on the few most strongly expressed genes because they show the largest absolute differences between samples.
 A simple and often used strategy to avoid this is to take the logarithm of the normalized count values plus a small pseudocount;
@@ -739,10 +740,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.Rmd"),
   output_file = here("E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```
