@@ -18,7 +18,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -26,9 +26,9 @@ date: "`r Sys.Date()`"
 Copy, please, these files and directories to your personal directory:
 
 ```{bash}
-mkdir -p ~/AGE2021/Exercises/E07-RNA_seq/data
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/data/experiment ~/AGE2021/Exercises/E07-RNA_seq/data
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/01_quality_control ~/AGE2021/Exercises/E07-RNA_seq
+mkdir -p ~/AGE/Exercises/E07-RNA_seq/data
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/data/experiment ~/AGE/Exercises/E07-RNA_seq/data
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/01_quality_control ~/AGE/Exercises/E07-RNA_seq
 ```
 
 In this and following exercises, we will be mostly working in shell.
@@ -37,11 +37,16 @@ Now go to the terminal tab at the bottom and change the working directory to the
 If there isn't the terminal tab, you have to open a new one in `Tools -> Terminal -> New Terminal`.
 
 ```{bash}
-cd ~/AGE2021/Exercises/E07-RNA_seq/01_quality_control
+cd ~/AGE/Exercises/E07-RNA_seq/01_quality_control
 ```
 
 > Unfortunately, in `bash`, there isn't something similar to the R's project-based/`here()` relative navigation,
   so better is to switch working directory and navigate using paths relative to that.
+
+> To easily distinguish between R and bash code chunks, you can hover over a chunk and the code type will appear on the left side.
+
+> Because `bash` chunks don't share variables between them, you have to run code in the terminal (copy-paste or `Ctrl + Alt + Enter`).
+  If you just run a chunk with `bash` code, it will be executed in a separate shell session and, thus, all variables will be forgetted.
 
 Some commands will take time to finish, so I recommend you to work in a `tmux` session,
 as you will be anytime able to exit your SSH connection and later come back to your work.
@@ -63,20 +68,23 @@ tmux attach -t rnaseq
 ```
 
 Because Python 2 is the default one on our VMs, we need to install `MultiQC` tool (will be introduced later) for Python 3.
-For that purpose we create a new `conda` environment to which we also install additional tools in the following exercise:
+For that purpose we create a new `conda` environment to which we also install additional tools in the following exercise.
+If you don't know `conda`, refer, please, to E01 - Intro.
 
 ```{bash}
+startConda
 conda init bash
-conda create -n tools
+# Update the conda itself first.
+conda update -n base conda
+# We need the older version of Python for compatibility between packages installed later.
+conda create -n tools python=3.9
 conda deactivate
 conda activate tools
 conda install -c bioconda multiqc
 ```
 
-> To easily distinguish between R and bash code chunks, you can hover over a chunk and the code type will appear on the left side.
-
-> Because `bash` chunks don't share variables between them, you have to run code in the terminal (copy-paste or `Ctrl + Alt + Enter`).
-  If you just run a chunk with `bash` code, it will be executed in a separate shell session and, thus, all variables will be forgetted.
+Note that we used the [bioconda](https://bioconda.github.io/) channel that contains
+[almost every bioinformatic tool](https://bioconda.github.io/conda-package_index.html), easily available to be installed.
 
 ***
 
@@ -245,7 +253,8 @@ done
 
 ***
 
-To further reduce computing, we take only 1 250 000 reads (one read = 4 lines in FASTQ file -> 5000000 lines) from each downloaded FASTQ file:
+To further reduce computing and storage size, we take only 1 250 000 reads (one read = 4 lines in FASTQ file -> 5000000 lines)
+from each downloaded FASTQ file. Those files are already prepared for you.
 
 ```{bash}
 for sample_id in ${SAMPLE_NAMES[@]}; do
@@ -259,7 +268,7 @@ done
 Let's inspect the first read pair of one of the downloaded samples:
 
 ```{bash}
-cat ../data/experiment/SRR1039508_1.fastq | head -n 4
+cat $EXPERIMENT_DATA_DIR/SRR1039508_1_subset.fastq | head -n 4
 ```
 
 ```
@@ -270,7 +279,7 @@ HJJJJJJJJJJJJJJ########00?GHIJJJJJJJIJJJJJJJJJJJJJJJJJHHHFFFFFD
 ```
 
 ```{bash}
-cat ../data/experiment/SRR1039508_2.fastq | head -n 4
+cat $EXPERIMENT_DATA_DIR/SRR1039508_2_subset.fastq | head -n 4
 ```
 
 ```
@@ -290,7 +299,7 @@ You can see that each read in FASTQ format occupies four lines:
    newer Illumina sequencers (1.8+) are using encoding called Phred+33.
 
 Read pairs (forward and reverse reads) are synchronised by their positions in the corresponding files -
-you can see that read IDs are same in the files above.
+you can see that read IDs are the same in the files above.
 
 ***
 
@@ -307,8 +316,8 @@ We will use it later for this purpose, but for now we utilize its FASTA files of
 We join all FASTAs to a single one and convert it to the TSV format with a simple Python script `fasta_to_table.py`.
 
 ```{bash}
-cat $TRIMMOMATIC_ADAPTERS_PATH > $ADAPTERS_FASTA_FILE
-echo "" >> $ADAPTERS_FASTA_FILE
+# This will add newline after each file.
+awk '{print $0}' $TRIMMOMATIC_ADAPTERS_PATH > $ADAPTERS_FASTA_FILE
 head $ADAPTERS_FASTA_FILE
 python3 fasta_to_table.py $ADAPTERS_FASTA_FILE > $ADAPTERS_TSV_FILE
 head $ADAPTERS_TSV_FILE
@@ -558,10 +567,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E07-RNA_seq/01_quality_control/01_quality_control.Rmd"),
   output_file = here("E07-RNA_seq/01_quality_control/01_quality_control.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```

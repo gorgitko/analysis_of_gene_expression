@@ -14,5 +14,12 @@ fi
 echo "To export: $TO_EXPORT"
 mkdir $1
 cp -r $TO_EXPORT $1
-mkdir $1/../data
-cp -r ../data/experiment/ ../data/experiment_trimmed/ $1/../data
+
+mkdir -p $1/../data/experiment
+TO_EXPORT=`echo ../data/experiment/*_subset.fastq`
+echo "To export: $TO_EXPORT"
+cp -r $TO_EXPORT $1/../data/experiment
+
+TO_EXPORT=`echo ../data/experiment_trimmed`
+echo "To export: $TO_EXPORT"
+cp -r $TO_EXPORT $1/../data
