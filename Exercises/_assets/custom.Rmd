@@ -75,7 +75,8 @@ library(glue)
 library(here)
 
 # Clear traceback: https://stackoverflow.com/questions/16715691/r-language-how-to-clear-the-frames-stack-in-rstudio-console
-if (Sys.getenv("CALLR") != "TRUE") {
-  assign(".Traceback", NULL, "package:base")
-}
+tryCatch(
+  assign(".Traceback", NULL, "package:base"),
+  error = function(e) {}
+)
 ```
