@@ -18,11 +18,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, eval = TRUE, echo = FALSE}
-library(here)
-```
-
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -36,14 +32,16 @@ tmux attach -t rnaseq
 Copy, please, these files and directories to your personal directory:
 
 ```{bash}
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/{bin,02_quantification} ~/AGE2021/Exercises/E07-RNA_seq
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/data/{sample_sheet_airway.csv,experiment_trimmed_filtered,genome,gsnap_index_hg37_chr20,salmon_index_hg37_chr20,rna_sequences,transcriptome} ~/AGE2021/Exercises/E07-RNA_seq/data
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/02_quantification ~/AGE/Exercises/E07-RNA_seq
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/data/{sample_sheet_airway.csv,experiment_trimmed_filtered,genome,gsnap_index_hg37_chr20,salmon_index_hg37_chr20,rna_sequences,transcriptome} ~/AGE/Exercises/E07-RNA_seq/data
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/bin ~
+chmod +x ~/bin/*
 ```
 
 And change the working directory in RStudio terminal to the current exercise's directory:
 
 ```{bash}
-cd ~/AGE2021/Exercises/E07-RNA_seq/02_quantification
+cd ~/AGE/Exercises/E07-RNA_seq/02_quantification
 ```
 
 We also need to install additional software.
@@ -54,24 +52,6 @@ conda deactivate
 conda activate tools
 conda install -c bioconda preseq subread salmon rseqc
 ```
-
-You have also copied the `bin` directory with some tools.
-To make them available in the shell, you need to add this directory to the `PATH` environment variable and make these files executable:
-
-```{bash}
-export PATH=~/AGE2021/Exercises/E07-RNA_seq/bin:$PATH
-chmod +x ~/AGE2021/Exercises/E07-RNA_seq/bin/*
-```
-
-Just keep in mind that this modification of `PATH` is temporary - it won't be available in a new shell session.
-You can add the `export ...` line to `~/.bashrc`, which is a `bash` script executed when `bash` is initiated (e.g. on SSH login or in a subshell).
-Alternatively, you can copy content of the `bin` directory to your home's `bin`, which should be available in `PATH` by default:
-
-```{bash}
-cp ~/shared/AGE2021/Exercises/E07-RNA_seq/bin/* ~/bin
-```
-
-But then don't forget to also backup this directory when AGE course will be over, otherwise the code below won't work `r emo::ji("wink")`
 
 ***
 
@@ -176,10 +156,6 @@ HUMAN_TRNA_FASTA="human_tRNA.fa"
 # Directory for SortMeRNA index of our reference sequences.
 SORTMERNA_INDEX_DIR="sortmerna_index"
 mkdir $SORTMERNA_INDEX_DIR
-
-# Filtered reads = without rRNA and tRNA.
-SORTMERNA_FILTERED_OUT_DIR="sortmerna_filtered"
-mkdir $SORTMERNA_FILTERED_OUT_DIR
 
 # Directory for logs from SortMeRNA which we later parse with MultiQC.
 SORTMERNA_LOG_DIR="sortmerna_log"
@@ -320,6 +296,8 @@ The simplified `SortMeRNA` pipeline is depicted here:
 Then we merge FASTQ files to a single one and use `SortMeRNA` to sort reads to those aligning to reference and those which don't.
 Finally, we split the latter to forward and reverse reads.](`r here("E07-RNA_seq/02_quantification/_rmd_images/sortmerna.png")`)
 
+> In the beggining you have copied scripts for `SortMeRNA` to `~/bin`
+
 ```{bash}
 # First we copy FASTA files with reference sequences to directory for SortMeRNA index.
 cp $SORTMERNA_REFERENCE_DIR/$HUMAN_RRNA_FASTA $SORTMERNA_REFERENCE_DIR/$HUMAN_TRNA_FASTA $SORTMERNA_INDEX_DIR
@@ -336,8 +314,8 @@ cd -
 for sample_id in ${SAMPLE_NAMES[@]}; do
   echo "Processing sample $sample_id ..."
 
-  # SortMeRNA cannot work directly with paired-end data.
-  # Its input is a single FASTQ file. However, authors provide two scripts to merge and unmerge paired-end data.
+  # SortMeRNA cannot work directly with paired-end data - its input is a single FASTQ file.
+  # However, authors provide two scripts to merge and unmerge paired-end data.
   merge-paired-reads.sh \
     $TRIMMED_DATA_DIR/${sample_id}*_1P.fastq \
     $TRIMMED_DATA_DIR/${sample_id}*_2P.fastq \
@@ -361,9 +339,6 @@ for sample_id in ${SAMPLE_NAMES[@]}; do
   
   mv $SORTMERNA_TMP_DIR/${sample_id}*.log $SORTMERNA_LOG_DIR
 done
-
-# First, change to the directory to prevent a catastrophic scenario when SORTMERNA_TMP_DIR is not defined.
-cd $SORTMERNA_TMP_DIR && rm -r ./* && cd -
 ```
 
 <p>
@@ -463,7 +438,7 @@ gmap_build \
 Now we create information about splice sites. That's because we are mapping reads coming from mRNA to genome which includes introns.
 So without the splicing information, "classic aligner" will put a long insert to alignment of reads which span introns.
 With splicing information, "splice-aware aligner" (such as `GSNAP`) knows the location of exons,
-so reads can be aligned to two exons without a long insert inside an intron.
+so reads can be aligned to two exons without a long insert inside the intron.
 
 ![](`r here("E07-RNA_seq/02_quantification/_rmd_images/alignment.png")`)
 
@@ -605,7 +580,7 @@ awk '{ gsub("^chr", "", $1); print $0 }' $HG37_ANN_BED > $HG37_ANN_BED_FIX
 
 <div class="collapse div-collapse-info" id="div_info_bed_awk">
 
-- `gsub("^chr", "", $1)`{.bash}
+- `gsub("^chr", "", $1)`
   - In the first column, remove the leading `chr` string.
 - `print $0`
   - Print all columns.
@@ -822,6 +797,7 @@ We will use the meta-feature `gene_id`.
 
 ```{r, eval = TRUE}
 library(Rsubread)
+library(here)
 library(glue)
 
 # pattern = ".bam$" will match all files ending with ".bam", so it won't include ".bam.bai" files.
@@ -1273,10 +1249,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = FALSE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E07-RNA_seq/02_quantification/02_quantification.Rmd"),
   output_file = here("E07-RNA_seq/02_quantification/02_quantification.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```

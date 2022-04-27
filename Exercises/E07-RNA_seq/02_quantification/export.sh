@@ -14,5 +14,8 @@ fi
 echo "To export: $TO_EXPORT"
 mkdir $1
 cp -r $TO_EXPORT $1
+
+TO_EXPORT=`echo ../data/{experiment_trimmed_filtered/,genome/,gsnap_index_hg37_chr20/,rna_sequences/,salmon_index_hg37_chr20/,sample_sheet_airway.csv,transcriptome/}`
+echo "To export: $TO_EXPORT"
 mkdir $1/../data
-cp -r ../data/experiment_trimmed_filtered/ genome/ gsnap_index_hg37_chr20/ rna_sequences/ salmon_index_hg37_chr20/ sample_sheet_airway.csv/ transcriptome/ $1/../data
+cp -r $TO_EXPORT $1/../data
