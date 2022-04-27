@@ -4,7 +4,7 @@
 
 cd "$(dirname "$0")"
 
-TO_EXPORT="_rmd_images/ 04_differential_expression.html 04_differential_expression.Rmd dex_trt_vs_untrt_degs.csv"
+TO_EXPORT="04_differential_expression.html 04_differential_expression.Rmd"
 
 if [ -z "$1" ]; then
   echo "Destination path is not set!"

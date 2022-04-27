@@ -18,7 +18,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -26,7 +26,7 @@ date: "`r Sys.Date()`"
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/E07-RNA_seq/04_differential_expression ~/AGE2021/Exercises/E07-RNA_seq
+cp -r ~/shared/AGE_current/Exercises/E07-RNA_seq/04_differential_expression ~/AGE/Exercises/E07-RNA_seq
 ```
 
 ***
@@ -400,10 +400,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E07-RNA_seq/04_differential_expression/04_differential_expression.Rmd"),
   output_file = here("E07-RNA_seq/04_differential_expression/04_differential_expression.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```
