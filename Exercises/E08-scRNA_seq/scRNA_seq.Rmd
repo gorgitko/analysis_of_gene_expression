@@ -18,11 +18,7 @@ output:
 date: "`r Sys.Date()`"
 ---
 
-```{r, eval = TRUE, echo = FALSE}
-library(here)
-```
-
-```{r, child = here("_assets/custom.Rmd"), eval = TRUE}
+```{r, child = here::here("_assets/custom.Rmd"), eval = TRUE}
 ```
 
 ***
@@ -30,7 +26,7 @@ library(here)
 Copy, please, these files and directories to your personal directory:
 
 ```{bash, eval = FALSE}
-cp -r ~/shared/AGE2021/Exercises/E08-scRNA_seq ~/AGE2021/Exercises
+cp -r ~/shared/AGE_current/Exercises/E08-scRNA_seq ~/AGE/Exercises
 ```
 
 ***
@@ -93,9 +89,7 @@ However, it may happen that two or more cells are having the same barcode, and t
 
 Because 10x Chromium platform is the leading one in scRNA-seq, we will mainly look at it.
 
-![10x read. Read 1 usually contains only technical sequences: adapters, cell barcode and UMI.
-Read 2 is the biological one.
-[[Source](davetang.org)](`r here("E08-scRNA_seq/_rmd_images/10xread.png")`)
+![10x read. Read 1 usually contains only technical sequences: adapters, cell barcode and UMI. Read 2 is the biological one. [Source](davetang.org)](`r here("E08-scRNA_seq/_rmd_images/10xread.png")`)
 
 ![10x read simplified. Source: Macosko et. al Cell 2015](`r here("E08-scRNA_seq/_rmd_images/10xread_simple.jpg")`)
 
@@ -258,10 +252,10 @@ if (!require(rmdformats)) {
 
 # You can set global chunk options. Options set in individual chunks will override this.
 opts_chunk$set(warning = FALSE, message = FALSE, eval = TRUE)
-opts_knit$set(root.dir = here())
 rmarkdown::render(
   here("E08-scRNA_seq/scRNA_seq.Rmd"),
   output_file = here("E08-scRNA_seq/scRNA_seq.html"),
-  envir = new.env()
+  envir = new.env(),
+  knit_root_dir = here()
 )
 ```
