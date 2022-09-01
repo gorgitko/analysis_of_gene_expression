@@ -147,7 +147,7 @@ Then decompress the downloaded archive to `Exercises/` directory, e.g. `tar xzf 
 (These data actually include also the output from this exercise, and so they are so large.
 TODO: also provide data only needed to begin this exercise - reference FASTAs and GTF, sample FASTQs etc.)
 
-### [01](https://gitcdn.link/repo/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
+### [01](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
 
 - Downloading from SRA (`fasterq-dump`).
 - Technical quality control (`FastQC`, `MultiQC`).
