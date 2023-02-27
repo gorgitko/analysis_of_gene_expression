@@ -70,7 +70,7 @@ Due to educational purposes, those are held in a private repository and availabl
 
 # Overview of exercises
 
-## [E01](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd)) - _Jiri Novotny_
+## [E01](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E01-intro/intro.html) - Intro ([Rmd](Exercises/E01-intro/intro.Rmd)) - _Jiri Novotny_
 
 - Some information about our virtual machines and files.
 - `sshfs` - mount directory on a remote server
@@ -79,9 +79,9 @@ Due to educational purposes, those are held in a private repository and availabl
 - `conda` - package and virtual environment manager
 - Links to beginner base R tutorials and other useful stuff.
 
-## [E02](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E02-intro_to_R/intro_to_R.html) - Intro to R ([Rmd](Exercises/E02-intro_to_R/intro_to_R.Rmd)) - _Jiri Novotny_
+## [E02](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E02-intro_to_R/intro_to_R.html) - Intro to R ([Rmd](Exercises/E02-intro_to_R/intro_to_R.Rmd)) - _Jiri Novotny_
 
-- [Introduction to RMarkdown](https://raw.githubusercontent.com/gorgitko/analysis_of_gene_expression/master/Exercises/E02-intro_to_R/intro_to_Rmd.html)
+- [Introduction to RMarkdown](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E02-intro_to_R/intro_to_Rmd.html)
   ([Rmd](Exercises/E02-intro_to_R/intro_to_R.Rmd)).
 - Reproducible R (project-oriented workflow, consistent paths using [here()](https://here.r-lib.org/),
   namespace conflicts, [renv](https://rstudio.github.io/renv/articles/renv.html), etc.).
@@ -108,11 +108,11 @@ Due to educational purposes, those are held in a private repository and availabl
   - `heatmaply` - interactive HTML heatmaps
   - `pheatmap` - pretty heatmaps in base R
   - `ComplexHeatmap` -
-    [introduction](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.html)
+    [introduction](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.html)
     ([Rmd](Exercises/E02-intro_to_R/ComplexHeatmap-intro/ComplexHeatmap.Rmd))
   - `BiocParallel` - parallelized `lapply()` and others
 
-## [E03](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E03-qPCR/qPCR.html) - qPCR ([Rmd](Exercises/E03-qPCR/qPCR.Rmd)) - _Jiri Novotny_
+## [E03](https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E03-qPCR/qPCR.html) - qPCR ([Rmd](Exercises/E03-qPCR/qPCR.Rmd)) - _Jiri Novotny_
 
 - Main purpose of this exercise is to practice basic R on a small dataset and to
   implement a basic set of (mainly visualization) functions, which will be used
@@ -120,12 +120,12 @@ Due to educational purposes, those are held in a private repository and availabl
 - Implemented functions are located in [age_library.R](Exercises/age_library.R),
   skeletons are in [age_library_empty.R](Exercises/age_library_empty.R).
 
-## [E04](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E04-microarrays/microarrays.html) - microarrays ([Rmd](Exercises/E04-microarrays/microarrays.Rmd)) - _Jiri Novotny_
+## [E04](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E04-microarrays/microarrays.html) - microarrays ([Rmd](Exercises/E04-microarrays/microarrays.Rmd)) - _Jiri Novotny_
 
 - Exercise on Affymetrix microarray analysis.
 - Reading in data, technical and biological quality control, normalization, differential expression, reporting.
 
-## [E05](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E05-multiple_testing_issue/multiple_testing_issue.html) - multiple testing issue ([Rmd](Exercises/E05-multiple_testing_issue/multiple_testing_issue.Rmd)) - _Michal Kolar_
+## [E05](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E05-multiple_testing_issue/multiple_testing_issue.html) - multiple testing issue ([Rmd](Exercises/E05-multiple_testing_issue/multiple_testing_issue.Rmd)) - _Michal Kolar_
 
 - Demonstration of multiple testing issue correction methods on fair/skewed coins.
 
@@ -147,13 +147,13 @@ Then decompress the downloaded archive to `Exercises/` directory, e.g. `tar xzf 
 (These data actually include also the output from this exercise, and so they are so large.
 TODO: also provide data only needed to begin this exercise - reference FASTAs and GTF, sample FASTQs etc.)
 
-### [01](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
+### [01](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E07-RNA_seq/01_quality_control/01_quality_control.html) - technical quality control and trimming ([Rmd](Exercises/E07-RNA_seq/01_quality_control/01_quality_control.Rmd))
 
 - Downloading from SRA (`fasterq-dump`).
 - Technical quality control (`FastQC`, `MultiQC`).
 - Read trimming (`Trimmomatic`).
 
-### [02](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/02_quantification/02_quantification.html) - quantification ([Rmd](Exercises/E07-RNA_seq/02_quantification/02_quantification.Rmd))
+### [02](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E07-RNA_seq/02_quantification/02_quantification.html) - quantification ([Rmd](Exercises/E07-RNA_seq/02_quantification/02_quantification.Rmd))
 
 - Downloading reference files (genome, annotation, etc.).
 - Filtering out rRNA and tRNA (`SortMeRNA`).
@@ -163,19 +163,19 @@ TODO: also provide data only needed to begin this exercise - reference FASTAs an
 - Importing count matrix to R (`tximport`, `DESeq2`).
 - Using `DESeqDataSet`.
 
-### [03](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.html) - exploratory analysis ([Rmd](Exercises/E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.Rmd))
+### [03](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.html) - exploratory analysis ([Rmd](Exercises/E07-RNA_seq/03_exploratory_analysis/03_exploratory_analysis.Rmd))
 
 - Running `DESeq2`.
 - Gene annotation.
 - Count transformations, TPM calculation.
 - PCA, hierarchical clustering, boxplots.
 
-### [04](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/04_differential_expression/04_differential_expression.html) - differential expression ([Rmd](Exercises/E07-RNA_seq/04_differential_expression/04_differential_expression.Rmd))
+### [04](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E07-RNA_seq/04_differential_expression/04_differential_expression.html) - differential expression ([Rmd](Exercises/E07-RNA_seq/04_differential_expression/04_differential_expression.Rmd))
 
 - Using `DESeq2` - contrasts, interactions, independent filtering, LFC shrinkage.
 - Reporting results: MA plot, volcano plot, boxplots, `ReportingTools`.
 
-### [05](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E07-RNA_seq/05_gene_set_analysis/05_gene_set_analysis.html) - Gene Set Enrichment Analysis (ORA, GSEA, SPIA) ([Rmd](Exercises/E07-RNA_seq/05_gene_set_analysis/05_gene_set_analysis.Rmd))
+### [05](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E07-RNA_seq/05_gene_set_analysis/05_gene_set_analysis.html) - Gene Set Enrichment Analysis (ORA, GSEA, SPIA) ([Rmd](Exercises/E07-RNA_seq/05_gene_set_analysis/05_gene_set_analysis.Rmd))
 
 - Gene set databases.
 - Data preparation.
@@ -185,6 +185,6 @@ TODO: also provide data only needed to begin this exercise - reference FASTAs an
 - Viewing data in KEGG (`pathview`).
 - Online tools.
 
-## [E08](https://gitcdn.link/cdn/gorgitko/analysis_of_gene_expression/master/Exercises/E08-scRNA_seq/scRNA_seq.html) - single-cell RNA-seq ([Rmd](Exercises/E08-scRNA_seq/scRNA_seq.Rmd)) - _Jiri Novotny_
+## [E08](https://htmlpreview.github.io/?https://github.com/gorgitko/analysis_of_gene_expression/blob/master/Exercises/E08-scRNA_seq/scRNA_seq.html) - single-cell RNA-seq ([Rmd](Exercises/E08-scRNA_seq/scRNA_seq.Rmd)) - _Jiri Novotny_
 
 - Introduction, software overview, and links to tutorials, lists and other readings.
