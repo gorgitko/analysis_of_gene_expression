@@ -13,6 +13,7 @@ Exercises/E07-RNA_seq/05_gene_set_analysis/*.png
 Exercises/E07-RNA_seq/05_gene_set_analysis/kegg_data/
 Exercises/age_library.R
 Exercises/age_library_empty.sh
+Exercises/renv/
 .Rproj.user
 tmp/
 fastqc/
